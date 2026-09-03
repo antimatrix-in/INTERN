@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Verification Result — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 5rem 0;">
+  <div style="max-width: 680px; margin: 0 auto;">
+
+    {% if cert %}
+      <div class="card card-highlighted" style="padding: 3rem 2.5rem; text-align: center;">
+        
+        {% if cert.status == 'Revoked' %}
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); border: 2px solid var(--danger); margin-bottom: 1.25rem;">
+            <span style="font-size: 2rem; color: var(--danger);">✕</span>
+          </div>
+          <h1 style="font-size: 2rem; font-weight: 800; color: var(--danger); margin-bottom: 0.5rem;">CERTIFICATE REVOKED</h1>
+          <p style="color: var(--text-muted); margin-bottom: 2rem;">This certificate has been revoked by the Anti Matrix Academic Board.</p>
+        {% else %}
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 2px solid var(--primary); margin-bottom: 1.25rem; box-shadow: 0 0 20px var(--primary-glow);">
+            <span style="font-size: 2rem; color: var(--primary);">✓</span>
+          </div>
+          <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--primary-light); margin-bottom: 0.25rem; letter-spacing: -0.02em;">CERTIFICATE VERIFIED ✓</h1>
+          <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem;">Official digitally signed credential issued by Anti Matrix.</p>
+        {% endif %}
+
+        <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 1.75rem; text-align: left; display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <div>
+            <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle); letter-spacing: 0.05em;">Certificate Identification Number</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); font-family: var(--font-mono); margin-top: 0.2rem;">{{ cert.certificate_no }}</div>
+          </div>
+
+          <div class="grid-2" style="gap: 1.25rem;">
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Student Name</div>
+              <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-top: 0.2rem;">{{ cert.student_name }}</div>
+            </div>
+
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Program Track</div>
+              <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-main); margin-top: 0.2rem;">{{ cert.program_title }}</div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap: 1.25rem;">
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Internship Duration</div>
+              <div style="font-size: 0.95rem; color: var(--text-main); margin-top: 0.2rem;">{{ cert.duration }}</div>
+            </div>
+
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Tenure Period</div>
+              <div style="font-size: 0.95rem; color: var(--text-main); margin-top: 0.2rem;">{{ cert.start_date }} – {{ cert.end_date }}</div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap: 1.25rem;">
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Status</div>
+              <div style="margin-top: 0.25rem;">
+                <span class="status-badge {% if cert.status == 'Revoked' %}status-rejected{% else %}status-verified{% endif %}">{{ cert.status }}</span>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Issuing Organization</div>
+              <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-top: 0.2rem;">ANTI MATRIX</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem;">
+          <a href="{{ url_for('main.verify_search') }}" class="btn btn-secondary">Verify Another Certificate</a>
+          <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">Return to Homepage</a>
+        </div>
+
+      </div>
+
+    {% else %}
+      <div class="card" style="padding: 3rem 2rem; text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+        <h2 style="font-size: 1.75rem; font-weight: 800; color: var(--danger); margin-bottom: 0.75rem;">Certificate Not Found</h2>
+        <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto;">
+          No authentic Anti Matrix certificate was found matching identification number <code>{{ cert_id }}</code>. Please verify the ID from your document.
+        </p>
+        <a href="{{ url_for('main.verify_search') }}" class="btn btn-primary">Try Searching Again</a>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Internship Programs — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 4rem 0;">
+  <div style="text-align: center; margin-bottom: 3.5rem;">
+    <h1 style="font-size: 2.75rem; font-weight: 800; margin-bottom: 0.75rem;">Internship Programs</h1>
+    <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 650px; margin: 0 auto;">
+      Choose between our 1-Month Project Track and 3-Month Professional Track to supercharge your technical skills.
+    </p>
+  </div>
+
+  <div class="grid-2">
+    <!-- Plan 1 -->
+    <div class="card">
+      <div class="plan-header">
+        <span class="plan-badge badge-fast-track">1-Month Project Track</span>
+        <h2 class="plan-title">1 Month Project Internship</h2>
+        <p class="plan-description">Focus entirely on building and deploying an end-to-end technical project with spec sheets, GitHub code submission, and video demonstration.</p>
+        <div class="plan-price-box">
+          <span class="plan-price">₹1,499</span>
+          <span class="plan-period">/ Full Track Fee</span>
+        </div>
+      </div>
+
+      <ul class="plan-features">
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Duration: 1 Month</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Practical Project Assignment & Guidelines</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Dedicated Anti Matrix Student Portal Access</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Source Code & Live Demo URL Submission</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> 5-10 Min Demo Video Defense Evaluation</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Official Completion Certificate & Tamper-Proof QR</li>
+      </ul>
+
+      <div style="display: flex; gap: 1rem;">
+        <a href="{{ url_for('auth.register', plan='1_MONTH_PROJECT') }}" class="btn btn-primary btn-block">Apply for 1-Month</a>
+        <a href="{{ url_for('main.internship_1month') }}" class="btn btn-secondary">Full Details</a>
+      </div>
+    </div>
+
+    <!-- Plan 2 -->
+    <div class="card card-highlighted">
+      <div class="plan-header">
+        <span class="plan-badge badge-pro-track">3-Month Professional Track</span>
+        <h2 class="plan-title">3 Month Professional Internship</h2>
+        <p class="plan-description">Comprehensive industrial internship experience with academic document verification, official Offer & Joining letters, monthly progress milestones, and experience letters.</p>
+        <div class="plan-price-box">
+          <span class="plan-price">₹3,999</span>
+          <span class="plan-period">/ Full Track Fee</span>
+        </div>
+      </div>
+
+      <ul class="plan-features">
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Duration: 3 Months</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Identity & Academic Document Verification</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Official Anti Matrix Offer Letter</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Official Joining & Appointment Letter</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Monthly Milestone Progress Tracking (Month 1/2/3)</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Mentor Support & Mid-Term Reviews</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> 7-Criteria Final Evaluation Assessment</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Official Completion Certificate & QR Code</li>
+        <li class="plan-feature-item"><span class="feature-icon-check">✓</span> Official Experience / Internship Letter (Subject to eligibility)</li>
+      </ul>
+
+      <div style="display: flex; gap: 1rem;">
+        <a href="{{ url_for('auth.register', plan='3_MONTH_PROFESSIONAL') }}" class="btn btn-primary btn-block">Apply for 3-Month</a>
+        <a href="{{ url_for('main.internship_3month') }}" class="btn btn-secondary">Full Details</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

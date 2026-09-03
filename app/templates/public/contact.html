@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Contact Support — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 4rem 0;">
+  <div style="max-width: 600px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+      <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem;">Contact Support</h1>
+      <p style="color: var(--text-muted);">Have questions about internship enrollment or technical issues? Reach out to our team.</p>
+    </div>
+
+    <div class="card">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" name="name" class="form-control" placeholder="Aarav Kumar" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" name="email" class="form-control" placeholder="aarav@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Subject</label>
+          <input type="text" name="subject" class="form-control" placeholder="Internship Verification Query" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea name="message" class="form-control" rows="4" placeholder="How can we assist you?" required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

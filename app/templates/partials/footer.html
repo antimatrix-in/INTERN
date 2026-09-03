@@ -1,0 +1,51 @@
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="{{ url_for('main.index') }}" class="brand-logo" style="margin-bottom: 0.5rem;">
+          <div class="brand-symbol">AM</div>
+          <span>ANTI MATRIX</span>
+        </a>
+        <p>Official student internship portal dedicated to industry-aligned engineering projects, structured mentoring, and digitally verifiable credentials.</p>
+        <div style="margin-top: 1rem; font-size: 0.825rem; color: var(--text-subtle);">
+          Security Notice: Anti Matrix never solicits or stores external portal passwords.
+        </div>
+      </div>
+
+      <div>
+        <h4 class="footer-col-title">Internship Tracks</h4>
+        <ul class="footer-links">
+          <li><a href="{{ url_for('main.internship_1month') }}">1-Month Project Track</a></li>
+          <li><a href="{{ url_for('main.internship_3month') }}">3-Month Professional Track</a></li>
+          <li><a href="{{ url_for('main.internships') }}">All Programs Overview</a></li>
+          <li><a href="{{ url_for('auth.register') }}">Apply for Program</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="footer-col-title">Portal & Verification</h4>
+        <ul class="footer-links">
+          <li><a href="{{ url_for('main.verify_search') }}">Certificate Verification</a></li>
+          <li><a href="{{ url_for('auth.login') }}">Student Portal Login</a></li>
+          <li><a href="{{ url_for('main.faq') }}">Frequently Asked Questions</a></li>
+          <li><a href="{{ url_for('main.about') }}">About Anti Matrix</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="footer-col-title">Support & Legal</h4>
+        <ul class="footer-links">
+          <li><a href="{{ url_for('main.contact') }}">Contact Support</a></li>
+          <li><a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a></li>
+          <li><a href="{{ url_for('main.terms') }}">Terms & Conditions</a></li>
+          <li><span style="color: var(--text-subtle); font-size: 0.85rem;">Desk: {{ support_email }}</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>© 2026 ANTI MATRIX. All Rights Reserved.</div>
+      <div>Official Technology & Engineering Internship Platform</div>
+    </div>
+  </div>
+</footer>

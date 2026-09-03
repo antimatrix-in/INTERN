@@ -1,0 +1,12 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="alerts-container">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+          <span>{{ message }}</span>
+          <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; color:inherit; cursor:pointer; font-weight:bold; font-size:1.1rem; line-height:1;">&times;</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}1 Month Project Internship — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 4rem 0;">
+  <div style="max-width: 900px; margin: 0 auto;">
+    
+    <div style="margin-bottom: 2.5rem;">
+      <span class="plan-badge badge-fast-track">Plan A — Fast Track</span>
+      <h1 style="font-size: 2.75rem; font-weight: 800; margin-bottom: 1rem;">1 Month Project Internship</h1>
+      <p style="color: var(--text-muted); font-size: 1.15rem; line-height: 1.7;">
+        A project-centric internship structure designed for college students to quickly build, test, and showcase a full-stack, AI, or cyber security project with verified completion certification.
+      </p>
+    </div>
+
+    <div class="card" style="margin-bottom: 3rem; background: var(--bg-surface-elevated);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">Duration & Investment</div>
+          <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">₹1,499 <span style="font-size: 1rem; color: var(--text-muted); font-weight: normal;">(1 Month Duration)</span></div>
+        </div>
+        <a href="{{ url_for('auth.register', plan='1_MONTH_PROJECT') }}" class="btn btn-primary btn-lg">Apply for 1 Month Program</a>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom: 3rem;">
+      <div class="card">
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--primary-light);">What You Receive</h3>
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.925rem;">
+          <li>✓ Industry Project Assignment with functional spec sheet</li>
+          <li>✓ Anti Matrix Student Portal Access</li>
+          <li>✓ Technical Guidelines & Resource Links</li>
+          <li>✓ Project Source Code & Live URL Submission desk</li>
+          <li>✓ 5-10 Min Demo Video submission & evaluation</li>
+          <li>✓ Rubric-based Mentor Review</li>
+          <li>✓ Anti Matrix Completion Certificate with unique ID & QR code</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--secondary);">Student Workflow</h3>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem; color: var(--text-muted); font-family: var(--font-mono);">
+          <div>1. Online Registration</div>
+          <div>2. Plan Selection (1-Month)</div>
+          <div>3. Payment Activation</div>
+          <div>4. Project Assignment</div>
+          <div>5. Project Development</div>
+          <div>6. Code & Demo Video Submission</div>
+          <div>7. Evaluation & Review</div>
+          <div>8. Completion Certificate Issued</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="text-align: center; padding: 3rem;">
+      <h3 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.75rem;">Ready to build your next project?</h3>
+      <p style="color: var(--text-muted); margin-bottom: 1.75rem;">Join students across top engineering institutions who have built their portfolio with Anti Matrix.</p>
+      <a href="{{ url_for('auth.register', plan='1_MONTH_PROJECT') }}" class="btn btn-primary btn-lg">Get Started Today</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

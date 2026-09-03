@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify Certificate — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 5rem 0;">
+  <div style="max-width: 650px; margin: 0 auto; text-align: center;">
+    
+    <div style="font-size: 2.5rem; margin-bottom: 1rem;">🛡️</div>
+    <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.75rem;">Certificate Verification</h1>
+    <p style="color: var(--text-muted); font-size: 1.05rem; margin-bottom: 2.5rem;">
+      Verify the authenticity of an official ANTI MATRIX completion certificate in real-time.
+    </p>
+
+    <div class="card" style="padding: 2.5rem;">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="form-group" style="text-align: left; margin-bottom: 1.5rem;">
+          <label class="form-label">Certificate Identification Number</label>
+          <input type="text" name="certificate_id" class="form-control" placeholder="e.g. AM-CERT-2026-00184" style="font-family: var(--font-mono); font-size: 1.1rem; padding: 0.85rem;" required autofocus>
+          <div style="font-size: 0.8rem; color: var(--text-subtle); margin-top: 0.5rem;">
+            Format: <code>AM-CERT-YYYY-XXXXX</code> as printed on your certificate or QR code.
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Verify Credential Now</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

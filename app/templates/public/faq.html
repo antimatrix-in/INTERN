@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Frequently Asked Questions — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 4rem 0;">
+  <div style="max-width: 800px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 3.5rem;">
+      <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.75rem;">Frequently Asked Questions</h1>
+      <p style="color: var(--text-muted);">Find clear answers about Anti Matrix internship tracks, verification, evaluation, and documentation.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <div class="card">
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--primary-light);">What is the difference between the 1-Month and 3-Month tracks?</h3>
+        <p style="color: var(--text-muted); font-size: 0.925rem; line-height: 1.6;">
+          The 1-Month track is project-focused and fast-paced, where students directly build an assigned project and submit code/demo for certificate issuance. The 3-Month track is a comprehensive industrial program including formal document verification, Offer Letter, Joining Letter, 3-month milestone progression, mentor guidance, and experience letter upon successful completion.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--primary-light);">Do I need to share any external passwords?</h3>
+        <p style="color: var(--text-muted); font-size: 0.925rem; line-height: 1.6;">
+          <strong>Never.</strong> Anti Matrix maintains its own independent, secure authentication system. You will create your own password on our portal. We will never ask for your Google, GitHub, LinkedIn, or college portal passwords.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--primary-light);">How is my project evaluated?</h3>
+        <p style="color: var(--text-muted); font-size: 0.925rem; line-height: 1.6;">
+          Evaluations are conducted by technical mentors using a strict 7-criteria scoring system out of 100 points: Technical Implementation (20), Functionality (20), UI/UX (15), Documentation (15), Demo Video (15), Originality (10), and Presentation (5).
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--primary-light);">How can colleges and employers verify my certificate?</h3>
+        <p style="color: var(--text-muted); font-size: 0.925rem; line-height: 1.6;">
+          Every certificate has an embossed QR code and a unique certificate ID (e.g. <code>AM-CERT-2026-00184</code>). Anyone can scan the QR code or visit our online Verification Portal to verify authenticity in real-time.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

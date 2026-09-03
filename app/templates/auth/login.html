@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In — ANTI MATRIX Student Portal{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      
+      <div class="auth-header">
+        <div class="brand-symbol" style="margin: 0 auto 1rem; width: 42px; height: 42px; font-size: 1.35rem;">AM</div>
+        <h1 class="auth-title">Student Portal Login</h1>
+        <p class="auth-subtitle">Sign in to access your projects, tasks, and certificates.</p>
+      </div>
+
+      <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+          <label class="form-label" for="email">{{ form.email.label }}</label>
+          {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="name@college.edu") }}
+          {% for error in form.email.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+            <label class="form-label" for="password" style="margin-bottom: 0;">{{ form.password.label }}</label>
+            <a href="{{ url_for('auth.forgot_password') }}" style="font-size: 0.8rem; color: var(--text-muted);">Forgot Password?</a>
+          </div>
+          {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••") }}
+          {% for error in form.password.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <div class="form-check">
+            {{ form.remember_me(class="form-check-input") }}
+            <label class="form-label" for="remember_me" style="margin-bottom: 0; font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">
+              {{ form.remember_me.label.text }}
+            </label>
+          </div>
+        </div>
+
+        {{ form.submit(class="btn btn-primary btn-block btn-lg") }}
+
+        <div style="text-align: center; margin-top: 1.75rem; font-size: 0.9rem; color: var(--text-muted);">
+          Don't have an account? <a href="{{ url_for('auth.register') }}" style="font-weight: 600;">Apply for Internship</a>
+        </div>
+      </form>
+
+      <div style="margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); text-align: center; font-size: 0.8rem; color: var(--text-subtle);">
+        🔒 Security Note: Anti Matrix utilizes independent salted credentials. Never input external passwords.
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

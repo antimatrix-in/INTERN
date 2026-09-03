@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ANTI MATRIX — Official Internship Management Portal{% endblock %}</title>
+  <meta name="description" content="Official Anti Matrix Internship Platform offering 1-Month Project and 3-Month Professional Industry Internships for students.">
+  
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Global Header Navigation -->
+  {% include 'partials/navbar.html' %}
+
+  <!-- Flash Alerts -->
+  <div class="container" style="margin-top: 1.5rem;">
+    {% include 'partials/alerts.html' %}
+  </div>
+
+  <!-- Main Content Area -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Global Footer -->
+  {% include 'partials/footer.html' %}
+
+  <!-- Core JavaScript -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

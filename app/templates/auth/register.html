@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}Internship Registration & Application — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 3rem 0 5rem;">
+  <div style="max-width: 780px; margin: 0 auto;">
+    
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+      <span class="plan-badge badge-pro-track" style="margin-bottom: 0.5rem;">Official Application Wizard</span>
+      <h1 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.5rem;">Apply for Anti Matrix Internship</h1>
+      <p style="color: var(--text-muted); font-size: 1rem;">Complete your student registration and select your preferred internship track.</p>
+    </div>
+
+    <div class="card" style="padding: 2.5rem;">
+      <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+
+        <!-- SECTION 1: ACCOUNT & PERSONAL INFO -->
+        <div style="margin-bottom: 2.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle);">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #04130C; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">1</div>
+            <h2 style="font-size: 1.25rem; font-weight: 700;">Account & Personal Details</h2>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="full_name">{{ form.full_name.label }}</label>
+              {{ form.full_name(class="form-control" + (" is-invalid" if form.full_name.errors else ""), placeholder="Aarav Kumar") }}
+              {% for error in form.full_name.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="email">{{ form.email.label }}</label>
+              {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="aarav@college.edu") }}
+              {% for error in form.email.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="phone">{{ form.phone.label }}</label>
+              {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), placeholder="+91 98765 43210") }}
+              {% for error in form.phone.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="password">{{ form.password.label }}</label>
+              {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Minimum 8 characters") }}
+              {% for error in form.password.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="confirm_password">{{ form.confirm_password.label }}</label>
+              {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="Re-enter password") }}
+              {% for error in form.confirm_password.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: ACADEMIC INFORMATION -->
+        <div style="margin-bottom: 2.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle);">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--secondary); color: #04130C; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">2</div>
+            <h2 style="font-size: 1.25rem; font-weight: 700;">Academic Information</h2>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="college_id">{{ form.college_id.label }}</label>
+            {{ form.college_id(class="form-select" + (" is-invalid" if form.college_id.errors else ""), id="college_id") }}
+            {% for error in form.college_id.errors %}
+              <div class="form-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="department_id">{{ form.department_id.label }}</label>
+              {{ form.department_id(class="form-select" + (" is-invalid" if form.department_id.errors else ""), id="department_id") }}
+              {% for error in form.department_id.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="degree">{{ form.degree.label }}</label>
+              {{ form.degree(class="form-select" + (" is-invalid" if form.degree.errors else "")) }}
+              {% for error in form.degree.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="form-group">
+              <label class="form-label" for="roll_number">{{ form.roll_number.label }}</label>
+              {{ form.roll_number(class="form-control" + (" is-invalid" if form.roll_number.errors else ""), placeholder="e.g. 21CS048") }}
+              {% for error in form.roll_number.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="current_year">{{ form.current_year.label }}</label>
+              {{ form.current_year(class="form-select" + (" is-invalid" if form.current_year.errors else "")) }}
+              {% for error in form.current_year.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="graduation_year">{{ form.graduation_year.label }}</label>
+              {{ form.graduation_year(class="form-select" + (" is-invalid" if form.graduation_year.errors else "")) }}
+              {% for error in form.graduation_year.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: INTERNSHIP PLAN SELECTION -->
+        <div style="margin-bottom: 2.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle);">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent-cyan); color: #04130C; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">3</div>
+            <h2 style="font-size: 1.25rem; font-weight: 700;">Select Internship Track</h2>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="plan_code">{{ form.plan_code.label }}</label>
+            {{ form.plan_code(class="form-select" + (" is-invalid" if form.plan_code.errors else "")) }}
+            {% for error in form.plan_code.errors %}
+              <div class="form-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- SECTION 4: DATA CONSENT & AGREEMENT -->
+        <div style="margin-bottom: 2.5rem; background: var(--bg-surface-elevated); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-medium);">
+          <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-main);">Data Collection & Consent</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem;">
+            I understand that the personal and academic records submitted by me will be used for internship registration, identity verification, communication, mentor evaluation, and tamper-proof certificate generation by Anti Matrix.
+          </p>
+
+          <div class="form-check">
+            {{ form.consent_agreed(class="form-check-input") }}
+            <label class="form-label" for="consent_agreed" style="font-size: 0.85rem; font-weight: normal; color: var(--text-main); margin-bottom: 0;">
+              {{ form.consent_agreed.label.text }}
+            </label>
+          </div>
+          {% for error in form.consent_agreed.errors %}
+            <div class="form-error" style="margin-top: 0.5rem;">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        {{ form.submit(class="btn btn-primary btn-block btn-lg") }}
+
+        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+          Already enrolled in a program? <a href="{{ url_for('auth.login') }}" style="font-weight: 600;">Sign in to your portal</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

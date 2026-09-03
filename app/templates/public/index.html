@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+
+{% block title %}ANTI MATRIX — Official Internship Management Portal{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">
+      <span style="display:inline-block; width:8px; height:8px; background:var(--primary); border-radius:50%; box-shadow: 0 0 8px var(--primary);"></span>
+      Academic Year 2026-2027 Cohort Registrations Open
+    </div>
+    
+    <h1 class="hero-title">
+      Build Your Future With <span class="hero-title-highlight">ANTI MATRIX</span>
+    </h1>
+    
+    <p class="hero-subtitle">
+      Industry-oriented internship programs designed to help college students gain practical project experience, structured mentoring, and digitally verifiable credentials.
+    </p>
+
+    <div class="hero-ctas">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Apply for Internship</a>
+      <a href="{{ url_for('main.internships') }}" class="btn btn-secondary btn-lg">Explore Internship Programs</a>
+    </div>
+
+    <!-- Quick highlights bar -->
+    <div style="display: flex; justify-content: center; gap: 2.5rem; flex-wrap: wrap; margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+      <div>✓ Zero 3rd-Party Passwords</div>
+      <div>✓ Verified Digital Certificates</div>
+      <div>✓ Direct Mentor Reviews</div>
+      <div>✓ Official Joining & Offer Letters</div>
+    </div>
+  </div>
+</section>
+
+<!-- Why Anti Matrix Section -->
+<section style="padding: 4rem 0; background: var(--bg-surface);">
+  <div class="container">
+    <div style="text-align: center; margin-bottom: 3.5rem;">
+      <h2 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.75rem;">Why Choose Anti Matrix?</h2>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">A rigorous, structured engineering lifecycle built to emulate enterprise software development.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div style="font-size: 1.5rem; color: var(--primary); margin-bottom: 1rem; font-family: var(--font-mono); font-weight: bold;">01</div>
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Real-World Projects</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Work on industry-relevant architectures in Full-Stack, AI/ML, Cloud Microservices, and Cyber Security with strict code quality standards.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 1.5rem; color: var(--secondary); margin-bottom: 1rem; font-family: var(--font-mono); font-weight: bold;">02</div>
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Structured Documentation</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Receive official Offer Letters, Joining Letters, and Experience Letters formatted with unique tracking IDs and digital authorization.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 1.5rem; color: var(--accent-cyan); margin-bottom: 1rem; font-family: var(--font-mono); font-weight: bold;">03</div>
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">7-Criteria Evaluation</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Get comprehensive rubric-based scoring across Technical Implementation, UI/UX, Documentation, Demo Video, and Architecture.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Internship Programs Section -->
+<section style="padding: 5rem 0;" id="programs">
+  <div class="container">
+    <div style="text-align: center; margin-bottom: 3.5rem;">
+      <h2 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.75rem;">Internship Programs</h2>
+      <p style="color: var(--text-muted); max-width: 650px; margin: 0 auto;">Select the program track that best aligns with your academic schedule and career goals.</p>
+    </div>
+
+    <div class="grid-2">
+      <!-- Plan A: 1 Month -->
+      <div class="card">
+        <div class="plan-header">
+          <span class="plan-badge badge-fast-track">Fast-Track Project Plan</span>
+          <h3 class="plan-title">1 Month Project Internship</h3>
+          <p class="plan-description">A fast-paced, project-intensive program designed for students wanting focused hands-on development and rapid certificate credentialing.</p>
+          <div class="plan-price-box">
+            <span class="plan-price">₹1,499</span>
+            <span class="plan-period">/ 1-Month Program</span>
+          </div>
+        </div>
+
+        <ul class="plan-features">
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Duration: 1 Month (Project-focused)</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Industry Project Assignment & Spec Sheet</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Dedicated Anti Matrix Student Portal Access</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>GitHub Code & Live Demo URL Submission</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>5-10 Min Demo Video Defense Evaluation</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Official Completion Certificate & Tamper-Proof QR</span>
+          </li>
+        </ul>
+
+        <div style="display: flex; gap: 1rem;">
+          <a href="{{ url_for('auth.register', plan='1_MONTH_PROJECT') }}" class="btn btn-primary btn-block">Apply for 1 Month</a>
+          <a href="{{ url_for('main.internship_1month') }}" class="btn btn-secondary">Learn More</a>
+        </div>
+      </div>
+
+      <!-- Plan B: 3 Month -->
+      <div class="card card-highlighted">
+        <div class="plan-header">
+          <span class="plan-badge badge-pro-track">Enterprise Professional Track</span>
+          <h3 class="plan-title">3 Month Professional Internship</h3>
+          <p class="plan-description">Complete industrial internship with academic identity verification, formal onboarding letters, 3-month milestone tracking, and experience credentials.</p>
+          <div class="plan-price-box">
+            <span class="plan-price">₹3,999</span>
+            <span class="plan-period">/ 3-Month Program</span>
+          </div>
+        </div>
+
+        <ul class="plan-features">
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Duration: 3 Months (Structured Industrial Track)</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Academic Identity & Document Verification Desk</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Official Anti Matrix Offer Letter</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Official Appointment / Joining Letter with UID</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Monthly Milestone Progress Tracking (Month 1/2/3)</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Dedicated Technical Mentor & Review Feedback</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>7-Criteria Final Evaluator Assessment</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Official Completion Certificate</span>
+          </li>
+          <li class="plan-feature-item">
+            <span class="feature-icon-check">✓</span>
+            <span>Official Experience / Internship Letter (Subject to completion)</span>
+          </li>
+        </ul>
+
+        <div style="display: flex; gap: 1rem;">
+          <a href="{{ url_for('auth.register', plan='3_MONTH_PROFESSIONAL') }}" class="btn btn-primary btn-block">Apply for 3 Months</a>
+          <a href="{{ url_for('main.internship_3month') }}" class="btn btn-secondary">Learn More</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section style="padding: 4rem 0; background: var(--bg-surface);">
+  <div class="container">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <h2 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.75rem;">How It Works</h2>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">A transparent, step-by-step student journey from registration to certified credential.</p>
+    </div>
+
+    <div class="timeline-steps">
+      <div class="step-card">
+        <div class="step-number">01</div>
+        <div class="step-title">Apply Online</div>
+        <div class="step-desc">Create your student profile and select your preferred 1-month or 3-month program track.</div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">02</div>
+        <div class="step-title">Activation</div>
+        <div class="step-desc">Complete payment and submit required verification documents to unlock your portal.</div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">03</div>
+        <div class="step-title">Project & Review</div>
+        <div class="step-desc">Develop assigned industry project with milestone tasks and mentor feedback.</div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">04</div>
+        <div class="step-title">Certified Credential</div>
+        <div class="step-desc">Submit demo video for 7-point evaluation and receive your digitally verifiable certificate.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Certificate Verification Teaser -->
+<section style="padding: 4rem 0;">
+  <div class="container">
+    <div class="card" style="text-align: center; max-width: 750px; margin: 0 auto; padding: 3rem 2rem;">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🛡️</div>
+      <h3 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.75rem;">Instant Certificate Verification</h3>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.75rem;">
+        Already have an Anti Matrix certificate or verifying a candidate's credentials? Enter the unique Certificate ID below.
+      </p>
+
+      <form action="{{ url_for('main.verify_search') }}" method="POST" style="display: flex; gap: 0.75rem; max-width: 500px; margin: 0 auto; flex-wrap: wrap;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="text" name="certificate_id" placeholder="e.g. AM-CERT-2026-00184" class="form-control" style="flex: 1; font-family: var(--font-mono);" required>
+        <button type="submit" class="btn btn-primary">Verify Credential</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

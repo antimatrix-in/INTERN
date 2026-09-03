@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+  
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="sidebar">
+    <div class="sidebar-brand-badge">Student Portal Hub</div>
+    
+    <div style="margin-bottom: 2rem; padding: 1rem; background: var(--bg-surface-elevated); border-radius: var(--radius-md); border: 1px solid var(--border-medium);">
+      <div style="font-size: 0.75rem; color: var(--text-subtle); text-transform: uppercase;">Student UID</div>
+      <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary); font-family: var(--font-mono);">{{ student.student_uid }}</div>
+      <div style="font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">{{ current_user.full_name }}</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">{{ student.college.name }}</div>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li class="sidebar-item active"><a href="{{ url_for('student.dashboard') }}">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="#internship-section">🎓 My Internship</a></li>
+      <li class="sidebar-item"><a href="#project-section">💻 My Project</a></li>
+      <li class="sidebar-item"><a href="#documents-section">📄 Documents</a></li>
+      <li class="sidebar-item"><a href="#certificates-section">🏆 Certificates</a></li>
+      <li class="sidebar-item"><a href="{{ url_for('student.profile') }}">👤 Profile</a></li>
+      <li class="sidebar-item" style="margin-top: 1.5rem;"><a href="{{ url_for('auth.logout') }}" style="color: var(--danger);">🚪 Sign Out</a></li>
+    </ul>
+  </aside>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="dashboard-content">
+    
+    <!-- WELCOME BANNER -->
+    <div class="welcome-banner">
+      <div>
+        <div style="font-size: 0.85rem; color: var(--primary-light); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">
+          Active Internship Session
+        </div>
+        <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem;">Welcome, {{ current_user.full_name }}</h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          {% if internship %}
+            Track: <strong>{{ internship.plan.title }}</strong> &nbsp;|&nbsp; Stage: <span class="status-badge status-active">{{ internship.current_stage }}</span>
+          {% else %}
+            Your application is being processed. Complete your onboarding requirements below.
+          {% endif %}
+        </p>
+      </div>
+
+      {% if internship %}
+        <div style="text-align: right;">
+          <div style="font-size: 0.75rem; color: var(--text-subtle); text-transform: uppercase;">Internship ID</div>
+          <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); font-family: var(--font-mono);">{{ internship.internship_no }}</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Tenure: {{ internship.start_date }} to {{ internship.end_date }}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- PROGRESS OVERVIEW -->
+    {% if internship %}
+      <div class="card" style="margin-bottom: 2rem;" id="internship-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <h3 style="font-size: 1.1rem; font-weight: 700;">Internship Lifecycle Progress</h3>
+          <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary); font-family: var(--font-mono);">{{ internship.progress_percent }}%</span>
+        </div>
+
+        <div class="progress-track">
+          <div class="progress-fill" style="width: {{ internship.progress_percent }}%;"></div>
+        </div>
+
+        <!-- Visual Timeline -->
+        <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; font-size: 0.8rem;">
+          <div style="color: var(--primary); font-weight: 600;">✓ Registration</div>
+          <div style="color: var(--primary); font-weight: 600;">✓ Payment Verified</div>
+          
+          {% if internship.plan.plan_code == '3_MONTH_PROFESSIONAL' %}
+            <div style="color: {% if internship.progress_percent >= 25 %}var(--primary){% else %}var(--text-muted){% endif %}; font-weight: 600;">
+              {% if internship.progress_percent >= 25 %}✓{% else %}●{% endif %} Verification & Offer Letter
+            </div>
+            <div style="color: {% if internship.progress_percent >= 50 %}var(--primary){% else %}var(--text-muted){% endif %}; font-weight: 600;">
+              {% if internship.progress_percent >= 50 %}✓{% else %}○{% endif %} Month 1 & 2 Milestones
+            </div>
+          {% endif %}
+
+          <div style="color: {% if internship.progress_percent >= 70 %}var(--primary){% else %}var(--text-muted){% endif %}; font-weight: 600;">
+            {% if internship.progress_percent >= 70 %}✓{% else %}○{% endif %} Project Submission & Demo
+          </div>
+          <div style="color: {% if internship.progress_percent >= 90 %}var(--primary){% else %}var(--text-muted){% endif %}; font-weight: 600;">
+            {% if internship.progress_percent >= 90 %}✓{% else %}○{% endif %} 7-Point Evaluation
+          </div>
+          <div style="color: {% if internship.progress_percent == 100 %}var(--primary){% else %}var(--text-muted){% endif %}; font-weight: 600;">
+            {% if internship.progress_percent == 100 %}✓{% else %}○{% endif %} Completion & Certificate
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- DASHBOARD METRIC CARDS -->
+    <div class="grid-3" style="margin-bottom: 2.5rem;">
+      <div class="card">
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Internship Track</div>
+        <div style="font-size: 1.25rem; font-weight: 700; margin: 0.5rem 0;">
+          {% if internship %}{{ internship.plan.title }}{% else %}No Active Track{% endif %}
+        </div>
+        <span class="status-badge {% if internship and internship.status == 'ACTIVE' %}status-active{% else %}status-pending{% endif %}">
+          {{ internship.status if internship else 'PENDING ACTIVATION' }}
+        </span>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Project Assignment</div>
+        <div style="font-size: 1.15rem; font-weight: 700; margin: 0.5rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          {% if project_assignment %}{{ project_assignment.project.title }}{% else %}Auto-Assigning...{% endif %}
+        </div>
+        <span class="status-badge {% if project_assignment and project_assignment.status == 'PASSED' %}status-passed{% else %}status-in-progress{% endif %}">
+          {{ project_assignment.status if project_assignment else 'PENDING ASSIGNMENT' }}
+        </span>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Official Credentials</div>
+        <div style="font-size: 1.25rem; font-weight: 700; margin: 0.5rem 0;">
+          {{ issued_docs|length }} Document{{ 's' if issued_docs|length != 1 else '' }} Issued
+        </div>
+        <span class="status-badge status-verified">Tamper-Proof QR</span>
+      </div>
+    </div>
+
+    <!-- PROJECT SECTION -->
+    <div class="card" style="margin-bottom: 2.5rem;" id="project-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 700;">Assigned Engineering Project</h2>
+        {% if project_assignment %}
+          <span class="status-badge status-active">Deadline: {{ project_assignment.deadline }}</span>
+        {% endif %}
+      </div>
+
+      {% if project_assignment %}
+        <div style="background: var(--bg-surface-elevated); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-medium); margin-bottom: 1.5rem;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary-light); text-transform: uppercase;">
+            {{ project_assignment.project.domain }} &nbsp;|&nbsp; {{ project_assignment.project.project_code }}
+          </div>
+          <h3 style="font-size: 1.25rem; font-weight: 700; margin: 0.35rem 0 0.75rem;">{{ project_assignment.project.title }}</h3>
+          <p style="color: var(--text-muted); font-size: 0.925rem; line-height: 1.6; margin-bottom: 1.25rem;">
+            {{ project_assignment.project.description }}
+          </p>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            {% for tech in project_assignment.project.tech_stack %}
+              <span style="font-size: 0.75rem; padding: 0.2rem 0.6rem; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); font-family: var(--font-mono);">
+                {{ tech }}
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="font-size: 0.85rem; color: var(--text-muted);">
+            Submission includes GitHub Codebase URL, Live Hosted URL, and 5-10 min Demo Video URL.
+          </div>
+          <a href="#submissions-section" class="btn btn-primary">Project Submission Portal</a>
+        </div>
+      {% else %}
+        <div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">💻</div>
+          <h4 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.35rem;">Project Allocation In Progress</h4>
+          <p style="font-size: 0.9rem;">Your project spec sheet and mentor allocation will be provisioned directly in your dashboard.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- NOTIFICATIONS STREAM -->
+    <div class="card" style="margin-bottom: 2.5rem;">
+      <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1.25rem;">Recent Portal Notifications</h3>
+      {% if notifications %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          {% for notif in notifications %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; background: var(--bg-surface-elevated); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <div>
+                <strong style="color: var(--primary-light); font-size: 0.9rem;">{{ notif.title }}</strong>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.15rem;">{{ notif.message }}</p>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-subtle);">{{ notif.created_at.strftime('%d %b %Y') }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--text-muted); font-size: 0.9rem;">No new notifications at this time.</p>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+{% endblock %}
