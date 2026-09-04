@@ -1,0 +1,185 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}My Assigned Project — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <a href="{{ url_for('student.dashboard') }}" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    Back to Dashboard
+  </a>
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="display: flex; gap: 0.65rem; margin-bottom: 0.5rem;">
+        <span class="meta-badge mono">ID: {{ project.project_code }}</span>
+        <span class="meta-badge">{{ project.domain }}</span>
+        <span class="meta-badge">{{ project.difficulty }} Level</span>
+      </div>
+      <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem;">
+        {{ project.title }}
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.925rem;">
+        Assigned to: <strong style="color: var(--text-main);">{{ student.user.full_name }}</strong> ({{ student.student_uid }}) • 
+        Mentor: <strong style="color: var(--text-main);">{{ internship.mentor.full_name if internship.mentor else 'Technical Lead' }}</strong>
+      </p>
+    </div>
+
+    <div style="text-align: right;">
+      <span class="status-badge badge-available" style="font-size: 0.825rem; padding: 0.35rem 0.9rem;">
+        Status: {{ assignment.status }}
+      </span>
+      <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;">
+        Target Deadline: <strong style="color: var(--text-main);">{{ assignment.deadline }}</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Project Specs Grid -->
+<div class="grid-3" style="margin-bottom: 2rem;">
+  <div class="card" style="grid-column: span 2; margin-bottom: 0;">
+    <h3 class="card-title" style="margin-bottom: 1rem;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+      Project Overview & Scope
+    </h3>
+    <p style="color: var(--text-main); font-size: 0.95rem; line-height: 1.65; margin-bottom: 1.5rem;">
+      {{ project.description }}
+    </p>
+
+    {% if project.problem_statement %}
+      <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+        <h4 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--warning); margin-bottom: 0.4rem; letter-spacing: 0.05em;">
+          Problem Statement
+        </h4>
+        <p style="color: var(--text-muted); font-size: 0.885rem; line-height: 1.6;">
+          {{ project.problem_statement }}
+        </p>
+      </div>
+    {% endif %}
+
+    <div style="margin-bottom: 1.5rem;">
+      <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem;">
+        Key Project Objectives
+      </h4>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.6rem;">
+        {% for obj in project.objectives %}
+          <li style="display: flex; align-items: flex-start; gap: 0.65rem; font-size: 0.885rem; color: var(--text-muted);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" stroke-width="2" style="flex-shrink: 0; margin-top: 0.15rem;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>{{ obj }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {% if project.expected_outcome %}
+      <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-md); padding: 1.25rem;">
+        <h4 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--primary-light); margin-bottom: 0.4rem; letter-spacing: 0.05em;">
+          Expected Engineering Outcome
+        </h4>
+        <p style="color: var(--text-muted); font-size: 0.885rem; line-height: 1.6;">
+          {{ project.expected_outcome }}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Sidebar Specs Card -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Technical Stack -->
+    <div class="card" style="margin-bottom: 0;">
+      <h3 class="card-title" style="margin-bottom: 0.85rem; font-size: 1rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        Required Technologies
+      </h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        {% for tech in project.tech_stack %}
+          <span style="background: var(--bg-surface-elevated); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); padding: 0.35rem 0.75rem; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-main);">
+            {{ tech }}
+          </span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Requirements & Evaluation Criteria -->
+    <div class="card" style="margin-bottom: 0;">
+      <h3 class="card-title" style="margin-bottom: 0.85rem; font-size: 1rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        Evaluation Criteria
+      </h3>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.85rem; color: var(--text-muted);">
+        {% for req in project.requirements %}
+          <li style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <span style="color: var(--primary-light);">▪</span>
+            <span>{{ req }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Progress Status Card -->
+    <div class="card" style="margin-bottom: 0;">
+      <h3 class="card-title" style="margin-bottom: 0.75rem; font-size: 1rem;">Roadmap Progress</h3>
+      <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.35rem;">
+        <span style="color: var(--text-muted);">Milestones</span>
+        <span style="font-weight: 700; color: var(--primary-light);">{{ assignment.progress_percent }}%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width: {{ assignment.progress_percent }}%;"></div>
+      </div>
+      <p style="font-size: 0.775rem; color: var(--text-subtle); margin-top: 0.5rem;">
+        Progress increases as each weekly milestone is evaluated and approved by your mentor.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Embedded Roadmap Timeline -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      Project Milestone Roadmap
+    </h3>
+    <span style="font-size: 0.85rem; color: var(--text-muted);">{{ milestones|length }} Scheduled Milestones</span>
+  </div>
+
+  <div class="roadmap-grid">
+    {% for m in milestones %}
+      <div class="week-card {% if m.status in ['COMPLETED', 'APPROVED'] %}status-completed-card{% elif m.status in ['AVAILABLE', 'IN_PROGRESS', 'REVISION_REQUIRED'] %}status-available-card{% else %}status-locked-card{% endif %}">
+        <div>
+          <div class="week-card-top">
+            <span class="week-num-badge">WEEK {{ m.week_number }}</span>
+            {% if m.status in ['COMPLETED', 'APPROVED'] %}
+              <span class="status-badge badge-completed">Completed</span>
+            {% elif m.status == 'AVAILABLE' or m.status == 'IN_PROGRESS' %}
+              <span class="status-badge badge-available">Available</span>
+            {% elif m.status == 'SUBMITTED' or m.status == 'UNDER_REVIEW' %}
+              <span class="status-badge badge-submitted">Under Review</span>
+            {% elif m.status == 'REVISION_REQUIRED' %}
+              <span class="status-badge badge-revision">Revision Req.</span>
+            {% else %}
+              <span class="status-badge badge-locked">Locked 🔒</span>
+            {% endif %}
+          </div>
+
+          <h4 class="week-card-title">{{ m.title }}</h4>
+          <p class="week-card-objective">{{ m.objective }}</p>
+        </div>
+
+        <div class="week-card-action">
+          {% if m.status != 'LOCKED' %}
+            <a href="{{ url_for('student.week_detail', milestone_id=m.id) }}" class="btn btn-outline-primary btn-sm btn-block">
+              Open Week {{ m.week_number }} Workspace →
+            </a>
+          {% else %}
+            <button class="btn btn-secondary btn-sm btn-block disabled" disabled>
+              Locked (Complete Week {{ m.week_number - 1 }})
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

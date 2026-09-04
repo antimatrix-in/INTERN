@@ -1,0 +1,83 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}Weekly Roadmap Progress — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem;">Weekly Roadmap Progress</h1>
+  <p style="color: var(--text-muted); font-size: 0.925rem;">
+    Track your progression through the {{ assignment.project.duration_weeks }}-week curriculum. Milestones require mentor approval to unlock the next phase.
+  </p>
+</div>
+
+<!-- Progress Overview Banner -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.75rem;">
+    <div>
+      <span style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted);">Overall Project Completion</span>
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-light);">{{ assignment.progress_percent }}% Completed</h3>
+    </div>
+    <div style="font-size: 0.85rem; color: var(--text-muted);">
+      {{ assignment.project.title }} ({{ assignment.project.project_code }})
+    </div>
+  </div>
+  <div class="progress-track" style="height: 10px;">
+    <div class="progress-fill" style="width: {{ assignment.progress_percent }}%;"></div>
+  </div>
+</div>
+
+<!-- Roadmap List -->
+<div style="display: flex; flex-direction: column; gap: 1.25rem;">
+  {% for m in milestones %}
+    <div class="card" style="margin-bottom: 0; {% if m.status in ['COMPLETED', 'APPROVED'] %}border-color: rgba(16, 185, 129, 0.3);{% elif m.status == 'AVAILABLE' %}border-color: var(--primary);{% else %}opacity: 0.75;{% endif %}">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; gap: 1.25rem; align-items: flex-start;">
+          <div style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--bg-surface-elevated); border: 1px solid var(--border-medium); display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: var(--font-mono); color: {% if m.status in ['COMPLETED', 'APPROVED'] %}var(--primary-light){% elif m.status == 'AVAILABLE' %}var(--accent-cyan){% else %}var(--text-subtle){% endif %}; flex-shrink: 0;">
+            W{{ m.week_number }}
+          </div>
+
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
+              <h3 style="font-size: 1.15rem; font-weight: 700;">{{ m.title }}</h3>
+              {% if m.status in ['COMPLETED', 'APPROVED'] %}
+                <span class="status-badge badge-completed">Completed</span>
+              {% elif m.status in ['AVAILABLE', 'IN_PROGRESS'] %}
+                <span class="status-badge badge-available">Available</span>
+              {% elif m.status in ['SUBMITTED', 'UNDER_REVIEW'] %}
+                <span class="status-badge badge-submitted">Under Review</span>
+              {% elif m.status == 'REVISION_REQUIRED' %}
+                <span class="status-badge badge-revision">Revision Required</span>
+              {% else %}
+                <span class="status-badge badge-locked">Locked 🔒</span>
+              {% endif %}
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem; line-height: 1.5;">
+              {{ m.objective }}
+            </p>
+
+            <div style="display: flex; gap: 1.5rem; font-size: 0.8rem; color: var(--text-subtle);">
+              <span>📋 {{ m.tasks.count() }} Tasks</span>
+              <span>📦 {{ m.deliverables|length }} Deliverables</span>
+              {% if m.approved_at %}
+                <span style="color: var(--primary-light);">✓ Approved on {{ m.approved_at.strftime('%d %b %Y') if m.approved_at.strftime is defined else m.approved_at }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          {% if m.status != 'LOCKED' %}
+            <a href="{{ url_for('student.week_detail', milestone_id=m.id) }}" class="btn btn-outline-primary btn-sm">
+              Open Workspace →
+            </a>
+          {% else %}
+            <button class="btn btn-secondary btn-sm disabled" disabled>
+              Locked
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

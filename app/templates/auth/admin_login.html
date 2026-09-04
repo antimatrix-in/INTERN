@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrator Login — ANTI MATRIX Portal</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+
+  <div class="auth-card" style="border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 0 35px rgba(59, 130, 246, 0.08);">
+    <div class="auth-header">
+      <div class="auth-brand" style="justify-content: center;">
+        <div class="brand-symbol" style="background: linear-gradient(135deg, #3B82F6, #8B5CF6); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);">AM</div>
+        <div>
+          <div class="brand-title">ANTI MATRIX</div>
+          <span style="font-size: 0.725rem; font-weight: 700; text-transform: uppercase; color: #60A5FA; letter-spacing: 0.06em;">Administration</span>
+        </div>
+      </div>
+      <h1 class="auth-title">Admin Sign In</h1>
+      <p class="auth-subtitle">Evaluation panel, milestone unlocking & student roadmap control</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% include 'partials/alerts.html' %}
+
+    <form method="POST" action="{{ url_for('auth.admin_login') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        <label for="email_or_id" class="form-label">Administrator Email or Employee ID</label>
+        {{ form.email_or_id(class="form-control mono", placeholder="e.g. admin@antimatrix.com or AM-ADM-001", autofocus=true) }}
+        {% for error in form.email_or_id.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Security Password</label>
+        {{ form.password(class="form-control", placeholder="••••••••••••") }}
+        {% for error in form.password.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <div class="form-check">
+          {{ form.remember_me(class="form-check-input") }}
+          <label for="remember_me" style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer;">Maintain active session</label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-block btn-lg" style="margin-top: 1.5rem; background: #2563EB; color: #fff; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);">
+        Authenticate Administrator
+      </button>
+
+      <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); text-align: center;">
+        <a href="{{ url_for('auth.login') }}" style="font-size: 0.825rem; color: var(--text-muted);">
+          ← Return to Student Portal Login
+        </a>
+      </div>
+    </form>
+  </div>
+
+</body>
+</html>

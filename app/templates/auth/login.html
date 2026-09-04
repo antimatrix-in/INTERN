@@ -1,61 +1,93 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Login — ANTI MATRIX Internship Portal</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
 
-{% block title %}Sign In — ANTI MATRIX Student Portal{% endblock %}
-
-{% block content %}
-<div class="container">
-  <div class="auth-wrapper">
-    <div class="auth-card">
-      
-      <div class="auth-header">
-        <div class="brand-symbol" style="margin: 0 auto 1rem; width: 42px; height: 42px; font-size: 1.35rem;">AM</div>
-        <h1 class="auth-title">Student Portal Login</h1>
-        <p class="auth-subtitle">Sign in to access your projects, tasks, and certificates.</p>
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-brand" style="justify-content: center;">
+        <div class="brand-symbol">AM</div>
+        <div>
+          <div class="brand-title">ANTI MATRIX</div>
+          <span style="font-size: 0.725rem; font-weight: 700; text-transform: uppercase; color: var(--primary-light); letter-spacing: 0.06em;">Internship Portal</span>
+        </div>
       </div>
-
-      <form method="POST" novalidate>
-        {{ form.hidden_tag() }}
-
-        <div class="form-group">
-          <label class="form-label" for="email">{{ form.email.label }}</label>
-          {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="name@college.edu") }}
-          {% for error in form.email.errors %}
-            <div class="form-error">{{ error }}</div>
-          {% endfor %}
-        </div>
-
-        <div class="form-group">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
-            <label class="form-label" for="password" style="margin-bottom: 0;">{{ form.password.label }}</label>
-            <a href="{{ url_for('auth.forgot_password') }}" style="font-size: 0.8rem; color: var(--text-muted);">Forgot Password?</a>
-          </div>
-          {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••") }}
-          {% for error in form.password.errors %}
-            <div class="form-error">{{ error }}</div>
-          {% endfor %}
-        </div>
-
-        <div class="form-group">
-          <div class="form-check">
-            {{ form.remember_me(class="form-check-input") }}
-            <label class="form-label" for="remember_me" style="margin-bottom: 0; font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">
-              {{ form.remember_me.label.text }}
-            </label>
-          </div>
-        </div>
-
-        {{ form.submit(class="btn btn-primary btn-block btn-lg") }}
-
-        <div style="text-align: center; margin-top: 1.75rem; font-size: 0.9rem; color: var(--text-muted);">
-          Don't have an account? <a href="{{ url_for('auth.register') }}" style="font-weight: 600;">Apply for Internship</a>
-        </div>
-      </form>
-
-      <div style="margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); text-align: center; font-size: 0.8rem; color: var(--text-subtle);">
-        🔒 Security Note: Anti Matrix utilizes independent salted credentials. Never input external passwords.
-      </div>
-
+      <h1 class="auth-title">Student Sign In</h1>
+      <p class="auth-subtitle">Access your assigned project, milestone roadmap & evaluation records</p>
     </div>
+
+    <!-- Flash Messages -->
+    {% include 'partials/alerts.html' %}
+
+    <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        <label for="employee_id" class="form-label">Employee ID or Registered Email</label>
+        <div style="position: relative;">
+          {{ form.employee_id(class="form-control mono", placeholder="e.g. AM-INT-2026-001 or aarav@example.com", autofocus=true) }}
+        </div>
+        {% for error in form.employee_id.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <label for="password" class="form-label" style="margin-bottom: 0;">Portal Password</label>
+          <button type="button" onclick="togglePasswordVisibility()" style="background: none; border: none; color: var(--text-muted); font-size: 0.775rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;">
+            <span id="pwToggleText">Show</span>
+          </button>
+        </div>
+        {{ form.password(id="passwordInput", class="form-control", placeholder="••••••••••••") }}
+        {% for error in form.password.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="form-check">
+          {{ form.remember_me(class="form-check-input") }}
+          <label for="remember_me" style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer;">Remember this device</label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.5rem;">
+        Sign In to Portal
+      </button>
+
+      <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); text-align: center;">
+        <p style="font-size: 0.8rem; color: var(--text-subtle); margin-bottom: 0.75rem;">
+          🔒 This portal is restricted to onboarded interns. Login credentials are issued upon formal acceptance.
+        </p>
+        <a href="{{ url_for('auth.admin_login') }}" style="font-size: 0.825rem; color: var(--text-muted); text-decoration: underline;">
+          Company Staff & Mentor Sign In →
+        </a>
+      </div>
+    </form>
   </div>
-</div>
-{% endblock %}
+
+  <script>
+    function togglePasswordVisibility() {
+      const pw = document.getElementById('passwordInput');
+      const text = document.getElementById('pwToggleText');
+      if (pw.type === 'password') {
+        pw.type = 'text';
+        text.innerText = 'Hide';
+      } else {
+        pw.type = 'password';
+        text.innerText = 'Show';
+      }
+    }
+  </script>
+</body>
+</html>

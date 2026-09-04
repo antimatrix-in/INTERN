@@ -1,66 +1,112 @@
-{% extends 'base.html' %}
+{% extends 'student/base_student.html' %}
 
-{% block title %}Student Profile — ANTI MATRIX{% endblock %}
+{% block title %}My Profile — ANTI MATRIX{% endblock %}
 
 {% block content %}
-<div class="container" style="padding: 4rem 0;">
-  <div style="max-width: 750px; margin: 0 auto;">
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-      <h1 style="font-size: 2rem; font-weight: 800;">Academic Profile</h1>
-      <a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary btn-sm">← Back to Dashboard</a>
+<div style="margin-bottom: 2rem;">
+  <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem;">Intern Profile & Enrollment Details</h1>
+  <p style="color: var(--text-muted); font-size: 0.925rem;">
+    Verified corporate records and academic credentials registered with ANTI MATRIX.
+  </p>
+</div>
+
+<div class="grid-3">
+  <!-- Left Card: Profile Avatar & Status -->
+  <div class="card" style="text-align: center;">
+    <div style="width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: inline-flex; align-items: center; justify-content: center; font-size: 2.25rem; font-weight: 800; color: var(--text-inverse); margin-bottom: 1.25rem; box-shadow: 0 0 25px var(--primary-glow);">
+      {{ student.user.full_name[:1] }}
     </div>
 
-    <div class="card" style="padding: 2.5rem; margin-bottom: 2rem;">
-      <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle);">
-        <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: #04130C;">
-          {{ current_user.full_name[:1] }}
-        </div>
-        <div>
-          <h2 style="font-size: 1.35rem; font-weight: 700;">{{ current_user.full_name }}</h2>
-          <div style="color: var(--primary); font-family: var(--font-mono); font-size: 0.9rem;">{{ student.student_uid }}</div>
-        </div>
+    <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.25rem;">{{ student.user.full_name }}</h2>
+    <div class="mono" style="font-size: 0.85rem; color: var(--primary-light); margin-bottom: 1rem;">{{ student.student_uid }}</div>
+
+    <div style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.75rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-full); font-size: 0.75rem; color: var(--primary-light); margin-bottom: 1.5rem;">
+      <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
+      Active Intern Profile
+    </div>
+
+    <div style="border-top: 1px solid var(--border-subtle); padding-top: 1.25rem; text-align: left; font-size: 0.825rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
+      <div>Degree: <strong style="color: var(--text-main);">{{ student.degree }}</strong></div>
+      <div>Current Year: <strong style="color: var(--text-main);">{{ student.current_year }}</strong></div>
+      <div>Graduation: <strong style="color: var(--text-main);">{{ student.graduation_year }}</strong></div>
+      <div>Roll No: <strong class="mono" style="color: var(--text-main);">{{ student.roll_number }}</strong></div>
+    </div>
+  </div>
+
+  <!-- Right 2 Cols: Comprehensive Corporate Records -->
+  <div class="card" style="grid-column: span 2;">
+    <h3 class="card-title" style="margin-bottom: 1.5rem;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      Official Internship Registration Data
+    </h3>
+
+    <div class="grid-2" style="gap: 1.5rem;">
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Full Legal Name</label>
+        <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);">{{ student.user.full_name }}</div>
       </div>
 
-      <div class="grid-2" style="gap: 1.5rem;">
-        <div>
-          <div style="font-size: 0.75rem; color: var(--text-subtle); text-transform: uppercase;">Email Address</div>
-          <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem;">{{ current_user.email }}</div>
-        </div>
-
-        <div>
-          <div style="font-size: 0.75rem; color: var(--text-subtle); text-transform: uppercase;">Mobile Number</div>
-          <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem;">{{ current_user.phone or 'Not Provided' }}</div>
-        </div>
-
-        <div>
-          <div style="font-size: 0.75rem; color: var(--text-subtle); text-transform: uppercase;">College / Institution</div>
-          <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem;">{{ student.college.name }} ({{ student.college.city }})</div>
-        </div>
-
-        <div>
-          <div style="font-size: 0.75rem; color: var(--text-subtle); text-transform: uppercase;">Department</div>
-          <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem;">{{ student.department.name }}</div>
-        </div>
-
-        <div>
-          <div style="font-size: 0.75rem; color: var(--text-subtle); text-transform: uppercase;">Roll Number / Student ID</div>
-          <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem;">{{ student.roll_number }}</div>
-        </div>
-
-        <div>
-          <div style="font-size: 0.75rem; color: var(--text-subtle); text-transform: uppercase;">Degree & Year</div>
-          <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem;">{{ student.degree }} ({{ student.current_year }}, Class of {{ student.graduation_year }})</div>
-        </div>
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Allocated Employee ID</label>
+        <div class="mono" style="font-size: 0.95rem; font-weight: 700; color: var(--primary-light);">{{ student.student_uid }}</div>
       </div>
 
-      <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-        <span class="status-badge {% if student.is_verified %}status-verified{% else %}status-pending{% endif %}">
-          {% if student.is_verified %}ACADEMIC STATUS: VERIFIED{% else %}ACADEMIC STATUS: PENDING VERIFICATION{% endif %}
-        </span>
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Registered Email Address</label>
+        <div class="mono" style="font-size: 0.9rem; color: var(--text-main);">{{ student.user.email }}</div>
+      </div>
+
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Contact Phone Number</label>
+        <div class="mono" style="font-size: 0.9rem; color: var(--text-main);">{{ student.user.phone or 'Not Provided' }}</div>
+      </div>
+
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">College / Institution</label>
+        <div style="font-size: 0.9rem; color: var(--text-main);">{{ student.college.name if student.college else 'Partner University' }}</div>
+      </div>
+
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Academic Department</label>
+        <div style="font-size: 0.9rem; color: var(--text-main);">{{ student.department.name if student.department else 'Computer Science' }}</div>
+      </div>
+
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Internship Track</label>
+        <div style="font-size: 0.9rem; color: var(--text-main);">{{ internship.plan.title if internship and internship.plan else 'Project Internship' }}</div>
+      </div>
+
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Program Duration</label>
+        <div style="font-size: 0.9rem; color: var(--text-main);">{{ internship.plan.duration_months if internship and internship.plan else 1 }} Months</div>
+      </div>
+
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Commencement Date</label>
+        <div class="mono" style="font-size: 0.9rem; color: var(--text-main);">{{ internship.start_date if internship else '01 Sep 2026' }}</div>
+      </div>
+
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Expected Completion Date</label>
+        <div class="mono" style="font-size: 0.9rem; color: var(--text-main);">{{ internship.end_date if internship else '30 Sep 2026' }}</div>
+      </div>
+
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Assigned Technical Mentor</label>
+        <div style="font-size: 0.9rem; color: var(--text-main);">{{ internship.mentor.full_name if internship and internship.mentor else 'Assigned Lead Mentor' }}</div>
+      </div>
+
+      <div>
+        <label class="form-label" style="color: var(--text-muted);">Allocated Project Code</label>
+        <div class="mono" style="font-size: 0.9rem; font-weight: 700; color: var(--accent-cyan);">
+          {{ assignment.project.project_code if assignment and assignment.project else 'AM-PRJ-001' }}
+        </div>
       </div>
     </div>
 
+    <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--text-subtle);">
+      🔒 <em>Note: Core personal, academic, and project allocation records are verified by ANTI MATRIX administration and cannot be modified directly from this portal.</em>
+    </div>
   </div>
 </div>
 {% endblock %}

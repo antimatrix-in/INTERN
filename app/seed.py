@@ -4,6 +4,7 @@ from app.extensions import db
 from app.models import (
     User, College, Department, Student, InternshipPlan,
     Application, Payment, Internship, Project, ProjectAssignment,
+    WeeklyMilestone, WeeklyTask, WeeklySubmission, Meeting,
     CertificateVerification, Notification
 )
 
@@ -25,13 +26,13 @@ def seed_internship_plans():
                 'Curated Industry Project Assignment',
                 'Anti Matrix Student Portal Access',
                 'Structured Project Instructions & Resources',
+                'Weekly Milestone Progression & Mentorship',
                 'Source Code & Live Deployment Submission',
                 'Demo Video Submission & Evaluation',
-                'Mentor Review & Project Scoring',
                 'Official Anti Matrix Completion Certificate',
                 'Public QR Verification Link'
             ]),
-            badge='Fast-Track Project Plan',
+            badge='Fast-Track Project Track',
             is_active=True
         )
         db.session.add(plan_1m)
@@ -44,19 +45,18 @@ def seed_internship_plans():
             duration_months=3,
             fee=3999.00,
             currency='INR',
-            description='Comprehensive industrial internship with official onboarding letters, document verification, monthly milestone tracking, and experience credentials.',
+            description='Comprehensive industrial internship with official onboarding, document verification, monthly milestone tracking, and experience credentials.',
             features_json=json.dumps([
                 'Complete Academic & Identity Verification',
                 'Official Anti Matrix Offer Letter',
                 'Official Joining Letter with Internship ID',
                 'Enterprise-Grade Industry Project Assignment',
-                'Monthly Milestone Progress Tracking (Month 1/2/3)',
+                '12-Week Structured Milestone Roadmap',
                 'Dedicated Technical Mentor & Review Process',
+                'Weekly Code Reviews & 1-on-1 Milestone Evaluations',
                 'Final Codebase & Technical Documentation Submission',
-                '5-10 Min Demo Video Defense',
-                '7-Criteria Final Evaluation Report',
                 'Official Anti Matrix Completion Certificate',
-                'Official Experience / Internship Letter (Subject to completion)',
+                'Official Experience / Internship Letter',
                 'Tamper-Proof QR Certificate Verification'
             ]),
             badge='Enterprise Professional Track',
@@ -134,153 +134,386 @@ def seed_colleges_and_departments():
         db.session.commit()
 
 
-def seed_default_users_and_demo():
-    """Seed initial staff users and demo student if not present."""
-    if not User.query.filter_by(email='admin@antimatrix.com').first():
-        # Super Admin
-        admin = User(email='admin@antimatrix.com', role='super_admin', full_name='Anti Matrix Super Admin', phone='+91 98765 43210')
+def seed_projects_and_students():
+    """Seed master projects, staff accounts, and demo enrolled students with weekly roadmaps."""
+    col = College.query.first()
+    dept = Department.query.filter_by(college_id=col.id).first() if col else None
+
+    # 1. Staff Users
+    admin = User.query.filter_by(email='admin@antimatrix.com').first()
+    if not admin:
+        admin = User(
+            email='admin@antimatrix.com',
+            employee_id='AM-ADM-001',
+            role='super_admin',
+            full_name='Anti Matrix Super Admin',
+            phone='+91 98765 43210'
+        )
         admin.set_password('Admin@2026Password!')
         db.session.add(admin)
-
-        # HR
-        hr = User(email='hr@antimatrix.com', role='hr', full_name='Divya Raman (HR Lead)', phone='+91 98765 43211')
-        hr.set_password('Hr@2026Password!')
-        db.session.add(hr)
-
-        # Mentor
-        mentor = User(email='mentor@antimatrix.com', role='mentor', full_name='Dr. Rajesh Sharma (Lead Architect)', phone='+91 98765 43212')
-        mentor.set_password('Mentor@2026Password!')
-        db.session.add(mentor)
-
-        # Evaluator
-        evaluator = User(email='evaluator@antimatrix.com', role='evaluator', full_name='Pooja Nair (Senior Evaluator)', phone='+91 98765 43213')
-        evaluator.set_password('Evaluator@2026Password!')
-        db.session.add(evaluator)
-
-        # Demo Student
-        student_user = User(email='aarav.kumar@example.com', role='student', full_name='Aarav Kumar', phone='+91 98765 00184')
-        student_user.set_password('Student@2026Password!')
-        db.session.add(student_user)
         db.session.flush()
 
-        col = College.query.first()
-        dept = Department.query.filter_by(college_id=col.id).first() if col else None
+    mentor = User.query.filter_by(email='mentor@antimatrix.com').first()
+    if not mentor:
+        mentor = User(
+            email='mentor@antimatrix.com',
+            employee_id='AM-MTR-001',
+            role='mentor',
+            full_name='Dr. Rajesh Sharma (Lead Architect)',
+            phone='+91 98765 43212'
+        )
+        mentor.set_password('Mentor@2026Password!')
+        db.session.add(mentor)
+        db.session.flush()
 
-        if col and dept:
-            student = Student(
-                user_id=student_user.id,
-                student_uid='AM-STU-2026-00184',
-                dob='2003-08-15',
-                gender='Male',
-                college_id=col.id,
-                department_id=dept.id,
-                roll_number='21CS048',
-                degree='B.Tech / B.E',
-                current_year='3rd Year',
-                graduation_year='2026',
-                aadhaar_masked='XXXX XXXX 4821',
-                is_verified=True
+    # 2. Master Projects
+    proj_1 = Project.query.filter_by(project_code='AM-PRJ-001').first()
+    if not proj_1:
+        proj_1 = Project(
+            project_code='AM-PRJ-001',
+            title='AI-Based Student Performance Analysis System',
+            domain='Artificial Intelligence & Data Science',
+            description='Design and implement an intelligent predictive system that analyzes student academic histories, behavioral patterns, and attendance records to forecast examination performance and identify at-risk students.',
+            problem_statement='Educational institutions often lack early warning mechanisms to detect declining student engagement before examinations. This project solves that by building machine learning models that generate actionable intervention insights for educators.',
+            expected_outcome='A fully functional full-stack web application featuring predictive risk scoring, feature importance visualization, responsive student scorecards, and an automated report generation pipeline.',
+            objectives_json=json.dumps([
+                'Perform exploratory data analysis and feature engineering on multi-dimensional academic datasets.',
+                'Train and benchmark supervised learning models (Random Forest, XGBoost, Logistic Regression).',
+                'Develop a secure RESTful API backend using Python Flask.',
+                'Create an intuitive, responsive analytics dashboard with chart visualizers.'
+            ]),
+            tech_stack_json=json.dumps(['Python', 'Flask', 'Scikit-Learn', 'Pandas', 'NumPy', 'HTML5/CSS3', 'Chart.js', 'SQLite/PostgreSQL']),
+            requirements_json=json.dumps([
+                'Prediction accuracy > 85% with documented evaluation metrics (RMSE, Precision, Recall).',
+                'Sub-100ms API inference response latency.',
+                'Clean modular code structure adhering to PEP 8 standards.',
+                'Comprehensive README with installation, API schema, and execution instructions.'
+            ]),
+            instructions_md='Follow the 4-week structured milestone roadmap. Each week requires you to complete the specified tasks, document your progress, and submit deliverables before the weekly mentor evaluation.',
+            reference_links_json=json.dumps([
+                {'title': 'Scikit-Learn Machine Learning Guide', 'url': 'https://scikit-learn.org/stable/'},
+                {'title': 'Flask Web Development Documentation', 'url': 'https://flask.palletsprojects.com/'}
+            ]),
+            duration_weeks=4,
+            difficulty='Intermediate'
+        )
+        db.session.add(proj_1)
+        db.session.flush()
+
+    proj_2 = Project.query.filter_by(project_code='AM-PRJ-002').first()
+    if not proj_2:
+        proj_2 = Project(
+            project_code='AM-PRJ-002',
+            title='Autonomous Cloud Microservices Security Gateway',
+            domain='Cyber Security & Cloud Computing',
+            description='Design and deploy a high-performance Zero-Trust API gateway featuring rate limiting, JWT token introspection, anomaly detection, and automated threat mitigations.',
+            problem_statement='Microservice architectures expose numerous internal endpoints that are susceptible to credential stuffing, unauthorized data scraping, and DDoS attacks without centralized edge security.',
+            expected_outcome='An enterprise-ready cloud API gateway that validates cryptographic tokens, applies dynamic rate limits, logs audit events, and blocks suspicious traffic in real time.',
+            objectives_json=json.dumps([
+                'Implement HMAC request signing and OAuth2/JWT token verification.',
+                'Deploy Redis-backed token bucket rate limiting algorithms.',
+                'Build real-time health and threat monitoring analytics dashboards.',
+                'Automate IP blacklisting based on anomaly score thresholds.'
+            ]),
+            tech_stack_json=json.dumps(['Python', 'Flask', 'Redis', 'Docker', 'PostgreSQL', 'HTML5', 'CSS3']),
+            requirements_json=json.dumps([
+                'Sub-50ms latency overhead on proxied HTTP requests.',
+                'Unit test coverage > 85% across authentication and rate-limiting modules.',
+                'Detailed OpenAPI / Swagger documentation.'
+            ]),
+            instructions_md='Execute the 12-week comprehensive roadmap. Complete monthly milestone reviews with your assigned mentor to unlock subsequent phases.',
+            reference_links_json=json.dumps([
+                {'title': 'NIST Zero Trust Architecture Guidelines', 'url': 'https://csrc.nist.gov'}
+            ]),
+            duration_weeks=12,
+            difficulty='Advanced'
+        )
+        db.session.add(proj_2)
+        db.session.flush()
+
+    # 3. Demo Student 1: Aarav Kumar (1-Month Track, Project 1)
+    student1_user = User.query.filter_by(email='aarav.kumar@example.com').first()
+    if not student1_user:
+        student1_user = User(
+            email='aarav.kumar@example.com',
+            employee_id='AM-INT-2026-001',
+            role='student',
+            full_name='Aarav Kumar',
+            phone='+91 98765 00184'
+        )
+        student1_user.set_password('Student@2026Password!')
+        db.session.add(student1_user)
+        db.session.flush()
+
+        student1 = Student(
+            user_id=student1_user.id,
+            student_uid='AM-INT-2026-001',
+            dob='2003-08-15',
+            gender='Male',
+            college_id=col.id if col else 1,
+            department_id=dept.id if dept else 1,
+            roll_number='21CS048',
+            degree='B.Tech / B.E (Computer Science)',
+            current_year='3rd Year',
+            graduation_year='2026',
+            aadhaar_masked='XXXX XXXX 4821',
+            is_verified=True
+        )
+        db.session.add(student1)
+        db.session.flush()
+
+        plan_1m = InternshipPlan.query.filter_by(plan_code='1_MONTH_PROJECT').first()
+
+        internship1 = Internship(
+            internship_no='AM-INT-2026-001',
+            student_id=student1.id,
+            plan_id=plan_1m.id if plan_1m else 1,
+            status='ACTIVE',
+            start_date='01 Sep 2026',
+            end_date='30 Sep 2026',
+            progress_percent=0,
+            current_stage='Week 1 Understanding & Planning',
+            mentor_id=mentor.id
+        )
+        db.session.add(internship1)
+        db.session.flush()
+
+        assign1 = ProjectAssignment(
+            internship_id=internship1.id,
+            project_id=proj_1.id,
+            assigned_by=admin.id,
+            deadline='30 Sep 2026',
+            status='IN_PROGRESS',
+            description='Developing AI-Based Student Performance Analysis System for academic risk mitigation.'
+        )
+        db.session.add(assign1)
+        db.session.flush()
+
+        # Seed 4 Weekly Milestones for Student 1
+        milestone_definitions_1 = [
+            {
+                'week': 1,
+                'title': 'Project Understanding, Architecture & Data Modeling',
+                'objective': 'Analyze academic dataset schemas, understand predictive evaluation metrics, and formulate multi-tier system architecture and data models.',
+                'instructions': 'Review the problem statement and dataset schema. Perform preliminary exploratory data analysis in Python. Draft the Technical Design Document (TDD) including database ER diagrams and component architecture. Complete all tasks below and submit deliverables for mentor evaluation.',
+                'deliverables': ['System Architecture & Technical Design Document (PDF)', 'Dataset Exploratory Data Analysis Notebook (.ipynb)', 'Sprint Milestone Execution Plan'],
+                'status': 'AVAILABLE',
+                'tasks': [
+                    'Understand project requirements & domain problem statement',
+                    'Study required technologies (Python, Flask, Scikit-learn, Pandas)',
+                    'Perform Exploratory Data Analysis (EDA) on student performance dataset',
+                    'Prepare system architecture & Entity-Relationship (ER) diagram',
+                    'Create sprint execution plan & setup Git version control'
+                ]
+            },
+            {
+                'week': 2,
+                'title': 'Data Preprocessing & Machine Learning Model Pipeline',
+                'objective': 'Implement data cleaning pipelines, feature engineering techniques, and train predictive machine learning models for risk classification.',
+                'instructions': 'Develop automated data normalization routines. Train multiple classification and regression algorithms (Random Forest, XGBoost, Logistic Regression). Document accuracy, precision, recall, and F1-score benchmarks.',
+                'deliverables': ['Trained Model Artifacts (.pkl)', 'Model Evaluation & Benchmark Comparison Report', 'Data Preprocessing Pipeline Module'],
+                'status': 'LOCKED',
+                'tasks': [
+                    'Implement data imputation and categorical encoding pipeline',
+                    'Develop feature extraction and correlation analysis scripts',
+                    'Train baseline and advanced supervised learning models',
+                    'Conduct hyperparameter tuning with cross-validation',
+                    'Serialize final optimized model pipeline'
+                ]
+            },
+            {
+                'week': 3,
+                'title': 'RESTful API Backend & Interactive Analytics UI',
+                'objective': 'Build Flask REST endpoints for model inference and develop a modern, responsive web dashboard with scorecards and visualization charts.',
+                'instructions': 'Implement secure API routes accepting input parameters and returning prediction risk scores with confidence intervals. Build Jinja2/HTML5 views with Chart.js charts showing performance trends.',
+                'deliverables': ['Flask Backend API Modules', 'Interactive Frontend UI Templates & Styles', 'API Testing Collection & Documentation'],
+                'status': 'LOCKED',
+                'tasks': [
+                    'Create Flask API endpoints for real-time model inference',
+                    'Design responsive dashboard UI cards and metric badges',
+                    'Integrate Chart.js visualizations for grade distribution',
+                    'Add input validation, security sanitization, and error handling'
+                ]
+            },
+            {
+                'week': 4,
+                'title': 'Testing, Deployment, Demonstration & Defense',
+                'objective': 'Perform test verification, deploy live web demo, record technical video walkthrough, and prepare final project defense.',
+                'instructions': 'Execute comprehensive unit test suites. Deploy the live web application to cloud hosting. Record a 5-minute video walkthrough demonstrating architecture and live prediction results.',
+                'deliverables': ['Public GitHub Repository URL', 'Live Deployed Web Demo URL', '5-Minute Demonstration Video Link', 'Final Comprehensive Technical Report'],
+                'status': 'LOCKED',
+                'tasks': [
+                    'Write automated unit and integration test suites',
+                    'Deploy application to cloud hosting environment',
+                    'Record 5-minute video walkthrough explaining architecture & demo',
+                    'Submit final GitHub repository with comprehensive README'
+                ]
+            }
+        ]
+
+        for m_data in milestone_definitions_1:
+            m = WeeklyMilestone(
+                assignment_id=assign1.id,
+                week_number=m_data['week'],
+                title=f"Week {m_data['week']}: {m_data['title']}",
+                objective=m_data['objective'],
+                instructions=m_data['instructions'],
+                deliverables_json=json.dumps(m_data['deliverables']),
+                status=m_data['status'],
+                unlocked_at=db.func.now() if m_data['status'] == 'AVAILABLE' else None
             )
-            db.session.add(student)
+            db.session.add(m)
             db.session.flush()
 
-            plan_3m = InternshipPlan.query.filter_by(plan_code='3_MONTH_PROFESSIONAL').first()
-
-            if plan_3m:
-                app_rec = Application(
-                    application_no='AM-APP-2026-00184',
-                    student_id=student.id,
-                    plan_id=plan_3m.id,
-                    status='APPROVED',
-                    consent_agreed=True,
-                    consent_version='v1.0-2026'
+            for idx, task_text in enumerate(m_data['tasks'], start=1):
+                t = WeeklyTask(
+                    milestone_id=m.id,
+                    task_text=task_text,
+                    is_completed=False,
+                    order_num=idx
                 )
-                db.session.add(app_rec)
-                db.session.flush()
+                db.session.add(t)
 
-                payment = Payment(
-                    application_id=app_rec.id,
-                    student_id=student.id,
-                    transaction_id='AM-TXN-2026-94821',
-                    order_id='ORDER-AM-94821',
-                    amount=3999.00,
-                    status='SUCCESSFUL',
-                    payment_method='ONLINE_UPI'
-                )
-                db.session.add(payment)
+        # Scheduled evaluation meeting for Week 1
+        w1_m = WeeklyMilestone.query.filter_by(assignment_id=assign1.id, week_number=1).first()
+        meeting1 = Meeting(
+            milestone_id=w1_m.id if w1_m else None,
+            internship_id=internship1.id,
+            student_id=student1.id,
+            host_id=mentor.id,
+            title='Week 1 Milestone Evaluation & Architecture Review',
+            meeting_date='10 Sep 2026',
+            meeting_time='03:00 PM IST',
+            meeting_link='https://meet.google.com/ant-matx-rev',
+            status='SCHEDULED',
+            meeting_notes='Please have your architecture diagram and exploratory data analysis notebook ready for review.'
+        )
+        db.session.add(meeting1)
 
-                internship = Internship(
-                    internship_no='AM-INT-2026-00184',
-                    student_id=student.id,
-                    application_id=app_rec.id,
-                    plan_id=plan_3m.id,
-                    status='ACTIVE',
-                    start_date='01 Sep 2026',
-                    end_date='30 Nov 2026',
-                    progress_percent=72,
-                    current_stage='Month 2 Development',
-                    mentor_id=mentor.id
-                )
-                db.session.add(internship)
-                db.session.flush()
+        # Notifications
+        notif1 = Notification(
+            user_id=student1_user.id,
+            title='Welcome to Anti Matrix Internship Portal',
+            message='Your 1-Month Project Track is active. Your assigned project is: AI-Based Student Performance Analysis System.',
+            type='SUCCESS',
+            link='/project'
+        )
+        notif2 = Notification(
+            user_id=student1_user.id,
+            title='Week 1 Milestone is Available',
+            message='Week 1 (Project Understanding, Architecture & Data Modeling) is unlocked. Review tasks and prepare your submission.',
+            type='INFO',
+            link='/week/' + str(w1_m.id if w1_m else 1)
+        )
+        db.session.add(notif1)
+        db.session.add(notif2)
 
-                # Seed project
-                project = Project(
-                    project_code='AM-PRJ-01',
-                    title='Autonomous Cloud Microservices Security Gateway',
-                    domain='Cyber Security & Cloud',
-                    description='Design and deploy a Zero-Trust API gateway featuring rate limiting, JWT token introspection, anomaly detection, and automated threat mitigations.',
-                    objectives_json=json.dumps(['Implement token verification', 'Add circuit breakers', 'Build real-time metric dashboard', 'Automate IP blocklisting']),
-                    tech_stack_json=json.dumps(['Python', 'Flask', 'Redis', 'Docker', 'HTML5', 'CSS3']),
-                    requirements_json=json.dumps(['Full authentication pipeline', 'Sub-50ms latency overhead', 'Unit test coverage > 85%', 'Detailed API documentation']),
-                    instructions_md='Follow the Anti Matrix microservice security guidelines. Configure Redis token stores, implement HMAC request signing, and deploy the live demo.',
-                    reference_links_json=json.dumps([{'title': 'Zero Trust Architecture Guide', 'url': 'https://csrc.nist.gov'}]),
-                    duration_weeks=12,
-                    difficulty='Advanced'
-                )
-                db.session.add(project)
-                db.session.flush()
+    # 4. Demo Student 2: Sneha Patel (3-Month Track, Project 2)
+    student2_user = User.query.filter_by(email='sneha.patel@example.com').first()
+    if not student2_user:
+        student2_user = User(
+            email='sneha.patel@example.com',
+            employee_id='AM-INT-2026-002',
+            role='student',
+            full_name='Sneha Patel',
+            phone='+91 98765 00185'
+        )
+        student2_user.set_password('Student@2026Password!')
+        db.session.add(student2_user)
+        db.session.flush()
 
-                assignment = ProjectAssignment(
-                    internship_id=internship.id,
-                    project_id=project.id,
-                    assigned_by=admin.id,
-                    deadline='20 Nov 2026',
-                    status='IN_PROGRESS',
-                    repo_url='https://github.com/aarav-antimatrix/cloud-sec-gateway',
-                    live_demo_url='https://gateway-demo.antimatrix.tech',
-                    demo_video_url='https://youtube.com/watch?v=demo_anti_matrix',
-                    description='Built high performance Zero-Trust API Gateway with active rate limiting and live health monitoring.',
-                    tech_used='Python, Flask, SQLite, HTML5, CSS3, Docker'
-                )
-                db.session.add(assignment)
+        student2 = Student(
+            user_id=student2_user.id,
+            student_uid='AM-INT-2026-002',
+            dob='2002-11-20',
+            gender='Female',
+            college_id=col.id if col else 1,
+            department_id=dept.id if dept else 1,
+            roll_number='21IT092',
+            degree='B.Tech / B.E (Information Technology)',
+            current_year='4th Year / Final Year',
+            graduation_year='2026',
+            aadhaar_masked='XXXX XXXX 9124',
+            is_verified=True
+        )
+        db.session.add(student2)
+        db.session.flush()
 
-                # Seed certificate verification
-                cert = CertificateVerification(
-                    certificate_no='AM-CERT-2026-00184',
-                    internship_id=internship.id,
-                    student_name='Aarav Kumar',
-                    program_title='3 Month Professional Internship (Cyber Security & Cloud)',
-                    duration='3 Months',
-                    start_date='01 Sep 2026',
-                    end_date='30 Nov 2026',
-                    issue_date='30 Nov 2026',
-                    status='Successfully Completed',
-                    qr_code_data='http://localhost:5000/verify/AM-CERT-2026-00184'
-                )
-                db.session.add(cert)
+        plan_3m = InternshipPlan.query.filter_by(plan_code='3_MONTH_PROFESSIONAL').first()
 
-                # Welcome notification
-                notif = Notification(
-                    user_id=student_user.id,
-                    title='Welcome to Anti Matrix Internship Portal',
-                    message='Your 3-Month Professional Internship profile is active. Check your assigned project and milestone roadmap.',
-                    type='SUCCESS',
-                    link='/student/dashboard'
-                )
-                db.session.add(notif)
+        internship2 = Internship(
+            internship_no='AM-INT-2026-002',
+            student_id=student2.id,
+            plan_id=plan_3m.id if plan_3m else 2,
+            status='ACTIVE',
+            start_date='01 Sep 2026',
+            end_date='30 Nov 2026',
+            progress_percent=0,
+            current_stage='Week 1 Architecture Analysis',
+            mentor_id=mentor.id
+        )
+        db.session.add(internship2)
+        db.session.flush()
 
-        db.session.commit()
+        assign2 = ProjectAssignment(
+            internship_id=internship2.id,
+            project_id=proj_2.id,
+            assigned_by=admin.id,
+            deadline='30 Nov 2026',
+            status='IN_PROGRESS',
+            description='Developing Autonomous Cloud Microservices Security Gateway.'
+        )
+        db.session.add(assign2)
+        db.session.flush()
+
+        # Seed 12 Weekly Milestones for Student 2
+        titles_3m = [
+            'Enterprise Architecture & Security Threat Modeling',
+            'Token Validation Engine & JWT HMAC Verification',
+            'Redis Token Bucket Rate-Limiting Implementation',
+            'Month 1 Milestone Review & Security Benchmark Defense',
+            'Dynamic Circuit Breaker & Resiliency Handlers',
+            'Centralized Audit Logging & SIEM Event Pipeline',
+            'Intrusion Anomaly Detection Algorithm Integration',
+            'Month 2 Milestone Review & Resiliency Testing',
+            'Admin Security Dashboard & Live Telemetry UI',
+            'Docker Containerization & Kubernetes Orchestration Setup',
+            'End-to-End Penetration Testing & Vulnerability Hardening',
+            'Final Demonstration Defense & Technical Documentation'
+        ]
+
+        for w_num, w_title in enumerate(titles_3m, start=1):
+            m = WeeklyMilestone(
+                assignment_id=assign2.id,
+                week_number=w_num,
+                title=f"Week {w_num}: {w_title}",
+                objective=f"Execute Phase {w_num} objectives for Autonomous Cloud Security Gateway.",
+                instructions=f"Complete Week {w_num} deliverables and verify with unit tests.",
+                deliverables_json=json.dumps([f"Week {w_num} Technical Artifacts", "Implementation Source Code"]),
+                status='AVAILABLE' if w_num == 1 else 'LOCKED',
+                unlocked_at=db.func.now() if w_num == 1 else None
+            )
+            db.session.add(m)
+            db.session.flush()
+
+            t = WeeklyTask(
+                milestone_id=m.id,
+                task_text=f"Implement core specifications for Week {w_num}: {w_title}",
+                is_completed=False,
+                order_num=1
+            )
+            db.session.add(t)
+
+        notif_s2 = Notification(
+            user_id=student2_user.id,
+            title='Welcome to 3-Month Professional Internship Track',
+            message='Your 12-week roadmap for Autonomous Cloud Microservices Security Gateway is initialized.',
+            type='SUCCESS',
+            link='/project'
+        )
+        db.session.add(notif_s2)
+
+    db.session.commit()
 
 
 def seed_initial_data():
@@ -288,7 +521,7 @@ def seed_initial_data():
     try:
         seed_internship_plans()
         seed_colleges_and_departments()
-        seed_default_users_and_demo()
+        seed_projects_and_students()
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error during database seed: {e}")

@@ -1,0 +1,91 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}Internship Documents — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem;">Internship Credentials & Documents</h1>
+  <p style="color: var(--text-muted); font-size: 0.925rem;">
+    Official corporate credentials issued by ANTI MATRIX across your onboarding, active milestones, and program completion.
+  </p>
+</div>
+
+<!-- Documents Grid (Sample Placeholders for Phase 1) -->
+<div class="grid-2">
+  <!-- Card 1: Offer Letter -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+      <div style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.25); display: flex; align-items: center; justify-content: center; color: var(--info);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      </div>
+      <span class="status-badge badge-locked">Status: Not Generated</span>
+    </div>
+
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.4rem;">Official Offer Letter</h3>
+    <p style="color: var(--text-muted); font-size: 0.885rem; line-height: 1.5; margin-bottom: 1.5rem;">
+      Formal corporate internship selection document detailing stipend/track terms, program objectives, and project assignment scope.
+    </p>
+
+    <button onclick="showDocModal('Official Offer Letter', 'Document generation will be available after the required approval/completion.')" class="btn btn-secondary btn-sm btn-block">
+      View Offer Letter
+    </button>
+  </div>
+
+  <!-- Card 2: Joining Letter -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+      <div style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.25); display: flex; align-items: center; justify-content: center; color: var(--accent-cyan);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg>
+      </div>
+      <span class="status-badge badge-locked">Status: Not Generated</span>
+    </div>
+
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.4rem;">Official Joining Letter</h3>
+    <p style="color: var(--text-muted); font-size: 0.885rem; line-height: 1.5; margin-bottom: 1.5rem;">
+      Formal induction credentials containing your allocated Employee ID ({{ student.student_uid }}), reporting mentor, and commencement timestamp.
+    </p>
+
+    <button onclick="showDocModal('Official Joining Letter', 'Document generation will be available after the required approval/completion.')" class="btn btn-secondary btn-sm btn-block">
+      View Joining Letter
+    </button>
+  </div>
+
+  <!-- Card 3: Completion Certificate -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+      <div style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); display: flex; align-items: center; justify-content: center; color: var(--primary-light);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+      </div>
+      <span class="status-badge badge-locked">Status: Not Generated</span>
+    </div>
+
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.4rem;">Internship Completion Certificate</h3>
+    <p style="color: var(--text-muted); font-size: 0.885rem; line-height: 1.5; margin-bottom: 1.5rem;">
+      Tamper-proof verifiable completion certificate with unique cryptographic hash and public QR verification link. Issued upon final milestone approval.
+    </p>
+
+    <button onclick="showDocModal('Internship Completion Certificate', 'Document generation will be available after the required approval/completion.')" class="btn btn-secondary btn-sm btn-block">
+      View Certificate
+    </button>
+  </div>
+
+  <!-- Card 4: Experience Letter -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+      <div style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.25); display: flex; align-items: center; justify-content: center; color: var(--accent-purple);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+      </div>
+      <span class="status-badge badge-locked">Status: Not Generated</span>
+    </div>
+
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.4rem;">Official Experience Letter</h3>
+    <p style="color: var(--text-muted); font-size: 0.885rem; line-height: 1.5; margin-bottom: 1.5rem;">
+      Official company experience credential summarizing project achievements, duration completed, and mentor ratings.
+    </p>
+
+    <button onclick="showDocModal('Official Experience Letter', 'Document generation will be available after the required approval/completion.')" class="btn btn-secondary btn-sm btn-block">
+      View Experience Letter
+    </button>
+  </div>
+</div>
+{% endblock %}

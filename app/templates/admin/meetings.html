@@ -1,0 +1,69 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Review Meetings Management — ANTI MATRIX Admin{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem;">Evaluation Meetings Management</h1>
+  <p style="color: var(--text-muted); font-size: 0.925rem;">
+    Schedule and monitor 1-on-1 milestone defense sessions across all active internship programs.
+  </p>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Session Title</th>
+          <th>Student / ID</th>
+          <th>Date & Time</th>
+          <th>Assigned Host</th>
+          <th>Meeting Link</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in meetings %}
+          <tr>
+            <td>
+              <strong style="color: var(--text-main);">{{ m.title }}</strong>
+            </td>
+            <td>
+              <div style="font-weight: 600;">{{ m.student.user.full_name if m.student and m.student.user else 'Student' }}</div>
+              <div class="mono" style="font-size: 0.775rem; color: var(--primary-light);">{{ m.student.student_uid if m.student else '' }}</div>
+            </td>
+            <td style="font-size: 0.85rem;">
+              <div>{{ m.meeting_date }}</div>
+              <div style="color: var(--text-muted);">{{ m.meeting_time }}</div>
+            </td>
+            <td style="font-size: 0.85rem; color: var(--text-muted);">
+              {{ m.host.full_name if m.host else 'Mentor' }}
+            </td>
+            <td>
+              {% if m.meeting_link %}
+                <a href="{{ m.meeting_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
+                  Join Room
+                </a>
+              {% else %}
+                <span style="color: var(--text-subtle);">No link</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="status-badge {% if m.status == 'COMPLETED' %}badge-completed{% else %}badge-submitted{% endif %}">
+                {{ m.status }}
+              </span>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+              No review meetings scheduled.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

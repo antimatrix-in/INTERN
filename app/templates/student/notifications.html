@@ -1,0 +1,59 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}Notifications — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem;">Portal Notifications</h1>
+    <p style="color: var(--text-muted); font-size: 0.925rem;">
+      Live system alerts, milestone review updates, and evaluation scheduling announcements.
+    </p>
+  </div>
+
+  <form method="POST" action="{{ url_for('student.mark_all_read') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-secondary btn-sm">
+      Mark All as Read
+    </button>
+  </form>
+</div>
+
+<div class="card">
+  {% if notifications %}
+    <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+      {% for n in notifications %}
+        <div style="background: var(--bg-surface-elevated); border: 1px solid {% if not n.is_read %}var(--primary){% else %}var(--border-subtle){% endif %}; border-radius: var(--radius-md); padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+          <div style="display: flex; gap: 1rem; align-items: flex-start;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: {% if n.type == 'SUCCESS' %}var(--primary){% elif n.type == 'WARNING' %}var(--warning){% else %}var(--info){% endif %}; margin-top: 0.35rem; flex-shrink: 0;"></div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.25rem;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">{{ n.title }}</h4>
+                {% if not n.is_read %}
+                  <span class="status-badge badge-available" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">New</span>
+                {% endif %}
+              </div>
+              <p style="font-size: 0.885rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.5rem;">
+                {{ n.message }}
+              </p>
+              <span class="mono" style="font-size: 0.775rem; color: var(--text-subtle);">
+                {{ n.created_at.strftime('%d %b %Y, %H:%M') if n.created_at else 'Recent' }}
+              </span>
+            </div>
+          </div>
+
+          {% if n.link %}
+            <a href="{{ n.link }}" class="btn btn-outline-primary btn-sm" style="flex-shrink: 0;">
+              View Details →
+            </a>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+      <p>No notifications found in your feed.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

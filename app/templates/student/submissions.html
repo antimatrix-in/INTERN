@@ -1,0 +1,80 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}My Submissions — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem;">Deliverables & Submissions</h1>
+  <p style="color: var(--text-muted); font-size: 0.925rem;">
+    Comprehensive audit log of all project repositories, code walkthroughs, and mentor evaluation reports.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+      Milestone Submission History
+    </h3>
+    <span style="font-size: 0.85rem; color: var(--text-muted);">{{ submissions|length }} Total Submissions</span>
+  </div>
+
+  {% if submissions %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Milestone</th>
+            <th>Submission Date</th>
+            <th>Repository / Demo</th>
+            <th>Notes Summary</th>
+            <th>Review Status</th>
+            <th>Feedback</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in submissions %}
+            <tr>
+              <td>
+                <strong style="color: var(--text-main);">Week {{ s.milestone.week_number }}</strong>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">{{ s.milestone.title }}</div>
+              </td>
+              <td class="mono" style="font-size: 0.825rem; color: var(--text-muted);">
+                {{ s.submitted_at.strftime('%d %b %Y, %H:%M') if s.submitted_at else 'Recent' }}
+              </td>
+              <td>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                  {% if s.repo_url %}
+                    <a href="{{ s.repo_url }}" target="_blank" rel="noopener noreferrer" class="mono" style="font-size: 0.8rem;">📦 GitHub Repo</a>
+                  {% endif %}
+                  {% if s.live_demo_url %}
+                    <a href="{{ s.live_demo_url }}" target="_blank" rel="noopener noreferrer" class="mono" style="font-size: 0.8rem; color: var(--accent-cyan);">🌐 Live Demo</a>
+                  {% endif %}
+                  {% if s.demo_video_url %}
+                    <a href="{{ s.demo_video_url }}" target="_blank" rel="noopener noreferrer" class="mono" style="font-size: 0.8rem; color: #60A5FA;">🎥 Walkthrough Video</a>
+                  {% endif %}
+                </div>
+              </td>
+              <td style="max-width: 260px; font-size: 0.85rem; color: var(--text-muted);">
+                {{ s.submission_notes or 'No notes provided.' }}
+              </td>
+              <td>
+                <span class="status-badge {% if s.status == 'APPROVED' %}badge-completed{% elif s.status == 'REVISION_REQUIRED' %}badge-revision{% else %}badge-submitted{% endif %}">
+                  {{ s.status }}
+                </span>
+              </td>
+              <td style="font-size: 0.85rem; color: var(--text-muted);">
+                {{ s.review_feedback or 'Pending mentor review.' }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+      <p>No submissions recorded yet. Open an active milestone to submit your deliverables.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

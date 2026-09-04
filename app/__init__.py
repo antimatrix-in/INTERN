@@ -24,10 +24,12 @@ def create_app(config_class=Config):
     from app.main.routes import main_bp
     from app.auth.routes import auth_bp
     from app.student.routes import student_bp
+    from app.admin.routes import admin_bp
 
     app.register_blueprint(main_bp)
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(student_bp, url_prefix='/student')
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(student_bp)
+    app.register_blueprint(admin_bp)
 
     # Safe database schema initialization & idempotent seeding
     with app.app_context():
@@ -43,7 +45,7 @@ def create_app(config_class=Config):
         plans = InternshipPlan.query.filter_by(is_active=True).order_by(InternshipPlan.duration_months.asc()).all()
         return {
             'company_name': 'ANTI MATRIX',
-            'company_tagline': 'Advanced Internship Management Portal',
+            'company_tagline': 'Enterprise Internship Management Portal',
             'support_email': 'internships@antimatrix.tech',
             'global_plans': plans
         }

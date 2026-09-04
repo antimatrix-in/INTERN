@@ -8,11 +8,13 @@ from app.extensions import db, login_manager
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
+
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    employee_id = db.Column(db.String(50), unique=True, nullable=True, index=True) # AM-ADM-..., AM-MTR-...
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='student') # super_admin, admin, hr, mentor, evaluator, student
     full_name = db.Column(db.String(100), nullable=False)
@@ -24,7 +26,7 @@ class User(db.Model, UserMixin):
 
     # Relationships
     student_profile = db.relationship('Student', backref='user', uselist=False, cascade='all, delete-orphan')
-    notifications = db.relationship('Notification', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    notifications = db.relationship('Notification', backref='user', lazy='dynamic', cascade='all, delete-orphan', order_by='Notification.id.desc()')
     audit_logs = db.relationship('AuditLog', backref='actor', lazy='dynamic')
 
     def set_password(self, password):
@@ -81,7 +83,7 @@ class Student(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False)
-    student_uid = db.Column(db.String(30), unique=True, nullable=False, index=True) # AM-STU-2026-0001
+    student_uid = db.Column(db.String(30), unique=True, nullable=False, index=True) # AM-INT-2026-001 / AM-STU-...
     dob = db.Column(db.String(20), nullable=True)
     gender = db.Column(db.String(20), nullable=True)
     college_id = db.Column(db.Integer, db.ForeignKey('colleges.id'), nullable=False)
@@ -99,6 +101,12 @@ class Student(db.Model):
     internships = db.relationship('Internship', backref='student', lazy='dynamic')
     documents = db.relationship('Document', backref='student', lazy='dynamic', cascade='all, delete-orphan')
     payments = db.relationship('Payment', backref='student', lazy='dynamic')
+    submissions = db.relationship('WeeklySubmission', back_populates='student', lazy='dynamic', cascade='all, delete-orphan')
+    meetings = db.relationship('Meeting', back_populates='student', lazy='dynamic')
+
+    @property
+    def active_internship(self):
+        return self.internships.order_by(Internship.id.desc()).first()
 
     def __repr__(self):
         return f'<Student {self.student_uid} - {self.user.full_name if self.user else ""}>'
@@ -139,7 +147,7 @@ class Application(db.Model):
     application_no = db.Column(db.String(30), unique=True, nullable=False, index=True) # AM-APP-2026-0001
     student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey('internship_plans.id'), nullable=False)
-    status = db.Column(db.String(30), default='PAYMENT_PENDING') # DRAFT, SUBMITTED, PAYMENT_PENDING, PAID, DOCUMENT_PENDING, UNDER_REVIEW, VERIFIED, REJECTED, APPROVED
+    status = db.Column(db.String(30), default='APPROVED') # DRAFT, SUBMITTED, PAYMENT_PENDING, PAID, DOCUMENT_PENDING, UNDER_REVIEW, VERIFIED, REJECTED, APPROVED
     consent_agreed = db.Column(db.Boolean, default=True)
     consent_version = db.Column(db.String(20), default='v1.0-2026')
     consent_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -166,7 +174,7 @@ class Payment(db.Model):
     order_id = db.Column(db.String(50), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(10), default='INR')
-    status = db.Column(db.String(20), default='PENDING') # PENDING, SUCCESSFUL, FAILED, REFUNDED
+    status = db.Column(db.String(20), default='SUCCESSFUL') # PENDING, SUCCESSFUL, FAILED, REFUNDED
     payment_method = db.Column(db.String(50), default='ONLINE')
     gateway_response_json = db.Column(db.Text, nullable=True)
     paid_at = db.Column(db.DateTime, nullable=True)
@@ -182,22 +190,41 @@ class Internship(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     internship_no = db.Column(db.String(30), unique=True, nullable=False, index=True) # AM-INT-2026-0001
     student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
-    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=False)
+    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=True)
     plan_id = db.Column(db.Integer, db.ForeignKey('internship_plans.id'), nullable=False)
     status = db.Column(db.String(20), default='ACTIVE') # NOT_STARTED, ACTIVE, ON_HOLD, COMPLETED, TERMINATED
     start_date = db.Column(db.String(20), nullable=False)
     end_date = db.Column(db.String(20), nullable=False)
     progress_percent = db.Column(db.Integer, default=0)
-    current_stage = db.Column(db.String(50), default='Onboarding')
+    current_stage = db.Column(db.String(50), default='Week 1 Understanding')
     mentor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     mentor = db.relationship('User', foreign_keys=[mentor_id])
-    assignments = db.relationship('ProjectAssignment', backref='internship', lazy='dynamic')
+    assignments = db.relationship('ProjectAssignment', backref='internship', lazy='dynamic', cascade='all, delete-orphan')
     issued_documents = db.relationship('IssuedDocument', backref='internship', lazy='dynamic')
     verification = db.relationship('CertificateVerification', backref='internship', uselist=False)
+    meetings = db.relationship('Meeting', back_populates='internship', lazy='dynamic')
+
+    @property
+    def active_assignment(self):
+        return self.assignments.order_by(ProjectAssignment.id.desc()).first()
+
+    def update_progress(self):
+        assignment = self.active_assignment
+        if assignment:
+            milestones = assignment.weekly_milestones.all()
+            if milestones:
+                completed = sum(1 for m in milestones if m.status in ['COMPLETED', 'APPROVED'])
+                self.progress_percent = int((completed / len(milestones)) * 100)
+                active_m = next((m for m in milestones if m.status in ['AVAILABLE', 'IN_PROGRESS', 'SUBMITTED', 'UNDER_REVIEW', 'REVISION_REQUIRED']), None)
+                if active_m:
+                    self.current_stage = f"Week {active_m.week_number} ({active_m.status.replace('_', ' ').title()})"
+                elif completed == len(milestones):
+                    self.current_stage = "All Milestones Completed"
+                db.session.commit()
 
     def __repr__(self):
         return f'<Internship {self.internship_no} - {self.status}>'
@@ -234,12 +261,14 @@ class Project(db.Model):
     title = db.Column(db.String(200), nullable=False)
     domain = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
+    problem_statement = db.Column(db.Text, nullable=True)
+    expected_outcome = db.Column(db.Text, nullable=True)
     objectives_json = db.Column(db.Text, nullable=False)
     tech_stack_json = db.Column(db.Text, nullable=False)
     requirements_json = db.Column(db.Text, nullable=False)
     instructions_md = db.Column(db.Text, nullable=False)
     reference_links_json = db.Column(db.Text, nullable=False)
-    duration_weeks = db.Column(db.Integer, default=4)
+    duration_weeks = db.Column(db.Integer, default=4) # 4 or 12
     difficulty = db.Column(db.String(20), default='Intermediate') # Beginner, Intermediate, Advanced
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -275,7 +304,7 @@ class ProjectAssignment(db.Model):
     assigned_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
     deadline = db.Column(db.String(20), nullable=False)
-    status = db.Column(db.String(30), default='ASSIGNED') # NOT_ASSIGNED, ASSIGNED, IN_PROGRESS, SUBMITTED, REVISION_REQUIRED, UNDER_EVALUATION, PASSED, FAILED
+    status = db.Column(db.String(30), default='IN_PROGRESS') # ASSIGNED, IN_PROGRESS, SUBMITTED, REVISION_REQUIRED, UNDER_EVALUATION, PASSED, FAILED, COMPLETED
     repo_url = db.Column(db.String(255), nullable=True)
     live_demo_url = db.Column(db.String(255), nullable=True)
     zip_path = db.Column(db.String(255), nullable=True)
@@ -289,6 +318,135 @@ class ProjectAssignment(db.Model):
 
     assigner = db.relationship('User', foreign_keys=[assigned_by])
     evaluation = db.relationship('Evaluation', backref='assignment', uselist=False)
+    weekly_milestones = db.relationship('WeeklyMilestone', backref='assignment', lazy='dynamic', cascade='all, delete-orphan', order_by='WeeklyMilestone.week_number.asc()')
+
+    @property
+    def progress_percent(self):
+        milestones = self.weekly_milestones.all()
+        if not milestones:
+            return 0
+        completed = sum(1 for m in milestones if m.status in ['COMPLETED', 'APPROVED'])
+        return int((completed / len(milestones)) * 100)
+
+    @property
+    def current_milestone(self):
+        milestones = self.weekly_milestones.all()
+        for m in milestones:
+            if m.status in ['AVAILABLE', 'IN_PROGRESS', 'SUBMITTED', 'UNDER_REVIEW', 'REVISION_REQUIRED']:
+                return m
+        return milestones[-1] if milestones else None
+
+
+class WeeklyMilestone(db.Model):
+    __tablename__ = 'weekly_milestones'
+
+    id = db.Column(db.Integer, primary_key=True)
+    assignment_id = db.Column(db.Integer, db.ForeignKey('project_assignments.id', ondelete='CASCADE'), nullable=False)
+    week_number = db.Column(db.Integer, nullable=False) # 1, 2, 3, 4, ...
+    title = db.Column(db.String(200), nullable=False)
+    objective = db.Column(db.Text, nullable=False)
+    instructions = db.Column(db.Text, nullable=True)
+    deliverables_json = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(30), default='LOCKED') # LOCKED, AVAILABLE, IN_PROGRESS, SUBMITTED, UNDER_REVIEW, APPROVED, REVISION_REQUIRED, COMPLETED
+    unlocked_at = db.Column(db.DateTime, nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    approved_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    approved_at = db.Column(db.DateTime, nullable=True)
+    admin_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    tasks = db.relationship('WeeklyTask', backref='milestone', lazy='dynamic', cascade='all, delete-orphan', order_by='WeeklyTask.order_num.asc()')
+    submissions = db.relationship('WeeklySubmission', backref='milestone', lazy='dynamic', cascade='all, delete-orphan', order_by='WeeklySubmission.id.desc()')
+    meetings = db.relationship('Meeting', backref='milestone', lazy='dynamic')
+    approver = db.relationship('User', foreign_keys=[approved_by])
+
+    @property
+    def deliverables(self):
+        try:
+            return json.loads(self.deliverables_json) if self.deliverables_json else []
+        except:
+            return []
+
+    @property
+    def latest_submission(self):
+        return self.submissions.first()
+
+    @property
+    def is_locked(self):
+        return self.status == 'LOCKED'
+
+    @property
+    def is_available(self):
+        return self.status in ['AVAILABLE', 'IN_PROGRESS', 'REVISION_REQUIRED', 'SUBMITTED', 'UNDER_REVIEW']
+
+    @property
+    def is_completed(self):
+        return self.status in ['COMPLETED', 'APPROVED']
+
+    def __repr__(self):
+        return f'<WeeklyMilestone Week {self.week_number}: {self.title} ({self.status})>'
+
+
+class WeeklyTask(db.Model):
+    __tablename__ = 'weekly_tasks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    milestone_id = db.Column(db.Integer, db.ForeignKey('weekly_milestones.id', ondelete='CASCADE'), nullable=False)
+    task_text = db.Column(db.String(255), nullable=False)
+    is_completed = db.Column(db.Boolean, default=False)
+    order_num = db.Column(db.Integer, default=1)
+
+    def __repr__(self):
+        return f'<WeeklyTask {self.task_text}>'
+
+
+class WeeklySubmission(db.Model):
+    __tablename__ = 'weekly_submissions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    milestone_id = db.Column(db.Integer, db.ForeignKey('weekly_milestones.id', ondelete='CASCADE'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
+    repo_url = db.Column(db.String(255), nullable=True)
+    live_demo_url = db.Column(db.String(255), nullable=True)
+    demo_video_url = db.Column(db.String(255), nullable=True)
+    file_path = db.Column(db.String(255), nullable=True)
+    submission_notes = db.Column(db.Text, nullable=True)
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(30), default='SUBMITTED') # SUBMITTED, UNDER_REVIEW, APPROVED, REVISION_REQUIRED
+    review_feedback = db.Column(db.Text, nullable=True)
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+
+    student = db.relationship('Student', foreign_keys=[student_id], back_populates='submissions')
+    reviewer = db.relationship('User', foreign_keys=[reviewed_by])
+
+    def __repr__(self):
+        return f'<WeeklySubmission Milestone={self.milestone_id} Status={self.status}>'
+
+
+class Meeting(db.Model):
+    __tablename__ = 'meetings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    milestone_id = db.Column(db.Integer, db.ForeignKey('weekly_milestones.id'), nullable=True)
+    internship_id = db.Column(db.Integer, db.ForeignKey('internships.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
+    host_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    meeting_date = db.Column(db.String(30), nullable=False)
+    meeting_time = db.Column(db.String(30), nullable=False)
+    meeting_link = db.Column(db.String(255), nullable=True)
+    status = db.Column(db.String(30), default='SCHEDULED') # SCHEDULED, COMPLETED, RESCHEDULED, CANCELLED
+    meeting_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    student = db.relationship('Student', foreign_keys=[student_id], back_populates='meetings')
+    internship = db.relationship('Internship', foreign_keys=[internship_id], back_populates='meetings')
+    host = db.relationship('User', foreign_keys=[host_id])
+
+    def __repr__(self):
+        return f'<Meeting {self.title} ({self.status})>'
 
 
 class Evaluation(db.Model):
@@ -323,7 +481,7 @@ class IssuedDocument(db.Model):
     doc_type = db.Column(db.String(30), nullable=False) # OFFER_LETTER, JOINING_LETTER, CERTIFICATE, EXPERIENCE_LETTER
     template_version = db.Column(db.String(20), default='v1.0')
     file_path = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.String(20), default='ISSUED') # DRAFT, GENERATED, ISSUED, REVOKED
+    status = db.Column(db.String(20), default='DRAFT') # DRAFT, GENERATED, ISSUED, REVOKED
     issued_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     issued_at = db.Column(db.DateTime, default=datetime.utcnow)
     revocation_reason = db.Column(db.Text, nullable=True)

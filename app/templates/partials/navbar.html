@@ -5,30 +5,18 @@
       <span>ANTI MATRIX</span>
     </a>
 
-    <ul class="nav-links">
-      <li><a href="{{ url_for('main.index') }}" class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">Home</a></li>
-      <li><a href="{{ url_for('main.internships') }}" class="nav-link {% if 'internship' in request.endpoint %}active{% endif %}">Internships</a></li>
-      <li><a href="{{ url_for('main.internship_1month') }}" class="nav-link">1-Month Track</a></li>
-      <li><a href="{{ url_for('main.internship_3month') }}" class="nav-link">3-Month Track</a></li>
-      <li><a href="{{ url_for('main.about') }}" class="nav-link {% if request.endpoint == 'main.about' %}active{% endif %}">About</a></li>
-      <li><a href="{{ url_for('main.faq') }}" class="nav-link {% if request.endpoint == 'main.faq' %}active{% endif %}">FAQ</a></li>
-      <li><a href="{{ url_for('main.verify_search') }}" class="nav-link {% if 'verify' in request.endpoint %}active{% endif %}">Verify Certificate</a></li>
-    </ul>
-
-    <div class="nav-actions">
+    <div class="nav-actions" style="margin-left: auto;">
       {% if current_user.is_authenticated %}
-        {% if current_user.role == 'student' %}
+        {% if current_user.is_admin_or_staff %}
+          <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary btn-sm">Admin Dashboard</a>
+        {% else %}
           <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-primary btn-sm">Student Dashboard</a>
         {% endif %}
         <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">Sign Out</a>
       {% else %}
-        <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-sm">Student Login</a>
-        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Apply Now</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">Student Login</a>
+        <a href="{{ url_for('auth.admin_login') }}" class="btn btn-secondary btn-sm">Admin Login</a>
       {% endif %}
     </div>
-
-    <button class="mobile-toggle" aria-label="Toggle navigation menu">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-    </button>
   </div>
 </header>

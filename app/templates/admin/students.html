@@ -1,0 +1,96 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Enrolled Interns Directory — ANTI MATRIX{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem;">Enrolled Interns Directory</h1>
+      <p style="color: var(--text-muted); font-size: 0.925rem;">
+        Search and manage students, inspect active projects, and supervise weekly milestone unlocking.
+      </p>
+    </div>
+
+    <!-- Search Form -->
+    <form method="GET" action="{{ url_for('admin.students_list') }}" style="display: flex; gap: 0.5rem;">
+      <input type="text" name="q" class="form-control mono" placeholder="Search by name, ID, email..." value="{{ search_query }}" style="width: 280px; padding: 0.5rem 0.85rem; font-size: 0.85rem;">
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+      {% if search_query %}
+        <a href="{{ url_for('admin.students_list') }}" class="btn btn-secondary btn-sm">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Employee ID</th>
+          <th>Student Name & Email</th>
+          <th>College / Department</th>
+          <th>Program Track</th>
+          <th>Assigned Project</th>
+          <th>Stage / Progress</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+          {% set active_intern = s.active_internship %}
+          {% set active_assign = active_intern.active_assignment if active_intern else None %}
+          <tr>
+            <td class="mono" style="font-weight: 700; color: var(--primary-light);">
+              {{ s.student_uid }}
+            </td>
+            <td>
+              <div style="font-weight: 700; color: var(--text-main);">{{ s.user.full_name }}</div>
+              <div class="mono" style="font-size: 0.775rem; color: var(--text-muted);">{{ s.user.email }}</div>
+            </td>
+            <td style="font-size: 0.825rem; color: var(--text-muted);">
+              <div>{{ s.college.name if s.college else 'College' }}</div>
+              <div style="color: var(--text-subtle);">{{ s.department.name if s.department else 'Discipline' }}</div>
+            </td>
+            <td>
+              <span class="meta-badge" style="font-size: 0.75rem;">
+                {{ active_intern.plan.duration_months if active_intern and active_intern.plan else 1 }} Months
+              </span>
+            </td>
+            <td style="max-width: 220px;">
+              <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ active_assign.project.title if active_assign and active_assign.project else 'Unassigned' }}
+              </div>
+              <div class="mono" style="font-size: 0.75rem; color: var(--accent-cyan);">
+                {{ active_assign.project.project_code if active_assign and active_assign.project else '' }}
+              </div>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="mono" style="font-size: 0.85rem; font-weight: 700; color: var(--primary-light);">
+                  {{ active_assign.progress_percent if active_assign else 0 }}%
+                </span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">
+                  ({{ active_intern.current_stage if active_intern else 'Active' }})
+                </span>
+              </div>
+            </td>
+            <td>
+              <a href="{{ url_for('admin.student_detail', student_id=s.id) }}" class="btn btn-primary btn-sm">
+                Manage Roadmap →
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+              No interns matched your search query.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

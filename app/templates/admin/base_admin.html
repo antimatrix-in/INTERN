@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ANTI MATRIX — Admin Portal{% endblock %}</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <div class="portal-layout">
+    <!-- Admin Sidebar -->
+    <aside class="portal-sidebar" style="background: #060A11; border-right-color: rgba(59, 130, 246, 0.2);">
+      <div class="sidebar-header">
+        <a href="{{ url_for('admin.dashboard') }}" class="sidebar-brand">
+          <div class="brand-symbol" style="background: linear-gradient(135deg, #3B82F6, #8B5CF6); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);">AM</div>
+          <div>
+            <div class="sidebar-brand-name">ANTI MATRIX</div>
+            <span class="sidebar-badge" style="color: #60A5FA;">Administration</span>
+          </div>
+        </a>
+      </div>
+
+      <ul class="sidebar-nav">
+        <li>
+          <a href="{{ url_for('admin.dashboard') }}" class="nav-item-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            Dashboard Overview
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('admin.students_list') }}" class="nav-item-link {% if request.endpoint in ['admin.students_list', 'admin.student_detail'] %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Enrolled Students
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('admin.evaluations') }}" class="nav-item-link {% if request.endpoint == 'admin.evaluations' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+            Milestone Reviews
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('admin.meetings') }}" class="nav-item-link {% if request.endpoint == 'admin.meetings' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            Review Meetings
+          </a>
+        </li>
+        <li style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+          <a href="{{ url_for('auth.logout') }}" class="nav-item-link" style="color: var(--text-muted);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Sign Out
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-widget">
+          <div class="user-avatar" style="color: #60A5FA; border-color: rgba(59, 130, 246, 0.3);">{{ current_user.full_name[:1] }}</div>
+          <div class="user-info">
+            <div class="user-name">{{ current_user.full_name }}</div>
+            <span class="user-role-badge" style="color: #60A5FA;">{{ current_user.role|upper }}</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="portal-main">
+      <header class="portal-topbar" style="border-bottom-color: rgba(59, 130, 246, 0.2);">
+        <div class="topbar-left">
+          <span style="color: var(--text-muted); font-size: 0.85rem; font-family: var(--font-mono);">
+            ADMINISTRATOR PRIVILEGES: <strong style="color: #60A5FA;">AUTHORIZED</strong>
+          </span>
+        </div>
+
+        <div class="topbar-right">
+          <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">
+            Sign Out
+          </a>
+        </div>
+      </header>
+
+      <div class="portal-content">
+        <!-- Flash Alerts -->
+        {% include 'partials/alerts.html' %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Placeholder Modal for Admin -->
+  <div id="sampleAdminDocModal" class="modal-backdrop">
+    <div class="modal-content">
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); color: var(--info); display: flex; align-items: center; justify-content: center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        </div>
+        <h3 id="sampleAdminDocTitle" style="font-size: 1.15rem; font-weight: 700;">Document Generator Placeholder</h3>
+      </div>
+      <p id="sampleAdminDocMessage" style="color: var(--text-muted); font-size: 0.925rem; line-height: 1.6; margin-bottom: 1.5rem;">
+        This document generation action is a UI placeholder for Phase 1. Complete PDF rendering and digital issuance will be connected in Phase 2.
+      </p>
+      <div style="display: flex; justify-content: flex-end;">
+        <button onclick="closeAdminDocModal()" class="btn btn-primary btn-sm">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showAdminDocModal(docName) {
+      document.getElementById('sampleAdminDocTitle').innerText = 'Generate ' + docName;
+      document.getElementById('sampleAdminDocMessage').innerText = 'The ' + docName + ' generation pipeline is staged as a Phase 1 sample button. Actual PDF layout & dispatch will be activated in Phase 2.';
+      document.getElementById('sampleAdminDocModal').classList.add('active');
+    }
+    function closeAdminDocModal() {
+      document.getElementById('sampleAdminDocModal').classList.remove('active');
+    }
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
