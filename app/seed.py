@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime, timedelta
 from app.extensions import db
 from app.models import (
     User, College, Department, Student, InternshipPlan,
@@ -113,6 +114,20 @@ def seed_colleges_and_departments():
                 'state': 'Tamil Nadu',
                 'city': 'Kattankulathur',
                 'depts': ['Computer Science and Engineering', 'Information Technology', 'Cloud Computing', 'Data Analytics']
+            },
+            {
+                'code': 'VELAMMAL',
+                'name': 'Velammal Institute of Technology',
+                'state': 'Tamil Nadu',
+                'city': 'Chennai',
+                'depts': ['Computer Science and Engineering', 'Information Technology', 'Electronics and Communication', 'Artificial Intelligence']
+            },
+            {
+                'code': 'JAYA',
+                'name': 'Jaya College of Engineering & Technology',
+                'state': 'Tamil Nadu',
+                'city': 'Chennai',
+                'depts': ['Computer Science and Engineering', 'Information Technology', 'Mechanical Engineering']
             },
             {
                 'code': 'OTHER-COLLEGE',
@@ -352,7 +367,9 @@ def seed_projects_and_students():
             }
         ]
 
+        now = datetime.utcnow()
         for m_data in milestone_definitions_1:
+            is_avail = (m_data['status'] == 'AVAILABLE')
             m = WeeklyMilestone(
                 assignment_id=assign1.id,
                 week_number=m_data['week'],
@@ -361,7 +378,9 @@ def seed_projects_and_students():
                 instructions=m_data['instructions'],
                 deliverables_json=json.dumps(m_data['deliverables']),
                 status=m_data['status'],
-                unlocked_at=db.func.now() if m_data['status'] == 'AVAILABLE' else None
+                started_at=now if is_avail else None,
+                due_at=(now + timedelta(days=7)) if is_avail else None,
+                unlocked_at=now if is_avail else None
             )
             db.session.add(m)
             db.session.flush()
@@ -484,6 +503,7 @@ def seed_projects_and_students():
         ]
 
         for w_num, w_title in enumerate(titles_3m, start=1):
+            is_avail = (w_num == 1)
             m = WeeklyMilestone(
                 assignment_id=assign2.id,
                 week_number=w_num,
@@ -491,8 +511,10 @@ def seed_projects_and_students():
                 objective=f"Execute Phase {w_num} objectives for Autonomous Cloud Security Gateway.",
                 instructions=f"Complete Week {w_num} deliverables and verify with unit tests.",
                 deliverables_json=json.dumps([f"Week {w_num} Technical Artifacts", "Implementation Source Code"]),
-                status='AVAILABLE' if w_num == 1 else 'LOCKED',
-                unlocked_at=db.func.now() if w_num == 1 else None
+                status='AVAILABLE' if is_avail else 'LOCKED',
+                started_at=now if is_avail else None,
+                due_at=(now + timedelta(days=7)) if is_avail else None,
+                unlocked_at=now if is_avail else None
             )
             db.session.add(m)
             db.session.flush()
@@ -553,7 +575,32 @@ def seed_admin_user():
 
 def seed_career_applications():
     """Seed standalone career application records for admin lookup testing."""
+    plan_1m = InternshipPlan.query.filter_by(plan_code='1_MONTH_PROJECT').first()
+    plan_3m = InternshipPlan.query.filter_by(plan_code='3_MONTH_PROFESSIONAL').first()
+
     apps_data = [
+        {
+            'application_no': 'AM-APP-2026-1024',
+            'candidate_name': 'Rahul Kumar',
+            'candidate_email': 'rahul@example.com',
+            'candidate_phone': '+91 98412 01024',
+            'candidate_dob': '2002-05-14',
+            'candidate_gender': 'Male',
+            'college_name': 'Velammal Institute of Technology',
+            'department_name': 'Computer Science and Engineering',
+            'course': 'B.Tech Computer Science',
+            'year_of_study': '3rd Year',
+            'roll_number': '21CS1024',
+            'applied_role': 'AI Engineer Intern',
+            'city': 'Chennai',
+            'state': 'Tamil Nadu',
+            'aadhaar_masked': 'XXXX XXXX 4827',
+            'status': 'APPROVED',
+            'plan_id': plan_3m.id if plan_3m else None,
+            'converted_employee_id': 'AM4827',
+            'is_converted_to_employee': False,
+            'has_payment': True
+        },
         {
             'application_no': 'AM-APP-2026-001',
             'candidate_name': 'Rahul Kumar',
@@ -570,6 +617,11 @@ def seed_career_applications():
             'city': 'Chennai',
             'state': 'Tamil Nadu',
             'aadhaar_masked': 'XXXX XXXX 1234',
+            'status': 'APPROVED',
+            'plan_id': plan_1m.id if plan_1m else None,
+            'converted_employee_id': None,
+            'is_converted_to_employee': False,
+            'has_payment': True
         },
         {
             'application_no': 'AM-APP-2026-002',
@@ -587,6 +639,11 @@ def seed_career_applications():
             'city': 'Vellore',
             'state': 'Tamil Nadu',
             'aadhaar_masked': 'XXXX XXXX 5678',
+            'status': 'APPROVED',
+            'plan_id': plan_3m.id if plan_3m else None,
+            'converted_employee_id': None,
+            'is_converted_to_employee': False,
+            'has_payment': True
         },
         {
             'application_no': 'AM-APP-2026-003',
@@ -604,14 +661,64 @@ def seed_career_applications():
             'city': 'Surathkal',
             'state': 'Karnataka',
             'aadhaar_masked': 'XXXX XXXX 9012',
+            'status': 'APPROVED',
+            'plan_id': plan_1m.id if plan_1m else None,
+            'converted_employee_id': None,
+            'is_converted_to_employee': False,
+            'has_payment': True
         },
+        {
+            'application_no': 'AM-APP-2026-004',
+            'candidate_name': 'Ananya Sen',
+            'candidate_email': 'ananya.sen@example.com',
+            'candidate_phone': '+91 98412 00004',
+            'candidate_dob': '2003-01-10',
+            'candidate_gender': 'Female',
+            'college_name': 'PSG College of Technology',
+            'department_name': 'Information Technology',
+            'course': 'B.Tech IT',
+            'year_of_study': '2nd Year',
+            'roll_number': '22IT012',
+            'applied_role': 'Full Stack Intern',
+            'city': 'Coimbatore',
+            'state': 'Tamil Nadu',
+            'aadhaar_masked': 'XXXX XXXX 3456',
+            'status': 'PAYMENT_PENDING',
+            'plan_id': plan_1m.id if plan_1m else None,
+            'converted_employee_id': None,
+            'is_converted_to_employee': False,
+            'has_payment': False
+        },
+        {
+            'application_no': 'AM-APP-2026-005',
+            'candidate_name': 'Karthik Raja',
+            'candidate_email': 'karthik.raja@example.com',
+            'candidate_phone': '+91 98412 00005',
+            'candidate_dob': '2002-09-19',
+            'candidate_gender': 'Male',
+            'college_name': 'SRM Institute of Science and Technology',
+            'department_name': 'Computer Science and Engineering',
+            'course': 'B.Tech CSE',
+            'year_of_study': '3rd Year',
+            'roll_number': '21CS099',
+            'applied_role': 'Cybersecurity Intern',
+            'city': 'Chennai',
+            'state': 'Tamil Nadu',
+            'aadhaar_masked': 'XXXX XXXX 7890',
+            'status': 'REJECTED',
+            'plan_id': plan_1m.id if plan_1m else None,
+            'converted_employee_id': None,
+            'is_converted_to_employee': False,
+            'has_payment': False
+        }
     ]
+
     for app_data in apps_data:
         existing = Application.query.filter_by(application_no=app_data['application_no']).first()
         if not existing:
             app = Application(
                 application_no=app_data['application_no'],
-                status='APPROVED',
+                status=app_data['status'],
                 candidate_name=app_data['candidate_name'],
                 candidate_email=app_data['candidate_email'],
                 candidate_phone=app_data['candidate_phone'],
@@ -626,9 +733,26 @@ def seed_career_applications():
                 city=app_data['city'],
                 state=app_data['state'],
                 aadhaar_masked=app_data['aadhaar_masked'],
-                is_converted_to_employee=False,
+                plan_id=app_data.get('plan_id'),
+                converted_employee_id=app_data.get('converted_employee_id'),
+                is_converted_to_employee=app_data.get('is_converted_to_employee', False)
             )
             db.session.add(app)
+            db.session.flush()
+
+            if app_data.get('has_payment'):
+                payment = Payment(
+                    application_id=app.id,
+                    student_id=1,  # initial placeholder student reference
+                    transaction_id=f"AM-TXN-{app.application_no}",
+                    order_id=f"AM-ORD-{app.application_no}",
+                    amount=1499.00 if app_data.get('plan_id') == 1 else 3999.00,
+                    currency='INR',
+                    status='SUCCESSFUL',
+                    payment_method='ONLINE_GATEWAY'
+                )
+                db.session.add(payment)
+
     db.session.commit()
 
 

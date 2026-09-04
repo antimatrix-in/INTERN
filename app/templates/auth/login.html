@@ -21,7 +21,7 @@
           <span style="font-size: 0.725rem; font-weight: 700; text-transform: uppercase; color: var(--primary-light); letter-spacing: 0.06em;">Internship Portal</span>
         </div>
       </div>
-      <h1 class="auth-title">Student Sign In</h1>
+      <h1 class="auth-title">EMPLOYEE LOGIN</h1>
       <p class="auth-subtitle">Access your assigned project, milestone roadmap & evaluation records</p>
     </div>
 
@@ -32,9 +32,9 @@
       {{ form.hidden_tag() }}
 
       <div class="form-group">
-        <label for="employee_id" class="form-label">Employee ID or Registered Email</label>
+        <label for="employee_id" class="form-label">Employee ID</label>
         <div style="position: relative;">
-          {{ form.employee_id(class="form-control mono", placeholder="e.g. AM-INT-2026-001 or aarav@example.com", autofocus=true) }}
+          {{ form.employee_id(class="form-control mono", placeholder="e.g. AM4827 or AM-INT-2026-001", autofocus=true) }}
         </div>
         {% for error in form.employee_id.errors %}
           <div class="form-error">{{ error }}</div>
@@ -43,7 +43,7 @@
 
       <div class="form-group">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-          <label for="password" class="form-label" style="margin-bottom: 0;">Portal Password</label>
+          <label for="password" class="form-label" style="margin-bottom: 0;">Password</label>
           <button type="button" onclick="togglePasswordVisibility()" style="background: none; border: none; color: var(--text-muted); font-size: 0.775rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;">
             <span id="pwToggleText">Show</span>
           </button>
@@ -61,8 +61,8 @@
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.5rem;">
-        Sign In to Portal
+      <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.5rem; font-weight: 700; letter-spacing: 0.04em;">
+        SIGN IN
       </button>
 
       <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); text-align: center;">

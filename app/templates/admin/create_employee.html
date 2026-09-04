@@ -90,24 +90,44 @@
 
   <!-- ── CANDIDATE DETAILS CARD (shown after fetch) ─────────────────────────── -->
   <div id="candidateCard" style="display:none; background: var(--bg-card); border: 1px solid rgba(59,130,246,0.3); border-radius: 16px; overflow: hidden; margin-bottom: 1.5rem;">
-    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); background: rgba(59,130,246,0.06); display:flex;align-items:center;gap:0.75rem;">
-      <div style="width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); background: rgba(59,130,246,0.06); display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <h2 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0;">APPLICATION DETAILS</h2>
+          <p style="font-size: 0.8rem; color: #34D399; margin: 0;">Application verified from Career Portal database</p>
+        </div>
       </div>
-      <div>
-        <h2 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0;">Step 2: Candidate Details</h2>
-        <p style="font-size: 0.8rem; color: #34D399; margin: 0;">Application found — Review details below</p>
-      </div>
+      <div id="statusBadgeContainer"></div>
     </div>
+
     <div style="padding: 1.5rem;">
-      <div id="candidateGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+      <!-- Existing Employee Warning Banner (if already converted) -->
+      <div id="alreadyExistsBanner" style="display:none; padding: 1rem 1.25rem; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; margin-bottom: 1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+              <div style="font-weight:700;color:#FBBF24;font-size:0.9rem;" id="alreadyExistsMsg">Employee already exists.</div>
+              <div style="font-size:0.8rem;color:var(--text-muted);">This candidate has already been onboarded to the Internship Portal.</div>
+            </div>
+          </div>
+          <a id="viewEmployeeLink" href="#" class="btn btn-secondary" style="font-size:0.85rem;padding:0.45rem 1rem;">View Employee Profile →</a>
+        </div>
+      </div>
+
+      <!-- Application Details Key-Value Grid -->
+      <div id="candidateGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
         <!-- populated by JS -->
       </div>
 
-      <!-- Internship Configuration -->
-      <div style="border-top: 1px solid var(--border-subtle); padding-top: 1.5rem; margin-top: 0.5rem;">
-        <h3 style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1rem;">Step 3: Internship Configuration</h3>
-        <div style="margin-bottom: 1rem;">
+      <!-- Internship Configuration & Creation Form -->
+      <div id="createSection" style="border-top: 1px solid var(--border-subtle); padding-top: 1.5rem; margin-top: 0.5rem;">
+        <h3 style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1rem;">Internship Track Confirmation</h3>
+        
+        <div style="margin-bottom: 1.25rem;">
           <label style="font-size:0.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:0.4rem;">Internship Duration</label>
           <div style="display: flex; gap: 0.75rem;">
             <label id="plan1m" style="flex:1; display:flex; align-items:center; gap:0.75rem; padding:1rem; border:2px solid rgba(59,130,246,0.4); border-radius:12px; cursor:pointer; transition:all 0.2s; background:rgba(59,130,246,0.08);">
@@ -126,22 +146,22 @@
             </label>
           </div>
         </div>
+
+        <!-- Submit Form -->
+        <form id="createEmployeeForm" method="POST" action="{{ url_for('admin.create_employee') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" id="hiddenApplicationNo" name="application_no" value="">
+          <input type="hidden" id="hiddenDurationPlan" name="duration_plan" value="1_MONTH_PROJECT">
+
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.85rem;font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:0.6rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            CREATE EMPLOYEE
+          </button>
+          <p style="text-align:center;font-size:0.78rem;color:var(--text-muted);margin-top:0.75rem;">
+            Creates employee account, links Career Portal application records, and prepares for project assignment.
+          </p>
+        </form>
       </div>
-
-      <!-- FINAL FORM (hidden inputs + submit) -->
-      <form id="createEmployeeForm" method="POST" action="{{ url_for('admin.create_employee') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" id="hiddenApplicationNo" name="application_no" value="">
-        <input type="hidden" id="hiddenDurationPlan" name="duration_plan" value="1_MONTH_PROJECT">
-
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.85rem;font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:0.6rem;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-          Create Employee Account & Generate Credentials
-        </button>
-        <p style="text-align:center;font-size:0.78rem;color:var(--text-muted);margin-top:0.75rem;">
-          A secure Employee ID and temporary password will be generated and shown once after submission.
-        </p>
-      </form>
     </div>
   </div>
 
@@ -212,30 +232,50 @@
   function showCandidateCard(data) {
     document.getElementById('hiddenApplicationNo').value = data.application_no;
 
+    // Set duration plan
+    if (data.duration_plan) {
+      selectPlan(data.duration_plan);
+    }
+
     const fields = [
-      { label: 'Full Name', value: data.candidate_name },
-      { label: 'Email Address', value: data.candidate_email },
+      { label: 'Application ID', value: data.application_no, isMono: true, color: '#60A5FA' },
+      { label: 'Name', value: data.candidate_name },
+      { label: 'Email', value: data.candidate_email },
       { label: 'Phone', value: data.candidate_phone },
-      { label: 'Date of Birth', value: data.candidate_dob },
-      { label: 'Gender', value: data.candidate_gender },
-      { label: 'Application No.', value: data.application_no },
-      { label: 'Applied Role', value: data.applied_role },
       { label: 'College', value: data.college_name },
       { label: 'Department', value: data.department_name },
-      { label: 'Course', value: data.course },
-      { label: 'Year of Study', value: data.year_of_study },
-      { label: 'Roll Number', value: data.roll_number },
-      { label: 'City / State', value: `${data.city}, ${data.state}` },
-      { label: 'Aadhaar (Masked)', value: data.aadhaar_masked },
+      { label: 'Internship', value: data.applied_role || 'AI Engineer Intern' },
+      { label: 'Duration', value: data.duration || '1 Month' },
+      { label: 'Payment Status', value: data.payment_status || 'SUCCESS', color: '#34D399', isBadge: true },
+      { label: 'Application Status', value: data.status || 'APPROVED', color: '#60A5FA', isBadge: true },
+      { label: 'Employee ID', value: data.employee_id || 'AM4827', isMono: true, color: '#FBBF24' }
     ];
 
     const grid = document.getElementById('candidateGrid');
     grid.innerHTML = fields.map(f => `
       <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:0.85rem;">
         <div style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.3rem;">${f.label}</div>
-        <div style="font-size:0.875rem;font-weight:600;color:var(--text-primary);">${f.value || '—'}</div>
+        <div style="font-size:0.875rem;font-weight:700;color:${f.color || 'var(--text-primary)'};${f.isMono ? 'font-family:var(--font-mono);' : ''}">${f.value || '—'}</div>
       </div>
     `).join('');
+
+    const alreadyBanner = document.getElementById('alreadyExistsBanner');
+    const createSec = document.getElementById('createSection');
+
+    if (data.already_exists) {
+      document.getElementById('alreadyExistsMsg').textContent = `Employee already exists. Employee ID: ${data.employee_id || 'Assigned'}`;
+      if (data.student_id) {
+        document.getElementById('viewEmployeeLink').href = `/admin/employees/${data.student_id}`;
+        document.getElementById('viewEmployeeLink').style.display = 'inline-block';
+      } else {
+        document.getElementById('viewEmployeeLink').href = `/admin/employees`;
+      }
+      alreadyBanner.style.display = 'block';
+      createSec.style.display = 'none';
+    } else {
+      alreadyBanner.style.display = 'none';
+      createSec.style.display = 'block';
+    }
 
     document.getElementById('candidateCard').style.display = 'block';
     document.getElementById('candidateCard').scrollIntoView({ behavior: 'smooth', block: 'start' });

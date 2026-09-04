@@ -1,3 +1,4 @@
+import io
 import unittest
 from app import create_app
 from app.extensions import db
@@ -102,23 +103,29 @@ class Phase1PortalTestCase(unittest.TestCase):
             self.assertEqual(assignment.progress_percent, 0)
             w1_id = w1.id
 
-        # 1. Log in as Student 1 and submit Week 1 work
+        # 1. Complete tasks and log in as Student 1 to submit Week 1 work
+        with self.app.app_context():
+            w1 = db.session.get(WeeklyMilestone, w1_id)
+            for t in w1.tasks:
+                t.is_completed = True
+            db.session.commit()
+
         self.client.post('/login', data={
             'employee_id': 'AM-INT-2026-001',
             'password': 'Student@2026Password!'
         })
 
+        video_file = (io.BytesIO(b'mp4 dummy binary content'), 'demo.mp4')
         sub_resp = self.client.post(f'/submissions/submit/{w1_id}', data={
-            'repo_url': 'https://github.com/aarav-antimatrix/ai-student-analysis',
-            'live_demo_url': 'https://student-ai.antimatrix.tech',
-            'demo_video_url': 'https://youtube.com/watch?v=demo123',
+            'github_url': 'https://github.com/aarav-antimatrix/ai-student-analysis',
+            'demo_video': video_file,
             'submission_notes': 'Completed Exploratory Data Analysis, ER architecture diagrams, and requirements document.'
-        }, follow_redirects=True)
+        }, content_type='multipart/form-data', follow_redirects=True)
         self.assertEqual(sub_resp.status_code, 200)
 
         with self.app.app_context():
             w1_refreshed = db.session.get(WeeklyMilestone, w1_id)
-            self.assertEqual(w1_refreshed.status, 'SUBMITTED')
+            self.assertIn(w1_refreshed.status, ['UNDER_REVIEW', 'SUBMITTED'])
 
         # 2. Log in as Admin and approve Week 1
         self.client.get('/logout')

@@ -1,6 +1,6 @@
 {% extends 'admin/base_admin.html' %}
 
-{% block title %}Employee Directory — ANTI MATRIX Admin{% endblock %}
+{% block title %}Employees — {% if current_duration == '1' %}1 Month Track{% elif current_duration == '3' %}3 Months Track{% else %}Active Employees{% endif %} — ANTI MATRIX{% endblock %}
 
 {% block content %}
 <div style="padding: 2rem 2.5rem;">
@@ -8,113 +8,274 @@
   <!-- Header -->
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
     <div>
-      <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.2rem;">Employee Directory</h1>
-      <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0;">All enrolled internship employees managed through ANTI MATRIX Portal</p>
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;">
+        <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0;">
+          {% if current_duration == '1' %}
+          1 Month Active Employees
+          {% elif current_duration == '3' %}
+          3 Months Active Employees
+          {% else %}
+          Active Employees Directory
+          {% endif %}
+        </h1>
+        <span style="background: rgba(59, 130, 246, 0.12); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.25); font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.65rem; border-radius: 999px;">
+          {{ students|length }} Active Interns
+        </span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0;">
+        Manage currently active employees enrolled across project and professional internship tracks
+      </p>
     </div>
-    <a href="{{ url_for('admin.create_employee') }}" class="btn btn-primary" style="display:flex;align-items:center;gap:0.5rem;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Create Employee
+
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <a href="{{ url_for('admin.create_employee') }}" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        + Create Employee
+      </a>
+    </div>
+  </div>
+
+  <!-- Duration Filter Tabs -->
+  <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+    <a href="{{ url_for('admin.employees_list', duration='1', q=search_query if search_query else None) }}"
+       style="display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 1.15rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700; text-decoration: none; transition: all 0.2s;
+              {% if current_duration == '1' %}
+              background: linear-gradient(135deg, #3B82F6, #2563EB); color: #FFFFFF; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+              {% else %}
+              background: rgba(255, 255, 255, 0.04); color: var(--text-muted); border: 1px solid var(--border-subtle);
+              {% endif %}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      1 MONTH
+      <span style="font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 999px; {% if current_duration == '1' %}background: rgba(255,255,255,0.25); color: #FFF;{% else %}background: rgba(255,255,255,0.08); color: var(--text-muted);{% endif %}">
+        {{ count_1m }}
+      </span>
+    </a>
+
+    <a href="{{ url_for('admin.employees_list', duration='3', q=search_query if search_query else None) }}"
+       style="display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 1.15rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700; text-decoration: none; transition: all 0.2s;
+              {% if current_duration == '3' %}
+              background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: #FFFFFF; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+              {% else %}
+              background: rgba(255, 255, 255, 0.04); color: var(--text-muted); border: 1px solid var(--border-subtle);
+              {% endif %}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      3 MONTHS
+      <span style="font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 999px; {% if current_duration == '3' %}background: rgba(255,255,255,0.25); color: #FFF;{% else %}background: rgba(255,255,255,0.08); color: var(--text-muted);{% endif %}">
+        {{ count_3m }}
+      </span>
+    </a>
+
+    <a href="{{ url_for('admin.employees_list', q=search_query if search_query else None) }}"
+       style="display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.2s;
+              {% if not current_duration %}
+              background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.3);
+              {% else %}
+              background: transparent; color: var(--text-muted);
+              {% endif %}">
+      All Active
+      <span style="font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--text-muted);">
+        {{ count_all }}
+      </span>
     </a>
   </div>
 
-  <!-- Search -->
+  <!-- Search Box -->
   <form method="get" style="margin-bottom: 1.5rem;">
+    {% if current_duration %}
+    <input type="hidden" name="duration" value="{{ current_duration }}">
+    {% endif %}
     <div style="display: flex; gap: 0.75rem;">
-      <input type="text" name="q" value="{{ search_query }}"
-             placeholder="Search by name, Employee ID, email, roll number..."
-             style="flex:1; padding: 0.65rem 1rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 10px; color: var(--text-primary); font-size: 0.875rem; outline: none; font-family: var(--font-sans);">
-      <button type="submit" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.4rem;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div style="position: relative; flex: 1;">
+        <svg style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" name="q" value="{{ search_query }}"
+               placeholder="Search by Employee ID, Name, Application ID, College, Department, or Email..."
+               style="width: 100%; padding: 0.7rem 1rem 0.7rem 2.75rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; color: var(--text-primary); font-size: 0.875rem; outline: none; font-family: var(--font-sans); box-sizing: border-box;">
+      </div>
+      <button type="submit" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.4rem; padding: 0 1.25rem;">
         Search
       </button>
       {% if search_query %}
-      <a href="{{ url_for('admin.employees_list') }}" class="btn btn-secondary">Clear</a>
+      <a href="{{ url_for('admin.employees_list', duration=current_duration if current_duration else None) }}" class="btn btn-secondary">Clear</a>
       {% endif %}
     </div>
   </form>
 
-  <!-- Employee Table -->
-  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 14px; overflow: hidden;">
-    <table style="width: 100%; border-collapse: collapse;">
+  <!-- Employee Database Table -->
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 14px; overflow-x: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+    <table style="width: 100%; border-collapse: collapse; min-width: 1200px; font-size: 0.85rem;">
       <thead>
         <tr style="border-bottom: 1px solid var(--border-subtle); background: rgba(255,255,255,0.02);">
-          <th style="padding: 0.9rem 1.25rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em;">Employee</th>
-          <th style="padding: 0.9rem 1.25rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em;">Employee ID</th>
-          <th style="padding: 0.9rem 1.25rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em;">Internship</th>
-          <th style="padding: 0.9rem 1.25rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em;">Progress</th>
-          <th style="padding: 0.9rem 1.25rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em;">Status</th>
-          <th style="padding: 0.9rem 1.25rem; text-align: right; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em;">Actions</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; white-space: nowrap;">Employee ID</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem;">Name</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem;">Application ID</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem;">College</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem;">Department</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem;">Email</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; white-space: nowrap;">Start Date</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; white-space: nowrap;">End Date</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem;">Project</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; white-space: nowrap;">Project ID</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; white-space: nowrap;">Current Week</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem;">Progress</th>
+          <th style="padding: 1rem 1.15rem; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem;">Status</th>
+          <th style="padding: 1rem 1.15rem; text-align: right; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem;">Action</th>
         </tr>
       </thead>
       <tbody>
         {% for student in students %}
         {% set internship = student.active_internship %}
         {% set assignment = internship.active_assignment if internship else None %}
+        {% set app_record = student.applications.first() %}
         <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s;" onmouseover="this.style.background='rgba(59,130,246,0.03)'" onmouseout="this.style.background='transparent'">
-          <td style="padding: 1rem 1.25rem;">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(139,92,246,0.2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;color:#60A5FA;flex-shrink:0;">
-                {{ student.user.full_name[:1] }}
-              </div>
-              <div>
-                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">{{ student.user.full_name }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ student.user.email }}</div>
-              </div>
+          
+          <!-- Employee ID -->
+          <td style="padding: 1rem 1.15rem; white-space: nowrap;">
+            <a href="{{ url_for('admin.employee_detail', student_id=student.id) }}" style="text-decoration: none;">
+              <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: #60A5FA; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); padding: 0.25rem 0.6rem; border-radius: 6px;">
+                {{ student.student_uid }}
+              </span>
+            </a>
+          </td>
+
+          <!-- Name -->
+          <td style="padding: 1rem 1.15rem;">
+            <div style="font-weight: 600; color: var(--text-primary); white-space: nowrap;">
+              {{ student.user.full_name }}
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">
+              {{ student.degree }}
             </div>
           </td>
-          <td style="padding: 1rem 1.25rem;">
-            <span style="font-family: var(--font-mono); font-size: 0.8rem; color: #60A5FA; background: rgba(59,130,246,0.1); padding: 0.2rem 0.6rem; border-radius: 6px;">
-              {{ student.student_uid }}
+
+          <!-- Application ID -->
+          <td style="padding: 1rem 1.15rem; white-space: nowrap;">
+            {% if app_record %}
+            <span style="font-family: var(--font-mono); font-size: 0.78rem; color: #A78BFA; background: rgba(139,92,246,0.1); padding: 0.2rem 0.5rem; border-radius: 4px;">
+              {{ app_record.application_no }}
             </span>
-          </td>
-          <td style="padding: 1rem 1.25rem;">
-            {% if internship %}
-            <div style="font-size: 0.8rem; color: var(--text-primary);">{{ internship.internship_no }}</div>
-            <div style="font-size: 0.73rem; color: var(--text-muted);">{{ internship.start_date }} — {{ internship.end_date }}</div>
             {% else %}
-            <span style="font-size: 0.8rem; color: var(--text-muted);">No active internship</span>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">—</span>
             {% endif %}
           </td>
-          <td style="padding: 1rem 1.25rem;">
-            {% if assignment %}
-            {% set pct = assignment.progress_percent %}
-            <div style="display: flex; align-items: center; gap: 0.6rem;">
-              <div style="flex:1; height:6px; background:rgba(255,255,255,0.08); border-radius:999px; overflow:hidden;">
-                <div style="height:100%; width:{{ pct }}%; background: linear-gradient(90deg, #3B82F6, #8B5CF6); border-radius:999px;"></div>
-              </div>
-              <span style="font-size:0.75rem;font-weight:600;color:var(--text-muted);min-width:2rem;">{{ pct }}%</span>
+
+          <!-- College -->
+          <td style="padding: 1rem 1.15rem; max-width: 180px;">
+            <div style="font-weight: 500; color: var(--text-primary); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ student.college.name if student.college else 'N/A' }}">
+              {{ student.college.name if student.college else 'N/A' }}
+            </div>
+          </td>
+
+          <!-- Department -->
+          <td style="padding: 1rem 1.15rem; max-width: 150px;">
+            <div style="color: var(--text-muted); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ student.department.name if student.department else 'N/A' }}">
+              {{ student.department.name if student.department else 'N/A' }}
+            </div>
+          </td>
+
+          <!-- Email -->
+          <td style="padding: 1rem 1.15rem;">
+            <div style="color: var(--text-muted); font-size: 0.78rem; white-space: nowrap;">
+              {{ student.user.email }}
+            </div>
+          </td>
+
+          <!-- Internship Start Date -->
+          <td style="padding: 1rem 1.15rem; white-space: nowrap; color: var(--text-muted); font-size: 0.78rem;">
+            {{ internship.start_date if internship else '—' }}
+          </td>
+
+          <!-- Internship End Date -->
+          <td style="padding: 1rem 1.15rem; white-space: nowrap; color: var(--text-muted); font-size: 0.78rem;">
+            {{ internship.end_date if internship else '—' }}
+          </td>
+
+          <!-- Project -->
+          <td style="padding: 1rem 1.15rem; max-width: 200px;">
+            {% if assignment and assignment.project %}
+            <div style="font-weight: 600; color: #60A5FA; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ assignment.project.title }}">
+              {{ assignment.project.title }}
             </div>
             {% else %}
-            <span style="font-size: 0.78rem; color: var(--text-muted);">Not assigned</span>
+            <span style="color: var(--text-muted); font-style: italic; font-size: 0.78rem;">Not Assigned</span>
             {% endif %}
           </td>
-          <td style="padding: 1rem 1.25rem;">
+
+          <!-- Project ID -->
+          <td style="padding: 1rem 1.15rem; white-space: nowrap;">
+            {% if assignment and assignment.project %}
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: #34D399; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); padding: 0.15rem 0.5rem; border-radius: 4px;">
+              {{ assignment.project.project_code }}
+            </span>
+            {% else %}
+            <span style="color: var(--text-muted);">—</span>
+            {% endif %}
+          </td>
+
+          <!-- Current Week -->
+          <td style="padding: 1rem 1.15rem; white-space: nowrap;">
             {% if internship %}
-            <span style="font-size:0.72rem;padding:0.25rem 0.65rem;border-radius:999px;font-weight:700;
-              {% if internship.status == 'ACTIVE' %}background:rgba(16,185,129,0.12);color:#34D399;
-              {% elif internship.status == 'COMPLETED' %}background:rgba(59,130,246,0.12);color:#60A5FA;
-              {% else %}background:rgba(100,116,139,0.12);color:#94A3B8;{% endif %}">
+            <span style="font-size: 0.78rem; color: var(--text-primary); font-weight: 600; background: rgba(255,255,255,0.06); padding: 0.2rem 0.5rem; border-radius: 4px;">
+              {{ internship.current_stage or 'Week 1' }}
+            </span>
+            {% else %}
+            <span style="color: var(--text-muted);">—</span>
+            {% endif %}
+          </td>
+
+          <!-- Progress -->
+          <td style="padding: 1rem 1.15rem;">
+            {% set pct = internship.progress_percent if internship else 0 %}
+            <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 90px;">
+              <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;">
+                <div style="height: 100%; width: {{ pct }}%; background: linear-gradient(90deg, #3B82F6, #8B5CF6); border-radius: 999px;"></div>
+              </div>
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); min-width: 2rem;">{{ pct }}%</span>
+            </div>
+          </td>
+
+          <!-- Status -->
+          <td style="padding: 1rem 1.15rem; white-space: nowrap;">
+            {% if internship and internship.status == 'ACTIVE' %}
+            <span style="font-size: 0.72rem; padding: 0.25rem 0.65rem; border-radius: 999px; font-weight: 700; background: rgba(16,185,129,0.12); color: #34D399; border: 1px solid rgba(16,185,129,0.25); display: inline-flex; align-items: center; gap: 0.35rem;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: #34D399;"></span>
+              Active
+            </span>
+            {% elif internship %}
+            <span style="font-size: 0.72rem; padding: 0.25rem 0.65rem; border-radius: 999px; font-weight: 700; background: rgba(100,116,139,0.12); color: #94A3B8;">
               {{ internship.status }}
             </span>
             {% else %}
-            <span style="font-size:0.72rem;padding:0.25rem 0.65rem;border-radius:999px;background:rgba(100,116,139,0.12);color:#94A3B8;font-weight:700;">NO INTERNSHIP</span>
+            <span style="font-size: 0.72rem; padding: 0.25rem 0.65rem; border-radius: 999px; background: rgba(100,116,139,0.12); color: #94A3B8; font-weight: 700;">INACTIVE</span>
             {% endif %}
           </td>
-          <td style="padding: 1rem 1.25rem; text-align: right;">
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-              <a href="{{ url_for('admin.employee_detail', student_id=student.id) }}" class="btn btn-secondary btn-sm">View</a>
-              <a href="{{ url_for('admin.assign_project_to_student', student_id=student.id) }}" class="btn btn-primary btn-sm">Assign</a>
+
+          <!-- Action -->
+          <td style="padding: 1rem 1.15rem; text-align: right; white-space: nowrap;">
+            <div style="display: flex; justify-content: flex-end; gap: 0.4rem;">
+              <a href="{{ url_for('admin.assign_project_to_student', student_id=student.id) }}" class="btn btn-primary btn-sm" style="font-weight: 700; font-size: 0.75rem; padding: 0.35rem 0.75rem; letter-spacing: 0.03em;">
+                ASSIGN PROJECT
+              </a>
+              <a href="{{ url_for('admin.employee_detail', student_id=student.id) }}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.35rem 0.6rem;">
+                View
+              </a>
             </div>
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="6" style="padding: 3rem; text-align: center; color: var(--text-muted); font-size: 0.875rem;">
+          <td colspan="14" style="padding: 3.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
             {% if search_query %}
-            No employees matching "{{ search_query }}".
+            No active employees matching query "{{ search_query }}" in this view.
+            {% elif current_duration == '1' %}
+            No active 1-Month employees found.
+            {% elif current_duration == '3' %}
+            No active 3-Month employees found.
             {% else %}
-            No employees enrolled yet. <a href="{{ url_for('admin.create_employee') }}" style="color: #60A5FA;">Create the first employee →</a>
+            No active employees currently enrolled.
             {% endif %}
+            <div style="margin-top: 0.75rem;">
+              <a href="{{ url_for('admin.create_employee') }}" class="btn btn-primary btn-sm">+ Create New Employee</a>
+            </div>
           </td>
         </tr>
         {% endfor %}

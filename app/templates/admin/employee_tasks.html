@@ -1,0 +1,216 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Manage Employee Tasks — ANTI MATRIX Administration{% endblock %}
+
+{% block content %}
+<div class="admin-page-header" style="margin-bottom: 2rem;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+      <span class="meta-badge" style="background: rgba(59, 130, 246, 0.15); color: #60A5FA; border-color: rgba(59, 130, 246, 0.3);">EVALUATION ENGINE</span>
+      <span class="meta-badge">WORKFLOW QUEUE</span>
+    </div>
+    <h1 style="font-size: 1.85rem; font-weight: 800; color: #F8FAFC; margin-bottom: 0.35rem;">
+      MANAGE EMPLOYEE TASKS
+    </h1>
+    <p style="color: var(--text-muted); font-size: 0.925rem;">
+      Review weekly project milestones, evaluate demo videos, inspect GitHub repositories, and manage milestone approvals.
+    </p>
+  </div>
+</div>
+
+<!-- Metrics Summary Cards -->
+<div class="grid-4" style="margin-bottom: 2rem;">
+  <div class="stat-card" style="border-left: 3px solid #06B6D4;">
+    <div class="stat-icon cyan">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+    </div>
+    <div>
+      <div class="stat-label">Pending Reviews</div>
+      <div class="stat-value text-gradient" style="font-size: 1.65rem;">{{ pending_count }}</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="border-left: 3px solid #EF4444;">
+    <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: #EF4444;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    </div>
+    <div>
+      <div class="stat-label">Redo Required</div>
+      <div class="stat-value" style="font-size: 1.65rem; color: #EF4444;">{{ redo_count }}</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="border-left: 3px solid #3B82F6;">
+    <div class="stat-icon blue">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <div>
+      <div class="stat-label">Approved This Week</div>
+      <div class="stat-value" style="font-size: 1.65rem; color: #60A5FA;">{{ approved_this_week_count }}</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="border-left: 3px solid #10B981;">
+    <div class="stat-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+    </div>
+    <div>
+      <div class="stat-label">Completed Weeks</div>
+      <div class="stat-value" style="font-size: 1.65rem; color: #10B981;">{{ completed_weeks_count }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search & Filters Toolbar -->
+<div class="card" style="margin-bottom: 2rem; padding: 1.25rem;">
+  <form method="GET" action="{{ url_for('admin.employee_tasks') }}" style="display: flex; flex-direction: column; gap: 1rem;">
+    <!-- Top Filter Row: Search Bar & Submit -->
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 260px; position: relative;">
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Search Employee ID, Name, College, Project ID..." class="form-control" style="padding-left: 2.25rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span>Search</span>
+      </button>
+
+      {% if search_query or duration_filter != 'all' or status_filter != 'all' %}
+        <a href="{{ url_for('admin.employee_tasks') }}" class="btn btn-secondary">
+          Reset Filters
+        </a>
+      {% endif %}
+    </div>
+
+    <!-- Bottom Filter Row: Duration and Status Quick Filters -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 1px solid var(--border-subtle); padding-top: 0.85rem;">
+      <!-- Duration Pills -->
+      <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <span style="font-size: 0.775rem; color: var(--text-subtle); text-transform: uppercase; font-weight: 700; margin-right: 0.25rem;">Duration:</span>
+        <a href="{{ url_for('admin.employee_tasks', duration='all', status=status_filter, q=search_query) }}" class="btn btn-sm {% if duration_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}" style="padding: 0.25rem 0.65rem; font-size: 0.8rem;">All Tracks</a>
+        <a href="{{ url_for('admin.employee_tasks', duration='1m', status=status_filter, q=search_query) }}" class="btn btn-sm {% if duration_filter == '1m' %}btn-primary{% else %}btn-secondary{% endif %}" style="padding: 0.25rem 0.65rem; font-size: 0.8rem;">1 Month</a>
+        <a href="{{ url_for('admin.employee_tasks', duration='3m', status=status_filter, q=search_query) }}" class="btn btn-sm {% if duration_filter == '3m' %}btn-primary{% else %}btn-secondary{% endif %}" style="padding: 0.25rem 0.65rem; font-size: 0.8rem;">3 Months</a>
+      </div>
+
+      <!-- Status Pills -->
+      <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+        <span style="font-size: 0.775rem; color: var(--text-subtle); text-transform: uppercase; font-weight: 700; margin-right: 0.25rem;">Status:</span>
+        <a href="{{ url_for('admin.employee_tasks', status='all', duration=duration_filter, q=search_query) }}" class="btn btn-sm {% if status_filter == 'all' %}btn-secondary{% else %}btn-ghost{% endif %}" style="padding: 0.25rem 0.55rem; font-size: 0.8rem; {% if status_filter == 'all' %}background: var(--bg-surface-elevated); border: 1px solid var(--border-medium);{% endif %}">All</a>
+        <a href="{{ url_for('admin.employee_tasks', status='submitted', duration=duration_filter, q=search_query) }}" class="btn btn-sm" style="padding: 0.25rem 0.55rem; font-size: 0.8rem; background: {% if status_filter == 'submitted' %}rgba(6, 182, 212, 0.25){% else %}rgba(6, 182, 212, 0.1){% endif %}; color: #06B6D4; border: 1px solid rgba(6, 182, 212, 0.3);">Submitted / Under Review</a>
+        <a href="{{ url_for('admin.employee_tasks', status='redo_required', duration=duration_filter, q=search_query) }}" class="btn btn-sm" style="padding: 0.25rem 0.55rem; font-size: 0.8rem; background: {% if status_filter == 'redo_required' %}rgba(239, 68, 68, 0.25){% else %}rgba(239, 68, 68, 0.1){% endif %}; color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3);">Redo Required</a>
+        <a href="{{ url_for('admin.employee_tasks', status='approved', duration=duration_filter, q=search_query) }}" class="btn btn-sm" style="padding: 0.25rem 0.55rem; font-size: 0.8rem; background: {% if status_filter == 'approved' %}rgba(59, 130, 246, 0.25){% else %}rgba(59, 130, 246, 0.1){% endif %}; color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.3);">Approved</a>
+        <a href="{{ url_for('admin.employee_tasks', status='completed', duration=duration_filter, q=search_query) }}" class="btn btn-sm" style="padding: 0.25rem 0.55rem; font-size: 0.8rem; background: {% if status_filter == 'completed' %}rgba(16, 185, 129, 0.25){% else %}rgba(16, 185, 129, 0.1){% endif %}; color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);">Completed</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Submissions Queue Table -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h3 style="font-size: 1.1rem; font-weight: 700; color: #F8FAFC; margin: 0;">
+        Task Submissions ({{ submissions|length }})
+      </h3>
+    </div>
+    <span style="font-size: 0.8rem; color: var(--text-muted);">
+      Showing records matching active filters
+    </span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: rgba(15, 23, 42, 0.6); border-bottom: 1px solid var(--border-medium); text-align: left; font-size: 0.775rem; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.05em;">
+          <th style="padding: 0.85rem 1rem;">Employee ID</th>
+          <th style="padding: 0.85rem 1rem;">Employee Name</th>
+          <th style="padding: 0.85rem 1rem;">College</th>
+          <th style="padding: 0.85rem 1rem;">Project ID</th>
+          <th style="padding: 0.85rem 1rem;">Project Name</th>
+          <th style="padding: 0.85rem 1rem;">Week</th>
+          <th style="padding: 0.85rem 1rem;">Submitted At</th>
+          <th style="padding: 0.85rem 1rem;">Status</th>
+          <th style="padding: 0.85rem 1rem; text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub in submissions %}
+          {% set emp = sub.student %}
+          {% set milestone = sub.milestone %}
+          {% set project = milestone.assignment.project %}
+          <tr style="border-bottom: 1px solid var(--border-subtle); font-size: 0.875rem; transition: background 0.15s ease;">
+            <!-- Employee ID -->
+            <td style="padding: 0.85rem 1rem;">
+              <span class="mono" style="color: #60A5FA; font-weight: 600;">
+                {{ emp.user.employee_id or emp.student_uid }}
+              </span>
+            </td>
+
+            <!-- Employee Name -->
+            <td style="padding: 0.85rem 1rem;">
+              <strong style="color: #F8FAFC;">{{ emp.user.full_name }}</strong>
+            </td>
+
+            <!-- College -->
+            <td style="padding: 0.85rem 1rem; color: var(--text-muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ emp.college.name }}">
+              {{ emp.college.name }}
+            </td>
+
+            <!-- Project ID -->
+            <td style="padding: 0.85rem 1rem;">
+              <span class="mono" style="color: #818CF8; background: rgba(99, 102, 241, 0.1); padding: 0.15rem 0.45rem; border-radius: var(--radius-sm); border: 1px solid rgba(99, 102, 241, 0.2);">
+                {{ project.project_code }}
+              </span>
+            </td>
+
+            <!-- Project Name -->
+            <td style="padding: 0.85rem 1rem; color: #F8FAFC; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ project.title }}">
+              {{ project.title }}
+            </td>
+
+            <!-- Week -->
+            <td style="padding: 0.85rem 1rem;">
+              <span style="font-weight: 700; color: var(--text-main);">Week {{ milestone.week_number }}</span>
+            </td>
+
+            <!-- Submitted At -->
+            <td style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.8rem;">
+              {{ sub.submitted_at.strftime('%d %b %Y') if sub.submitted_at else 'Recent' }}
+            </td>
+
+            <!-- Status Badge -->
+            <td style="padding: 0.85rem 1rem;">
+              {% if sub.status == 'COMPLETED' or sub.status == 'APPROVED' %}
+                <span class="status-badge badge-completed" style="font-size: 0.75rem; padding: 0.2rem 0.55rem;">APPROVED</span>
+              {% elif sub.status == 'REDO_REQUIRED' %}
+                <span class="status-badge" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; padding: 0.2rem 0.55rem;">REDO REQUIRED</span>
+              {% else %}
+                <span class="status-badge badge-submitted" style="font-size: 0.75rem; padding: 0.2rem 0.55rem;">UNDER REVIEW</span>
+              {% endif %}
+            </td>
+
+            <!-- Action View Button -->
+            <td style="padding: 0.85rem 1rem; text-align: right;">
+              <a href="{{ url_for('admin.review_submission', submission_id=sub.id) }}" class="btn btn-outline-primary btn-sm" style="padding: 0.35rem 0.85rem; font-weight: 700;">
+                <span>VIEW</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+              <div style="margin-bottom: 0.5rem; opacity: 0.5;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </div>
+              <p style="font-size: 0.95rem; font-weight: 600; color: #F8FAFC; margin-bottom: 0.25rem;">No task submissions found</p>
+              <p style="font-size: 0.825rem; color: var(--text-subtle);">Try adjusting your search criteria or filter selections.</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

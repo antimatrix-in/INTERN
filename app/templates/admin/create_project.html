@@ -1,83 +1,91 @@
 {% extends 'admin/base_admin.html' %}
 
-{% block title %}Create Project — ANTI MATRIX Admin{% endblock %}
+{% block title %}Create Project — Project Database — ANTI MATRIX Admin{% endblock %}
 
 {% block extra_css %}
 <style>
-  .week-accordion { margin-bottom: 0.75rem; }
+  .week-accordion { margin-bottom: 0.85rem; }
   .week-header {
-    display: flex; align-items: center; gap: 0.75rem; padding: 0.9rem 1.25rem;
+    display: flex; align-items: center; gap: 0.85rem; padding: 1rem 1.25rem;
     background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle);
-    border-radius: 10px; cursor: pointer; user-select: none;
+    border-radius: 12px; cursor: pointer; user-select: none;
     transition: background 0.15s, border-color 0.15s;
   }
   .week-header:hover { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.25); }
-  .week-header.open { border-radius: 10px 10px 0 0; border-color: rgba(59,130,246,0.3); }
+  .week-header.open { border-radius: 12px 12px 0 0; border-color: rgba(59,130,246,0.35); background: rgba(59,130,246,0.05); }
   .week-body {
-    display: none; padding: 1.25rem;
-    border: 1px solid rgba(59,130,246,0.2); border-top: none;
-    border-radius: 0 0 10px 10px; background: rgba(59,130,246,0.02);
+    display: none; padding: 1.5rem;
+    border: 1px solid rgba(59,130,246,0.25); border-top: none;
+    border-radius: 0 0 12px 12px; background: rgba(10, 17, 30, 0.6);
   }
   .week-body.open { display: block; }
-  .form-label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .form-label { font-size: 0.76rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.45rem; text-transform: uppercase; letter-spacing: 0.06em; }
   .form-input, .form-textarea, .form-select {
     width: 100%; box-sizing: border-box;
-    padding: 0.65rem 0.9rem; background: var(--bg-input);
+    padding: 0.7rem 0.95rem; background: var(--bg-input);
     border: 1px solid var(--border-subtle); border-radius: 8px;
     color: var(--text-primary); font-size: 0.875rem;
     font-family: var(--font-sans); outline: none; transition: border-color 0.2s;
   }
   .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: rgba(59,130,246,0.5); }
-  .form-textarea { resize: vertical; min-height: 70px; }
+  .form-textarea { resize: vertical; min-height: 75px; }
   .form-row { display: grid; gap: 1rem; margin-bottom: 1rem; }
   .form-row.cols2 { grid-template-columns: 1fr 1fr; }
   .form-row.cols3 { grid-template-columns: 1fr 1fr 1fr; }
   .task-row {
-    display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.8rem;
-    background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 0.4rem;
+    display: flex; align-items: center; gap: 0.65rem; padding: 0.65rem 0.9rem;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; margin-bottom: 0.45rem;
   }
   .priority-badge {
-    font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 5px; white-space: nowrap;
+    font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 5px; white-space: nowrap;
   }
-  .priority-High { background: rgba(239,68,68,0.15); color: #F87171; }
-  .priority-Medium { background: rgba(245,158,11,0.15); color: #FBBF24; }
-  .priority-Low { background: rgba(16,185,129,0.15); color: #34D399; }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .priority-High { background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.25); }
+  .priority-Medium { background: rgba(245,158,11,0.15); color: #FBBF24; border: 1px solid rgba(245,158,11,0.25); }
+  .priority-Low { background: rgba(16,185,129,0.15); color: #34D399; border: 1px solid rgba(16,185,129,0.25); }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   .modal-overlay.active { opacity: 1; pointer-events: all; }
-  .modal-box { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.75rem; width: 520px; max-width: 95vw; max-height: 80vh; overflow-y: auto; }
+  .modal-box { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.75rem; width: 540px; max-width: 95vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="padding: 2rem 2.5rem; max-width: 860px;">
+<div style="padding: 2rem 2.5rem; max-width: 920px;">
 
   <div style="margin-bottom: 1.75rem;">
     <a href="{{ url_for('admin.projects_list') }}" style="display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-muted);font-size:0.85rem;text-decoration:none;margin-bottom:0.75rem;" onmouseover="this.style.color='#60A5FA'" onmouseout="this.style.color='var(--text-muted)'">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      Back to Projects
+      Back to Project Database
     </a>
-    <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.25rem;">Create Project</h1>
-    <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0;">Define a reusable project template with a structured weekly roadmap and task library</p>
+    <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.25rem;">Create New Project</h1>
+    <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0;">Define a master project template with automatic 4-week (1-Month) or 12-week (3-Month) milestone structure</p>
   </div>
 
   <form id="projectForm" method="POST" action="{{ url_for('admin.create_project') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <!-- ── Basic Details ───────────────────────────────────────────────────── -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem;">
-      <h2 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem;">Project Details</h2>
-
-      <div class="form-row" style="margin-bottom:1rem;">
-        <div>
-          <label class="form-label">Project Title *</label>
-          <input type="text" name="title" class="form-input" required placeholder="e.g. E-Commerce Platform with React & Flask">
-        </div>
-      </div>
+    <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.75rem; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #3B82F6;"></span>
+        Project Identification & Metadata
+      </h2>
 
       <div class="form-row cols2">
         <div>
-          <label class="form-label">Domain *</label>
-          <input type="text" name="domain" class="form-input" required placeholder="e.g. Full Stack Web Development">
+          <label class="form-label">Project ID (Unique Identifier) *</label>
+          <input type="text" name="project_code" id="projectCodeInput" class="form-input" required value="{{ suggested_1m_code }}" placeholder="e.g. AM-1M-001" style="font-family: var(--font-mono); font-weight: 700; color: #60A5FA;">
+          <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem; display: block;">Immutable once created. Auto-generated based on duration.</span>
+        </div>
+        <div>
+          <label class="form-label">Project Title *</label>
+          <input type="text" name="title" class="form-input" required placeholder="e.g. AI Student Performance Analyzer">
+        </div>
+      </div>
+
+      <div class="form-row cols3">
+        <div>
+          <label class="form-label">Project Category / Domain *</label>
+          <input type="text" name="domain" class="form-input" required placeholder="e.g. AI & Data Science">
         </div>
         <div>
           <label class="form-label">Difficulty Level</label>
@@ -87,66 +95,89 @@
             <option value="Advanced">Advanced</option>
           </select>
         </div>
+        <div>
+          <label class="form-label">Initial Status</label>
+          <select name="status" class="form-select">
+            <option value="ACTIVE" selected>Active (Available for Assignment)</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+        </div>
       </div>
 
       <div class="form-row" style="margin-bottom:1rem;margin-top:1rem;">
         <div>
-          <label class="form-label">Description *</label>
-          <textarea name="description" class="form-textarea" required placeholder="Brief overview of the project..."></textarea>
+          <label class="form-label">Project Description *</label>
+          <textarea name="description" class="form-textarea" required placeholder="Detailed overview and scope of the internship project..."></textarea>
         </div>
       </div>
 
       <div class="form-row cols2">
         <div>
           <label class="form-label">Problem Statement</label>
-          <textarea name="problem_statement" class="form-textarea" placeholder="What problem does this project solve?"></textarea>
+          <textarea name="problem_statement" class="form-textarea" placeholder="Describe the industrial or technical problem this project addresses..."></textarea>
         </div>
         <div>
           <label class="form-label">Expected Outcome</label>
-          <textarea name="expected_outcome" class="form-textarea" placeholder="What should the completed project deliver?"></textarea>
+          <textarea name="expected_outcome" class="form-textarea" placeholder="Expected software deliverables, architecture, and live demo..."></textarea>
         </div>
       </div>
 
       <div class="form-row cols2" style="margin-top:1rem;">
         <div>
-          <label class="form-label">Tech Stack (comma-separated)</label>
-          <input type="text" name="tech_stack" class="form-input" placeholder="Python, Flask, React, PostgreSQL...">
+          <label class="form-label">Technologies / Tech Stack (comma-separated)</label>
+          <input type="text" name="tech_stack" class="form-input" placeholder="Python, Flask, PostgreSQL, React, Docker...">
         </div>
         <div>
-          <label class="form-label">Objectives (one per line)</label>
-          <textarea name="objectives" class="form-textarea" placeholder="Build a RESTful API&#10;Implement JWT auth&#10;Deploy to cloud"></textarea>
+          <label class="form-label">Learning Objectives (one per line)</label>
+          <textarea name="objectives" class="form-textarea" placeholder="Master RESTful API design&#10;Implement end-to-end data pipeline&#10;Deploy production microservices"></textarea>
         </div>
       </div>
     </div>
 
-    <!-- ── Duration Selection ─────────────────────────────────────────────── -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem;">
-      <h2 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1rem;">Duration & Week Structure</h2>
-      <div style="display: flex; gap: 0.85rem; margin-bottom: 1.5rem;">
-        <label id="dur1m" style="flex:1;display:flex;align-items:center;gap:0.85rem;padding:1rem 1.25rem;border:2px solid rgba(59,130,246,0.45);border-radius:12px;cursor:pointer;background:rgba(59,130,246,0.08);transition:all 0.2s;">
+    <!-- ── Duration Selection & Auto-Weeks ─────────────────────────────────── -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.75rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: #8B5CF6;"></span>
+          Internship Duration & Weekly Milestone Plan
+        </h2>
+        <span id="weekCountBadge" style="font-size: 0.75rem; font-weight: 700; color: #60A5FA; background: rgba(59,130,246,0.12); padding: 0.2rem 0.6rem; border-radius: 999px;">
+          4 Weeks Plan
+        </span>
+      </div>
+
+      <!-- Duration Selector Cards -->
+      <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+        <label id="dur1m" style="flex:1;display:flex;align-items:center;gap:0.85rem;padding:1.1rem 1.25rem;border:2px solid rgba(59,130,246,0.5);border-radius:12px;cursor:pointer;background:rgba(59,130,246,0.08);transition:all 0.2s;">
           <input type="radio" name="duration_months" value="1" checked style="accent-color:#3B82F6;" onchange="changeDuration(1)">
           <div>
-            <div style="font-weight:700;color:var(--text-primary);">1 Month</div>
-            <div style="font-size:0.75rem;color:var(--text-muted);">Generates 4 editable weeks</div>
+            <div style="font-weight:800;color:var(--text-primary);font-size:0.95rem;">1 MONTH TRACK</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.15rem;">Generates exactly 4 weekly milestones (Week 1 – Week 4)</div>
           </div>
         </label>
-        <label id="dur3m" style="flex:1;display:flex;align-items:center;gap:0.85rem;padding:1rem 1.25rem;border:2px solid rgba(255,255,255,0.06);border-radius:12px;cursor:pointer;transition:all 0.2s;">
-          <input type="radio" name="duration_months" value="3" style="accent-color:#3B82F6;" onchange="changeDuration(3)">
+        <label id="dur3m" style="flex:1;display:flex;align-items:center;gap:0.85rem;padding:1.1rem 1.25rem;border:2px solid rgba(255,255,255,0.06);border-radius:12px;cursor:pointer;transition:all 0.2s;">
+          <input type="radio" name="duration_months" value="3" style="accent-color:#8B5CF6;" onchange="changeDuration(3)">
           <div>
-            <div style="font-weight:700;color:var(--text-primary);">3 Months</div>
-            <div style="font-size:0.75rem;color:var(--text-muted);">Generates 12 editable weeks</div>
+            <div style="font-weight:800;color:var(--text-primary);font-size:0.95rem;">3 MONTHS TRACK</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.15rem;">Generates exactly 12 weekly milestones (Week 1 – Week 12)</div>
           </div>
         </label>
       </div>
 
-      <!-- Week Accordions (generated by JS) -->
+      <!-- Dynamic Weeks Accordion -->
       <div id="weeksContainer"></div>
     </div>
 
-    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.9rem;font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:0.6rem;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      Create Project & Save All Weeks
-    </button>
+    <!-- Submit Button -->
+    <div style="display: flex; gap: 1rem;">
+      <a href="{{ url_for('admin.projects_list') }}" class="btn btn-secondary" style="flex: 1; justify-content: center; padding: 0.9rem;">
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-primary" style="flex: 2; justify-content: center; padding: 0.9rem; font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        SAVE PROJECT & ALL WEEKS
+      </button>
+    </div>
   </form>
 </div>
 
@@ -157,47 +188,53 @@
       <h3 style="font-size:1rem;font-weight:700;color:var(--text-primary);margin:0;" id="taskModalTitle">Add Task</h3>
       <button onclick="closeTaskModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.4rem;padding:0;line-height:1;">&times;</button>
     </div>
+    
     <div class="form-row" style="margin-bottom:0.85rem;">
       <div>
         <label class="form-label">Task Title *</label>
-        <input type="text" id="modalTaskTitle" class="form-input" placeholder="e.g. Build REST API endpoints">
+        <input type="text" id="modalTaskTitle" class="form-input" placeholder="e.g. Implement Requirement Analysis & Data Modeling">
       </div>
     </div>
+
     <div class="form-row cols2" style="margin-bottom:0.85rem;">
       <div>
         <label class="form-label">Priority</label>
         <select id="modalTaskPriority" class="form-select">
-          <option value="High">High</option>
-          <option value="Medium" selected>Medium</option>
+          <option value="High" selected>High</option>
+          <option value="Medium">Medium</option>
           <option value="Low">Low</option>
         </select>
       </div>
       <div>
         <label class="form-label">Estimated Hours</label>
-        <input type="number" id="modalTaskHours" class="form-input" placeholder="e.g. 8" min="0" step="0.5">
+        <input type="number" id="modalTaskHours" class="form-input" placeholder="e.g. 5" min="0.5" step="0.5">
       </div>
     </div>
+
     <div class="form-row" style="margin-bottom:0.85rem;">
       <div>
         <label class="form-label">Description</label>
-        <textarea id="modalTaskDesc" class="form-textarea" placeholder="What does this task involve?"></textarea>
+        <textarea id="modalTaskDesc" class="form-textarea" placeholder="Overview of what the intern needs to build or analyze..."></textarea>
       </div>
     </div>
+
     <div class="form-row" style="margin-bottom:0.85rem;">
       <div>
         <label class="form-label">Instructions</label>
-        <textarea id="modalTaskInstr" class="form-textarea" placeholder="Step-by-step instructions for the intern..."></textarea>
+        <textarea id="modalTaskInstr" class="form-textarea" placeholder="Step-by-step guidance and architectural instructions..."></textarea>
       </div>
     </div>
+
     <div class="form-row" style="margin-bottom:1.25rem;">
       <div>
-        <label class="form-label">Expected Output</label>
-        <textarea id="modalTaskOutput" class="form-textarea" placeholder="What should the intern produce / submit?"></textarea>
+        <label class="form-label">Expected Output / Deliverable</label>
+        <textarea id="modalTaskOutput" class="form-textarea" placeholder="e.g. Requirement analysis document and ER diagram PDF"></textarea>
       </div>
     </div>
+
     <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-      <button onclick="closeTaskModal()" class="btn btn-secondary">Cancel</button>
-      <button onclick="saveTask()" class="btn btn-primary">Add Task</button>
+      <button type="button" onclick="closeTaskModal()" class="btn btn-secondary">Cancel</button>
+      <button type="button" onclick="saveTask()" class="btn btn-primary" style="font-weight: 700;">Save Task</button>
     </div>
   </div>
 </div>
@@ -208,34 +245,70 @@
 <script>
   let currentWeekNum = null;
   const weekTasks = {}; // weekNum -> array of task objects
+  const suggested1m = "{{ suggested_1m_code }}";
+  const suggested3m = "{{ suggested_3m_code }}";
+
+  const defaultTitles1M = [
+    "Requirement Analysis & System Architecture",
+    "Core Development & Data/ML Pipeline",
+    "API Backend & Frontend Integration",
+    "Testing, Live Deployment & Demonstration"
+  ];
+
+  const defaultTitles3M = [
+    "Enterprise Architecture & Threat Modeling",
+    "Core Backend Architecture & API Specifications",
+    "Data Pipelines & Algorithm Optimization",
+    "Month 1 Milestone Review & Defense",
+    "Advanced Feature Implementation & Middleware",
+    "Security Hardening & Token Introspection",
+    "Intrusion & Anomaly Detection Modules",
+    "Month 2 Milestone Review & Benchmarking",
+    "Admin Dashboard & Real-Time Analytics UI",
+    "Docker Containerization & Cloud Deployment",
+    "End-to-End Penetration & Load Testing",
+    "Final Technical Defense & Documentation"
+  ];
 
   function changeDuration(months) {
     const d1 = document.getElementById('dur1m');
     const d3 = document.getElementById('dur3m');
+    const codeInput = document.getElementById('projectCodeInput');
+    const badge = document.getElementById('weekCountBadge');
     const weeks = months === 1 ? 4 : 12;
 
     if (months === 1) {
-      d1.style.borderColor = 'rgba(59,130,246,0.45)'; d1.style.background = 'rgba(59,130,246,0.08)';
+      d1.style.borderColor = 'rgba(59,130,246,0.5)'; d1.style.background = 'rgba(59,130,246,0.08)';
       d3.style.borderColor = 'rgba(255,255,255,0.06)'; d3.style.background = 'transparent';
+      badge.textContent = '4 Weeks Plan';
+      if (!codeInput.dataset.userEdited) codeInput.value = suggested1m;
     } else {
-      d3.style.borderColor = 'rgba(59,130,246,0.45)'; d3.style.background = 'rgba(59,130,246,0.08)';
+      d3.style.borderColor = 'rgba(139,92,246,0.5)'; d3.style.background = 'rgba(139,92,246,0.08)';
       d1.style.borderColor = 'rgba(255,255,255,0.06)'; d1.style.background = 'transparent';
+      badge.textContent = '12 Weeks Plan';
+      if (!codeInput.dataset.userEdited) codeInput.value = suggested3m;
     }
-    renderWeeks(weeks);
+    renderWeeks(weeks, months === 1 ? defaultTitles1M : defaultTitles3M);
   }
 
-  function renderWeeks(count) {
+  document.getElementById('projectCodeInput').addEventListener('input', function() {
+    this.dataset.userEdited = 'true';
+  });
+
+  function renderWeeks(count, titleDefaults) {
     const container = document.getElementById('weeksContainer');
     container.innerHTML = '';
     for (let i = 1; i <= count; i++) {
       if (!weekTasks[i]) weekTasks[i] = [];
+      const defaultTitle = titleDefaults && titleDefaults[i-1] ? `Week ${i}: ${titleDefaults[i-1]}` : `Week ${i} Milestone`;
+      
       container.innerHTML += `
         <div class="week-accordion">
           <div class="week-header" onclick="toggleWeek(${i})" id="weekHeader${i}">
-            <div style="width:28px;height:28px;border-radius:50%;background:rgba(59,130,246,0.2);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#60A5FA;flex-shrink:0;">${i}</div>
+            <div style="width:30px;height:30px;border-radius:50%;background:rgba(59,130,246,0.18);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#60A5FA;flex-shrink:0;">${i}</div>
             <div style="flex:1;">
-              <div style="font-weight:700;font-size:0.875rem;color:var(--text-primary);">Week ${i}</div>
-              <div style="font-size:0.75rem;color:var(--text-muted);" id="weekSubtitle${i}">0 tasks</div>
+              <div style="font-weight:700;font-size:0.875rem;color:var(--text-primary);" id="weekHeaderTitle${i}">Week ${i} — ${titleDefaults && titleDefaults[i-1] ? titleDefaults[i-1] : 'Milestone Plan'}</div>
+              <div style="font-size:0.72rem;color:var(--text-muted);" id="weekSubtitle${i}">${weekTasks[i].length} tasks defined</div>
             </div>
             <svg id="weekChevron${i}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
@@ -243,29 +316,29 @@
             <div class="form-row cols2" style="margin-bottom:0.85rem;">
               <div>
                 <label class="form-label">Week Title</label>
-                <input type="text" name="week_${i}_title" class="form-input" placeholder="e.g. Setup & Architecture">
+                <input type="text" name="week_${i}_title" value="${defaultTitle}" class="form-input" placeholder="e.g. Week ${i}: Requirements Analysis">
               </div>
               <div>
-                <label class="form-label">Objective</label>
-                <input type="text" name="week_${i}_objective" class="form-input" placeholder="e.g. Build foundational system structure">
+                <label class="form-label">Week Objective</label>
+                <input type="text" name="week_${i}_objective" class="form-input" placeholder="Key objective for Week ${i}...">
               </div>
             </div>
             <div class="form-row" style="margin-bottom:1rem;">
               <div>
-                <label class="form-label">Instructions for Interns</label>
-                <textarea name="week_${i}_instructions" class="form-textarea" placeholder="What should the intern do this week?"></textarea>
+                <label class="form-label">Instructions / Guidance</label>
+                <textarea name="week_${i}_instructions" class="form-textarea" placeholder="Detailed roadmap instructions for students executing Week ${i}..."></textarea>
               </div>
             </div>
 
             <!-- Tasks List -->
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;">
-              <span style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Tasks</span>
-              <button type="button" onclick="openTaskModal(${i})" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;gap:0.35rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;padding-top:0.5rem;border-top:1px solid rgba(255,255,255,0.06);">
+              <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Week ${i} Task Library</span>
+              <button type="button" onclick="openTaskModal(${i})" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;padding:0.3rem 0.65rem;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Add Task
+                + Add Task
               </button>
             </div>
-            <div id="taskList${i}" style="min-height:40px;"></div>
+            <div id="taskList${i}" style="min-height:30px;"></div>
             <input type="hidden" name="week_${i}_tasks" id="weekTasksInput${i}" value="[]">
           </div>
         </div>
@@ -285,9 +358,9 @@
 
   function openTaskModal(weekNum) {
     currentWeekNum = weekNum;
-    document.getElementById('taskModalTitle').textContent = `Add Task — Week ${weekNum}`;
+    document.getElementById('taskModalTitle').textContent = `Add Task to Week ${weekNum}`;
     document.getElementById('modalTaskTitle').value = '';
-    document.getElementById('modalTaskPriority').value = 'Medium';
+    document.getElementById('modalTaskPriority').value = 'High';
     document.getElementById('modalTaskHours').value = '';
     document.getElementById('modalTaskDesc').value = '';
     document.getElementById('modalTaskInstr').value = '';
@@ -303,7 +376,7 @@
 
   function saveTask() {
     const title = document.getElementById('modalTaskTitle').value.trim();
-    if (!title) { alert('Task title is required.'); return; }
+    if (!title) { alert('Task Title is required.'); return; }
 
     const task = {
       title,
@@ -325,12 +398,12 @@
     const tasks = weekTasks[weekNum];
     const colors = { High: 'priority-High', Medium: 'priority-Medium', Low: 'priority-Low' };
 
-    el.innerHTML = tasks.length === 0 ? `<div style="font-size:0.8rem;color:var(--text-muted);padding:0.5rem 0;">No tasks added yet.</div>` :
+    el.innerHTML = tasks.length === 0 ? `<div style="font-size:0.78rem;color:var(--text-muted);padding:0.4rem 0;">No tasks added to this week yet. Click "+ Add Task" to add weekly milestones.</div>` :
       tasks.map((t, idx) => `
         <div class="task-row">
           <span class="priority-badge ${colors[t.priority]}">${t.priority}</span>
-          <span style="flex:1;font-size:0.845rem;color:var(--text-primary);font-weight:500;">${t.title}</span>
-          ${t.estimated_hours ? `<span style="font-size:0.75rem;color:var(--text-muted);">${t.estimated_hours}h</span>` : ''}
+          <span style="flex:1;font-size:0.83rem;color:var(--text-primary);font-weight:500;">${t.title}</span>
+          ${t.estimated_hours ? `<span style="font-size:0.75rem;color:var(--text-muted);">${t.estimated_hours} hrs</span>` : ''}
           <button type="button" onclick="removeTask(${weekNum}, ${idx})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0.2rem;line-height:1;" title="Remove task">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -348,7 +421,7 @@
 
   function updateSubtitle(weekNum) {
     const count = weekTasks[weekNum].length;
-    document.getElementById(`weekSubtitle${weekNum}`).textContent = `${count} task${count !== 1 ? 's' : ''}`;
+    document.getElementById(`weekSubtitle${weekNum}`).textContent = `${count} task${count !== 1 ? 's' : ''} defined`;
   }
 
   // Close modal on backdrop click
@@ -357,6 +430,6 @@
   });
 
   // Init with 4 weeks (1 month default)
-  window.addEventListener('DOMContentLoaded', () => renderWeeks(4));
+  window.addEventListener('DOMContentLoaded', () => renderWeeks(4, defaultTitles1M));
 </script>
 {% endblock %}

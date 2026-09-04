@@ -1,95 +1,232 @@
 {% extends 'admin/base_admin.html' %}
 
-{% block title %}{{ project.title }} — Manage Tasks{% endblock %}
+{% block title %}{{ project.project_code }} — {{ project.title }} — ANTI MATRIX Admin{% endblock %}
 
 {% block extra_css %}
 <style>
-  .form-label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
-  .form-input, .form-textarea, .form-select { width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 0.85rem; font-family: var(--font-sans); outline: none; transition: border-color 0.2s; }
+  .form-label { font-size: 0.76rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.45rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .form-input, .form-textarea, .form-select {
+    width: 100%; box-sizing: border-box; padding: 0.7rem 0.95rem; background: var(--bg-input);
+    border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);
+    font-size: 0.875rem; font-family: var(--font-sans); outline: none; transition: border-color 0.2s;
+  }
   .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: rgba(59,130,246,0.5); }
-  .form-textarea { resize: vertical; min-height: 70px; }
-  .priority-badge { font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 5px; }
-  .priority-High { background: rgba(239,68,68,0.15); color: #F87171; }
-  .priority-Medium { background: rgba(245,158,11,0.15); color: #FBBF24; }
-  .priority-Low { background: rgba(16,185,129,0.15); color: #34D399; }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .form-textarea { resize: vertical; min-height: 75px; }
+  .form-row { display: grid; gap: 1rem; margin-bottom: 1rem; }
+  .form-row.cols2 { grid-template-columns: 1fr 1fr; }
+  .form-row.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+  .priority-badge { font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 5px; white-space: nowrap; }
+  .priority-High { background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.25); }
+  .priority-Medium { background: rgba(245,158,11,0.15); color: #FBBF24; border: 1px solid rgba(245,158,11,0.25); }
+  .priority-Low { background: rgba(16,185,129,0.15); color: #34D399; border: 1px solid rgba(16,185,129,0.25); }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   .modal-overlay.active { opacity: 1; pointer-events: all; }
-  .modal-box { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.75rem; width: 520px; max-width: 95vw; max-height: 85vh; overflow-y: auto; }
+  .modal-box { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.75rem; width: 540px; max-width: 95vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="padding: 2rem 2.5rem;">
+<div style="padding: 2rem 2.5rem; max-width: 980px;">
 
-  <!-- Header -->
+  <!-- Breadcrumb & Top Controls -->
   <div style="margin-bottom: 1.75rem;">
-    <a href="{{ url_for('admin.projects_list') }}" style="display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-muted);font-size:0.85rem;text-decoration:none;margin-bottom:0.75rem;">
+    <a href="{{ url_for('admin.projects_list') }}" style="display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-muted);font-size:0.85rem;text-decoration:none;margin-bottom:0.75rem;" onmouseover="this.style.color='#60A5FA'" onmouseout="this.style.color='var(--text-muted)'">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      Back to Projects
+      Back to Project Database
     </a>
-    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-      <div style="flex:1;">
-        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.2rem;">
-          <span style="font-family:var(--font-mono);font-size:0.75rem;color:#60A5FA;background:rgba(59,130,246,0.1);padding:0.15rem 0.5rem;border-radius:5px;">{{ project.project_code }}</span>
-          <span style="font-size:0.75rem;font-weight:700;padding:0.15rem 0.55rem;border-radius:999px;
-            {% if project.difficulty == 'Advanced' %}background:rgba(239,68,68,0.12);color:#F87171;{% elif project.difficulty == 'Beginner' %}background:rgba(16,185,129,0.12);color:#34D399;{% else %}background:rgba(245,158,11,0.12);color:#FBBF24;{% endif %}">{{ project.difficulty }}</span>
+    
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
+          <span style="font-family:var(--font-mono);font-size:0.85rem;font-weight:700;color:#60A5FA;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);padding:0.25rem 0.65rem;border-radius:6px;">
+            {{ project.project_code }}
+          </span>
+          <span style="font-size:0.75rem;font-weight:700;padding:0.2rem 0.65rem;border-radius:999px;
+            {% if project.is_active %}background:rgba(16,185,129,0.12);color:#34D399;border:1px solid rgba(16,185,129,0.25);{% else %}background:rgba(239,68,68,0.12);color:#F87171;border:1px solid rgba(239,68,68,0.25);{% endif %}">
+            {{ project.status }}
+          </span>
+          <span style="font-size:0.75rem;font-weight:600;color:var(--text-muted);background:rgba(255,255,255,0.06);padding:0.2rem 0.55rem;border-radius:4px;">
+            {{ project.duration_months }} Month Track ({{ project.duration_weeks }} Weeks)
+          </span>
         </div>
-        <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.2rem;">{{ project.title }}</h1>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">{{ project.domain }} · {{ project.duration_weeks }}-week program</p>
+        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.2rem;">{{ project.title }}</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">{{ project.domain }} · Created on {{ project.created_at.strftime('%d %b %Y') if project.created_at else '—' }}</p>
       </div>
-      <a href="{{ url_for('admin.assign_tasks') }}" class="btn btn-primary" style="display:flex;align-items:center;gap:0.5rem;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        Assign to Employee
-      </a>
+
+      <div style="display: flex; gap: 0.75rem;">
+        <form method="POST" action="{{ url_for('admin.toggle_project_status', project_id=project.id) }}" style="display:inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-secondary" style="font-weight: 600; font-size: 0.85rem;">
+            {% if project.is_active %}Deactivate Project{% else %}Activate Project{% endif %}
+          </button>
+        </form>
+        <a href="{{ url_for('admin.assign_tasks') }}" class="btn btn-primary" style="display:flex;align-items:center;gap:0.45rem;font-weight:700;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Assign to Employee
+        </a>
+      </div>
     </div>
   </div>
 
-  <!-- Weeks + Tasks -->
+  <!-- ── Edit Project Details Form ─────────────────────────────────────────── -->
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.75rem; margin-bottom: 2rem;">
+    <h2 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: #3B82F6;"></span>
+      Project Information
+    </h2>
+
+    <form method="POST" action="{{ url_for('admin.edit_project', project_id=project.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-row cols2">
+        <div>
+          <label class="form-label">Project ID (Read-Only / Permanent)</label>
+          <input type="text" class="form-input" value="{{ project.project_code }}" disabled style="font-family: var(--font-mono); font-weight: 700; color: #60A5FA; background: rgba(59, 130, 246, 0.06); cursor: not-allowed; border-color: rgba(59, 130, 246, 0.2);">
+          <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Protected: Project IDs are immutable to preserve historical college assignments.</span>
+        </div>
+        <div>
+          <label class="form-label">Project Title *</label>
+          <input type="text" name="title" class="form-input" required value="{{ project.title }}">
+        </div>
+      </div>
+
+      <div class="form-row cols3">
+        <div>
+          <label class="form-label">Category / Domain *</label>
+          <input type="text" name="domain" class="form-input" required value="{{ project.domain }}">
+        </div>
+        <div>
+          <label class="form-label">Difficulty Level</label>
+          <select name="difficulty" class="form-select">
+            <option value="Beginner" {% if project.difficulty == 'Beginner' %}selected{% endif %}>Beginner</option>
+            <option value="Intermediate" {% if project.difficulty == 'Intermediate' %}selected{% endif %}>Intermediate</option>
+            <option value="Advanced" {% if project.difficulty == 'Advanced' %}selected{% endif %}>Advanced</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="ACTIVE" {% if project.is_active %}selected{% endif %}>Active</option>
+            <option value="INACTIVE" {% if not project.is_active %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-bottom:1rem;margin-top:1rem;">
+        <div>
+          <label class="form-label">Description *</label>
+          <textarea name="description" class="form-textarea" required>{{ project.description }}</textarea>
+        </div>
+      </div>
+
+      <div class="form-row cols2">
+        <div>
+          <label class="form-label">Problem Statement</label>
+          <textarea name="problem_statement" class="form-textarea">{{ project.problem_statement or '' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Expected Outcome</label>
+          <textarea name="expected_outcome" class="form-textarea">{{ project.expected_outcome or '' }}</textarea>
+        </div>
+      </div>
+
+      <div class="form-row cols2" style="margin-top:1rem;">
+        <div>
+          <label class="form-label">Tech Stack (comma-separated)</label>
+          <input type="text" name="tech_stack" class="form-input" value="{{ project.tech_stack|join(', ') }}">
+        </div>
+        <div>
+          <label class="form-label">Learning Objectives (one per line)</label>
+          <textarea name="objectives" class="form-textarea">{{ project.objectives|join('\n') }}</textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:1.25rem;">
+        <button type="submit" class="btn btn-primary" style="font-weight:700;">
+          Save Project Changes
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Week & Task Management ───────────────────────────────────────────── -->
+  <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+    <div>
+      <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.2rem;">
+        Weekly Milestone Roadmaps ({{ weeks|length }} Weeks)
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+        Manage weekly objectives, instructions, and task templates for this project
+      </p>
+    </div>
+  </div>
+
   {% for week in weeks %}
-  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 14px; overflow: hidden; margin-bottom: 1.25rem;">
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 14px; overflow: hidden; margin-bottom: 1.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
+    
     <!-- Week Header -->
-    <div style="padding: 1.1rem 1.5rem; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-subtle); display:flex;align-items:center;gap:0.85rem;">
-      <div style="width:34px;height:34px;border-radius:50%;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:800;color:#60A5FA;flex-shrink:0;">{{ week.week_number }}</div>
-      <div style="flex:1;">
-        <div style="font-weight:700;color:var(--text-primary);">{{ week.title }}</div>
+    <div style="padding: 1.15rem 1.5rem; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-subtle); display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;">
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(59,130,246,0.18);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:800;color:#60A5FA;flex-shrink:0;">
+        {{ week.week_number }}
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-weight:700;color:var(--text-primary);font-size:0.95rem;">{{ week.title }}</div>
         {% if week.objective %}
-        <div style="font-size:0.78rem;color:var(--text-muted);">{{ week.objective[:80] }}{% if week.objective|length > 80 %}...{% endif %}</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">{{ week.objective }}</div>
         {% endif %}
       </div>
+      
       <div style="display:flex;align-items:center;gap:0.5rem;">
-        <span style="font-size:0.75rem;color:var(--text-muted);">{{ week.tasks.count() }} tasks</span>
-        <button type="button" onclick="openAddTask({{ week.id }}, {{ week.week_number }})" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;gap:0.35rem;">
+        <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);background:rgba(255,255,255,0.06);padding:0.25rem 0.6rem;border-radius:6px;">
+          {{ week.tasks.count() }} tasks
+        </span>
+        <button type="button" onclick="openEditWeek({{ week.id }}, '{{ week.title|replace("'", "\\'") }}', '{{ (week.objective or "")|replace("'", "\\'") }}', '{{ (week.instructions or "")|replace("'", "\\'") }}')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;">
+          Edit Week
+        </button>
+        <button type="button" onclick="openAddTask({{ week.id }}, {{ week.week_number }})" class="btn btn-primary btn-sm" style="display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;font-weight:700;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Task
+          + Add Task
         </button>
       </div>
     </div>
 
-    <!-- Task Rows -->
+    <!-- Task List -->
     <div>
       {% for task in week.tasks.all() %}
-      <div style="display:flex;align-items:center;gap:0.85rem;padding:0.85rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <div style="display:flex;align-items:center;gap:0.85rem;padding:0.9rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.15s;" onmouseover="this.style.background='rgba(59,130,246,0.02)'" onmouseout="this.style.background='transparent'">
         <span class="priority-badge priority-{{ task.priority }}">{{ task.priority }}</span>
         <div style="flex:1;min-width:0;">
           <div style="font-weight:600;font-size:0.875rem;color:var(--text-primary);">{{ task.title }}</div>
           {% if task.description %}
-          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.15rem;">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</div>
+          <div style="font-size:0.76rem;color:var(--text-muted);margin-top:0.15rem;">{{ task.description }}</div>
+          {% endif %}
+          {% if task.expected_output %}
+          <div style="font-size:0.72rem;color:#60A5FA;margin-top:0.2rem;">Deliverable: {{ task.expected_output }}</div>
           {% endif %}
         </div>
         {% if task.estimated_hours %}
-        <span style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-mono);white-space:nowrap;">{{ task.estimated_hours }}h</span>
+        <span style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-mono);white-space:nowrap;background:rgba(255,255,255,0.05);padding:0.15rem 0.45rem;border-radius:4px;">
+          {{ task.estimated_hours }} hrs
+        </span>
         {% endif %}
         <div style="display:flex;gap:0.4rem;">
-          <button type="button" onclick="openEditTask({{ task.id }}, {{ week.id }}, '{{ task.title|replace("'", "\\'") }}', '{{ task.priority }}', '{{ task.estimated_hours or "" }}', '{{ (task.description or '')|replace("'", "\\'") }}', '{{ (task.instructions or '')|replace("'", "\\'") }}', '{{ (task.expected_output or '')|replace("'", "\\'") }}')" class="btn btn-secondary btn-sm">Edit</button>
-          <form method="POST" action="{{ url_for('admin.delete_task', task_id=task.id) }}" style="display:inline;" onsubmit="return confirm('Delete task: {{ task.title[:30] }}?')">
+          <button type="button" onclick="openEditTask({{ task.id }}, '{{ task.title|replace("'", "\\'") }}', '{{ task.priority }}', '{{ task.estimated_hours or "" }}', '{{ (task.description or '')|replace("'", "\\'") }}', '{{ (task.instructions or '')|replace("'", "\\'") }}', '{{ (task.expected_output or '')|replace("'", "\\'") }}')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;">
+            Edit
+          </button>
+          <form method="POST" action="{{ url_for('admin.delete_task', task_id=task.id) }}" style="display:inline;" onsubmit="return confirm('Delete task: {{ task.title[:35] }}?')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#F87171;border:1px solid rgba(239,68,68,0.2);">Delete</button>
+            <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#F87171;border:1px solid rgba(239,68,68,0.2);font-size:0.75rem;">
+              Delete
+            </button>
           </form>
         </div>
       </div>
       {% else %}
-      <div style="padding: 1.25rem 1.5rem; color: var(--text-muted); font-size: 0.85rem;">
-        No tasks yet. <button type="button" onclick="openAddTask({{ week.id }}, {{ week.week_number }})" style="background:none;border:none;color:#60A5FA;cursor:pointer;font-size:0.85rem;padding:0;">Add the first task →</button>
+      <div style="padding: 1.25rem 1.5rem; color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between;">
+        <span>No tasks configured for Week {{ week.week_number }} yet.</span>
+        <button type="button" onclick="openAddTask({{ week.id }}, {{ week.week_number }})" class="btn btn-secondary btn-sm">
+          + Add First Task
+        </button>
       </div>
       {% endfor %}
     </div>
@@ -107,39 +244,45 @@
     </div>
     <form id="addTaskForm" method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
       <div style="margin-bottom:0.85rem;">
         <label class="form-label">Task Title *</label>
-        <input type="text" name="title" id="addTaskName" class="form-input" required placeholder="e.g. Implement JWT authentication">
+        <input type="text" name="title" class="form-input" required placeholder="e.g. Implement REST API endpoints">
       </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:0.85rem;">
         <div>
           <label class="form-label">Priority</label>
           <select name="priority" class="form-select">
-            <option value="High">High</option>
-            <option value="Medium" selected>Medium</option>
+            <option value="High" selected>High</option>
+            <option value="Medium">Medium</option>
             <option value="Low">Low</option>
           </select>
         </div>
         <div>
           <label class="form-label">Estimated Hours</label>
-          <input type="number" name="estimated_hours" class="form-input" placeholder="e.g. 6" min="0" step="0.5">
+          <input type="number" name="estimated_hours" class="form-input" placeholder="e.g. 6" min="0.5" step="0.5">
         </div>
       </div>
+
       <div style="margin-bottom:0.85rem;">
         <label class="form-label">Description</label>
-        <textarea name="description" class="form-textarea" placeholder="What does this task involve?"></textarea>
+        <textarea name="description" class="form-textarea" placeholder="Overview of the task requirement..."></textarea>
       </div>
+
       <div style="margin-bottom:0.85rem;">
         <label class="form-label">Instructions for Intern</label>
-        <textarea name="instructions" class="form-textarea" placeholder="Step-by-step guide for the intern..."></textarea>
+        <textarea name="instructions" class="form-textarea" placeholder="Step-by-step guidance for completing this task..."></textarea>
       </div>
+
       <div style="margin-bottom:1.25rem;">
-        <label class="form-label">Expected Output</label>
-        <textarea name="expected_output" class="form-textarea" placeholder="What should the intern deliver?"></textarea>
+        <label class="form-label">Expected Output / Deliverable</label>
+        <textarea name="expected_output" class="form-textarea" placeholder="e.g. Working API route code and Postman collection"></textarea>
       </div>
+
       <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
         <button type="button" onclick="closeModal('addTaskModal')" class="btn btn-secondary">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Task</button>
+        <button type="submit" class="btn btn-primary" style="font-weight: 700;">Save Task</button>
       </div>
     </form>
   </div>
@@ -154,10 +297,12 @@
     </div>
     <form id="editTaskForm" method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
       <div style="margin-bottom:0.85rem;">
         <label class="form-label">Task Title *</label>
-        <input type="text" name="title" id="editTaskName" class="form-input" required>
+        <input type="text" name="title" id="editTaskTitle" class="form-input" required>
       </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:0.85rem;">
         <div>
           <label class="form-label">Priority</label>
@@ -169,24 +314,61 @@
         </div>
         <div>
           <label class="form-label">Estimated Hours</label>
-          <input type="number" name="estimated_hours" id="editTaskHours" class="form-input" min="0" step="0.5">
+          <input type="number" name="estimated_hours" id="editTaskHours" class="form-input" min="0.5" step="0.5">
         </div>
       </div>
+
       <div style="margin-bottom:0.85rem;">
         <label class="form-label">Description</label>
         <textarea name="description" id="editTaskDesc" class="form-textarea"></textarea>
       </div>
+
       <div style="margin-bottom:0.85rem;">
         <label class="form-label">Instructions for Intern</label>
         <textarea name="instructions" id="editTaskInstr" class="form-textarea"></textarea>
       </div>
+
       <div style="margin-bottom:1.25rem;">
         <label class="form-label">Expected Output</label>
         <textarea name="expected_output" id="editTaskOutput" class="form-textarea"></textarea>
       </div>
+
       <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
         <button type="button" onclick="closeModal('editTaskModal')" class="btn btn-secondary">Cancel</button>
-        <button type="submit" class="btn btn-primary">Update Task</button>
+        <button type="submit" class="btn btn-primary" style="font-weight: 700;">Update Task</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Week Modal -->
+<div id="editWeekModal" class="modal-overlay">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+      <h3 style="font-size:1rem;font-weight:700;color:var(--text-primary);margin:0;" id="editWeekModalTitle">Edit Week</h3>
+      <button onclick="closeModal('editWeekModal')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.4rem;padding:0;line-height:1;">&times;</button>
+    </div>
+    <form id="editWeekForm" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <div style="margin-bottom:0.85rem;">
+        <label class="form-label">Week Title *</label>
+        <input type="text" name="title" id="editWeekTitle" class="form-input" required>
+      </div>
+
+      <div style="margin-bottom:0.85rem;">
+        <label class="form-label">Objective</label>
+        <input type="text" name="objective" id="editWeekObjective" class="form-input">
+      </div>
+
+      <div style="margin-bottom:1.25rem;">
+        <label class="form-label">Instructions / Description</label>
+        <textarea name="instructions" id="editWeekInstructions" class="form-textarea"></textarea>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+        <button type="button" onclick="closeModal('editWeekModal')" class="btn btn-secondary">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="font-weight: 700;">Update Week</button>
       </div>
     </form>
   </div>
@@ -196,32 +378,38 @@
 
 {% block extra_js %}
 <script>
-  function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
-  }
-
   function openAddTask(weekId, weekNum) {
-    document.getElementById('addTaskTitle').textContent = `Add Task — Week ${weekNum}`;
+    document.getElementById('addTaskTitle').textContent = `Add Task to Week ${weekNum}`;
     document.getElementById('addTaskForm').action = `/admin/projects/{{ project.id }}/weeks/${weekId}/tasks/add`;
-    document.getElementById('addTaskName').value = '';
     document.getElementById('addTaskModal').classList.add('active');
-    document.getElementById('addTaskName').focus();
   }
 
-  function openEditTask(taskId, weekId, title, priority, hours, desc, instr, output) {
+  function openEditTask(taskId, title, priority, hours, desc, instr, output) {
     document.getElementById('editTaskForm').action = `/admin/tasks/${taskId}/edit`;
-    document.getElementById('editTaskName').value = title;
+    document.getElementById('editTaskTitle').value = title;
     document.getElementById('editTaskPriority').value = priority;
     document.getElementById('editTaskHours').value = hours;
     document.getElementById('editTaskDesc').value = desc;
     document.getElementById('editTaskInstr').value = instr;
     document.getElementById('editTaskOutput').value = output;
     document.getElementById('editTaskModal').classList.add('active');
-    document.getElementById('editTaskName').focus();
   }
 
-  document.querySelectorAll('.modal-overlay').forEach(el => {
-    el.addEventListener('click', function(e) {
+  function openEditWeek(weekId, title, objective, instructions) {
+    document.getElementById('editWeekForm').action = `/admin/weeks/${weekId}/edit`;
+    document.getElementById('editWeekTitle').value = title;
+    document.getElementById('editWeekObjective').value = objective;
+    document.getElementById('editWeekInstructions').value = instructions;
+    document.getElementById('editWeekModal').classList.add('active');
+  }
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+  }
+
+  // Close modals on backdrop click
+  document.querySelectorAll('.modal-overlay').forEach(modal => {
+    modal.addEventListener('click', function(e) {
       if (e.target === this) this.classList.remove('active');
     });
   });

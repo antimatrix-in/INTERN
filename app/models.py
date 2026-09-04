@@ -239,7 +239,7 @@ class Internship(db.Model):
             if milestones:
                 completed = sum(1 for m in milestones if m.status in ['COMPLETED', 'APPROVED'])
                 self.progress_percent = int((completed / len(milestones)) * 100)
-                active_m = next((m for m in milestones if m.status in ['AVAILABLE', 'IN_PROGRESS', 'SUBMITTED', 'UNDER_REVIEW', 'REVISION_REQUIRED']), None)
+                active_m = next((m for m in milestones if m.status in ['AVAILABLE', 'IN_PROGRESS', 'SUBMITTED', 'UNDER_REVIEW', 'REDO_REQUIRED', 'REVISION_REQUIRED']), None)
                 if active_m:
                     self.current_stage = f"Week {active_m.week_number} ({active_m.status.replace('_', ' ').title()})"
                 elif completed == len(milestones):
@@ -291,10 +291,61 @@ class Project(db.Model):
     duration_weeks = db.Column(db.Integer, default=4) # 4 or 12
     duration_months = db.Column(db.Integer, default=1) # 1 or 3
     difficulty = db.Column(db.String(20), default='Intermediate') # Beginner, Intermediate, Advanced
+    is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     assignments = db.relationship('ProjectAssignment', backref='project', lazy='dynamic')
     project_weeks = db.relationship('ProjectWeek', backref='project', lazy='dynamic', cascade='all, delete-orphan', order_by='ProjectWeek.week_number.asc()')
+
+    @property
+    def status(self):
+        return 'ACTIVE' if self.is_active else 'INACTIVE'
+
+    @status.setter
+    def status(self, val):
+        if isinstance(val, bool):
+            self.is_active = val
+        else:
+            self.is_active = (str(val).upper() == 'ACTIVE')
+
+    @property
+    def total_weeks(self):
+        return self.duration_weeks or (4 if self.duration_months == 1 else 12)
+
+    @property
+    def active_colleges_count(self):
+        """Count of distinct colleges with active assignments for this project."""
+        try:
+            from app.models import Student, Internship, ProjectAssignment
+            count = db.session.query(Student.college_id).join(
+                Internship, Internship.student_id == Student.id
+            ).join(
+                ProjectAssignment, ProjectAssignment.internship_id == Internship.id
+            ).filter(
+                ProjectAssignment.project_id == self.id,
+                ProjectAssignment.status.in_(['ASSIGNED', 'IN_PROGRESS', 'SUBMITTED', 'REVISION_REQUIRED', 'UNDER_EVALUATION', 'ACTIVE']),
+                Internship.status == 'ACTIVE'
+            ).distinct().count()
+            return count
+        except Exception:
+            return 0
+
+    @property
+    def total_colleges_count(self):
+        """Count of distinct colleges with any assignments for this project."""
+        try:
+            from app.models import Student, Internship, ProjectAssignment
+            count = db.session.query(Student.college_id).join(
+                Internship, Internship.student_id == Student.id
+            ).join(
+                ProjectAssignment, ProjectAssignment.internship_id == Internship.id
+            ).filter(
+                ProjectAssignment.project_id == self.id
+            ).distinct().count()
+            return count
+        except Exception:
+            return 0
 
     @property
     def objectives(self):
@@ -320,6 +371,7 @@ class Project(db.Model):
 class ProjectWeek(db.Model):
     """Reusable project template week structure."""
     __tablename__ = 'project_weeks'
+    __table_args__ = (db.UniqueConstraint('project_id', 'week_number', name='uq_project_week'),)
 
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
@@ -357,6 +409,7 @@ class ProjectTask(db.Model):
     priority = db.Column(db.String(20), default='Medium')  # High, Medium, Low
     estimated_hours = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
         return f'<ProjectTask {self.title} ({self.priority})>'
@@ -414,7 +467,9 @@ class WeeklyMilestone(db.Model):
     objective = db.Column(db.Text, nullable=False)
     instructions = db.Column(db.Text, nullable=True)
     deliverables_json = db.Column(db.Text, nullable=True)
-    status = db.Column(db.String(30), default='LOCKED') # LOCKED, AVAILABLE, IN_PROGRESS, SUBMITTED, UNDER_REVIEW, APPROVED, REVISION_REQUIRED, COMPLETED
+    status = db.Column(db.String(30), default='LOCKED') # LOCKED, AVAILABLE, IN_PROGRESS, SUBMITTED, UNDER_REVIEW, APPROVED, REDO_REQUIRED, REVISION_REQUIRED, COMPLETED
+    started_at = db.Column(db.DateTime, nullable=True)
+    due_at = db.Column(db.DateTime, nullable=True)
     unlocked_at = db.Column(db.DateTime, nullable=True)
     completed_at = db.Column(db.DateTime, nullable=True)
     approved_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
@@ -425,6 +480,7 @@ class WeeklyMilestone(db.Model):
     # Relationships
     tasks = db.relationship('WeeklyTask', backref='milestone', lazy='dynamic', cascade='all, delete-orphan', order_by='WeeklyTask.order_num.asc()')
     submissions = db.relationship('WeeklySubmission', backref='milestone', lazy='dynamic', cascade='all, delete-orphan', order_by='WeeklySubmission.id.desc()')
+    evaluations = db.relationship('Evaluation', backref='milestone', lazy='dynamic')
     meetings = db.relationship('Meeting', backref='milestone', lazy='dynamic')
     approver = db.relationship('User', foreign_keys=[approved_by])
 
@@ -444,8 +500,46 @@ class WeeklyMilestone(db.Model):
         return self.status == 'LOCKED'
 
     @property
+    def is_overdue(self):
+        if self.due_at and self.status not in ['COMPLETED', 'APPROVED', 'SUBMITTED', 'UNDER_REVIEW']:
+            return datetime.utcnow() > self.due_at
+        return False
+
+    @property
+    def display_status(self):
+        norm = (self.status or '').upper()
+        if norm in ['COMPLETED', 'APPROVED']:
+            return 'COMPLETED'
+        if norm in ['SUBMITTED', 'UNDER_REVIEW']:
+            return 'UNDER_REVIEW'
+        if norm in ['REDO_REQUIRED', 'REVISION_REQUIRED']:
+            return 'REDO_REQUIRED'
+        if norm == 'LOCKED':
+            return 'LOCKED'
+        if norm in ['AVAILABLE', 'IN_PROGRESS']:
+            if self.is_overdue:
+                return 'OVERDUE'
+            return norm
+        return norm
+
+    @property
+    def all_tasks_completed(self):
+        task_list = self.tasks.all()
+        if not task_list:
+            return True
+        return all(t.is_completed for t in task_list)
+
+    @property
+    def completed_tasks_count(self):
+        return sum(1 for t in self.tasks.all() if t.is_completed)
+
+    @property
+    def total_tasks_count(self):
+        return self.tasks.count()
+
+    @property
     def is_available(self):
-        return self.status in ['AVAILABLE', 'IN_PROGRESS', 'REVISION_REQUIRED', 'SUBMITTED', 'UNDER_REVIEW']
+        return self.status in ['AVAILABLE', 'IN_PROGRESS', 'REVISION_REQUIRED', 'REDO_REQUIRED', 'SUBMITTED', 'UNDER_REVIEW']
 
     @property
     def is_completed(self):
@@ -475,18 +569,34 @@ class WeeklySubmission(db.Model):
     milestone_id = db.Column(db.Integer, db.ForeignKey('weekly_milestones.id', ondelete='CASCADE'), nullable=False)
     student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
     repo_url = db.Column(db.String(255), nullable=True)
+    github_url = db.Column(db.String(255), nullable=True)
     live_demo_url = db.Column(db.String(255), nullable=True)
     demo_video_url = db.Column(db.String(255), nullable=True)
+    demo_video_path = db.Column(db.String(255), nullable=True)
     file_path = db.Column(db.String(255), nullable=True)
     submission_notes = db.Column(db.Text, nullable=True)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(30), default='SUBMITTED') # SUBMITTED, UNDER_REVIEW, APPROVED, REVISION_REQUIRED
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    status = db.Column(db.String(30), default='SUBMITTED') # SUBMITTED, UNDER_REVIEW, APPROVED, REDO_REQUIRED, REVISION_REQUIRED, COMPLETED
     review_feedback = db.Column(db.Text, nullable=True)
     reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     reviewed_at = db.Column(db.DateTime, nullable=True)
 
     student = db.relationship('Student', foreign_keys=[student_id], back_populates='submissions')
     reviewer = db.relationship('User', foreign_keys=[reviewed_by])
+    evaluations = db.relationship('Evaluation', backref='submission', lazy='dynamic', cascade='all, delete-orphan', order_by='Evaluation.id.desc()')
+
+    @property
+    def effective_repo_url(self):
+        return self.github_url or self.repo_url or ''
+
+    @property
+    def effective_video_path(self):
+        return self.demo_video_path or self.file_path or self.demo_video_url or ''
+
+    @property
+    def admin_remarks(self):
+        return self.review_feedback or (self.milestone.admin_notes if self.milestone else '')
 
     def __repr__(self):
         return f'<WeeklySubmission Milestone={self.milestone_id} Status={self.status}>'
@@ -520,8 +630,14 @@ class Evaluation(db.Model):
     __tablename__ = 'evaluations'
 
     id = db.Column(db.Integer, primary_key=True)
-    assignment_id = db.Column(db.Integer, db.ForeignKey('project_assignments.id'), nullable=False)
-    evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    assignment_id = db.Column(db.Integer, db.ForeignKey('project_assignments.id', ondelete='CASCADE'), nullable=True)
+    submission_id = db.Column(db.Integer, db.ForeignKey('weekly_submissions.id', ondelete='CASCADE'), nullable=True)
+    milestone_id = db.Column(db.Integer, db.ForeignKey('weekly_milestones.id', ondelete='CASCADE'), nullable=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    action = db.Column(db.String(50), nullable=True) # REDO, VERIFY, PROCEED_TO_NEXT
+    remarks = db.Column(db.Text, nullable=True)
     technical_score = db.Column(db.Integer, default=0) # max 20
     functionality_score = db.Column(db.Integer, default=0) # max 20
     ui_ux_score = db.Column(db.Integer, default=0) # max 15
@@ -530,12 +646,15 @@ class Evaluation(db.Model):
     originality_score = db.Column(db.Integer, default=0) # max 10
     presentation_score = db.Column(db.Integer, default=0) # max 5
     total_score = db.Column(db.Integer, default=0) # max 100
-    result = db.Column(db.String(30), nullable=False) # PASSED, NEEDS_IMPROVEMENT, FAILED
-    feedback = db.Column(db.Text, nullable=False)
+    result = db.Column(db.String(30), nullable=True) # PASSED, NEEDS_IMPROVEMENT, FAILED
+    feedback = db.Column(db.Text, nullable=True)
     revision_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     evaluated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    admin = db.relationship('User', foreign_keys=[admin_id])
     evaluator = db.relationship('User', foreign_keys=[evaluator_id])
+    employee = db.relationship('Student', foreign_keys=[employee_id])
 
 
 class IssuedDocument(db.Model):

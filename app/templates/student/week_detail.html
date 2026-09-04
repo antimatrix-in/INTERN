@@ -1,21 +1,26 @@
 {% extends 'student/base_student.html' %}
 
-{% block title %}Week {{ milestone.week_number }} — {{ milestone.title }}{% endblock %}
+{% block title %}Week {{ milestone.week_number }} — {{ milestone.title }} — ANTI MATRIX{% endblock %}
 
 {% block content %}
 <div style="margin-bottom: 2rem;">
-  <a href="{{ url_for('student.weekly_progress') }}" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+  <a href="{{ url_for('student.dashboard') }}" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; text-decoration: none;">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-    Back to Weekly Roadmap
+    Back to Dashboard
   </a>
 
   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
     <div>
-      <div style="display: flex; gap: 0.65rem; margin-bottom: 0.4rem;">
-        <span class="meta-badge mono">WEEK {{ milestone.week_number }}</span>
+      <div style="display: flex; gap: 0.65rem; margin-bottom: 0.4rem; align-items: center;">
+        <span class="meta-badge mono" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border-color: rgba(16, 185, 129, 0.3);">WEEK {{ milestone.week_number }}</span>
         <span class="meta-badge mono">{{ assignment.project.project_code }}</span>
+        {% if milestone.due_at %}
+          <span class="meta-badge mono" style="color: {% if milestone.is_overdue %}#EF4444{% else %}#94A3B8{% endif %};">
+            Deadline: {{ milestone.due_at.strftime('%d %b %Y') }}
+          </span>
+        {% endif %}
       </div>
-      <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem;">
+      <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.35rem; color: #F8FAFC;">
         {{ milestone.title }}
       </h1>
       <p style="color: var(--text-muted); font-size: 0.9rem;">
@@ -24,25 +29,30 @@
     </div>
 
     <div>
-      {% if milestone.status in ['COMPLETED', 'APPROVED'] %}
-        <span class="status-badge badge-completed" style="font-size: 0.85rem; padding: 0.35rem 0.9rem;">
-          Status: Completed & Approved
+      {% set disp_status = milestone.display_status %}
+      {% if disp_status == 'COMPLETED' %}
+        <span class="status-badge badge-completed" style="font-size: 0.85rem; padding: 0.4rem 1rem;">
+          ✓ COMPLETED & APPROVED
         </span>
-      {% elif milestone.status == 'AVAILABLE' or milestone.status == 'IN_PROGRESS' %}
-        <span class="status-badge badge-available" style="font-size: 0.85rem; padding: 0.35rem 0.9rem;">
-          Status: In Progress
+      {% elif disp_status == 'UNDER_REVIEW' %}
+        <span class="status-badge badge-submitted" style="font-size: 0.85rem; padding: 0.4rem 1rem;">
+          UNDER REVIEW
         </span>
-      {% elif milestone.status == 'SUBMITTED' or milestone.status == 'UNDER_REVIEW' %}
-        <span class="status-badge badge-submitted" style="font-size: 0.85rem; padding: 0.35rem 0.9rem;">
-          Status: Submitted for Review
+      {% elif disp_status == 'REDO_REQUIRED' %}
+        <span class="status-badge badge-revision" style="font-size: 0.85rem; padding: 0.4rem 1rem; background: rgba(239, 68, 68, 0.15); color: #EF4444; border-color: rgba(239, 68, 68, 0.3);">
+          REDO REQUIRED
         </span>
-      {% elif milestone.status == 'REVISION_REQUIRED' %}
-        <span class="status-badge badge-revision" style="font-size: 0.85rem; padding: 0.35rem 0.9rem;">
-          Status: Revision Required
+      {% elif disp_status == 'OVERDUE' %}
+        <span class="status-badge badge-revision" style="font-size: 0.85rem; padding: 0.4rem 1rem; background: rgba(245, 158, 11, 0.15); color: #F59E0B; border-color: rgba(245, 158, 11, 0.3);">
+          ⚠ OVERDUE
+        </span>
+      {% elif disp_status == 'AVAILABLE' or disp_status == 'IN_PROGRESS' %}
+        <span class="status-badge badge-available" style="font-size: 0.85rem; padding: 0.4rem 1rem;">
+          IN PROGRESS / AVAILABLE
         </span>
       {% else %}
-        <span class="status-badge badge-locked" style="font-size: 0.85rem; padding: 0.35rem 0.9rem;">
-          Status: Locked 🔒
+        <span class="status-badge badge-locked" style="font-size: 0.85rem; padding: 0.4rem 1rem;">
+          🔒 LOCKED
         </span>
       {% endif %}
     </div>
@@ -55,25 +65,48 @@
   <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--bg-surface-elevated); border: 1px dashed var(--border-medium); display: inline-flex; align-items: center; justify-content: center; color: var(--text-muted); margin-bottom: 1.5rem;">
     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
   </div>
-  <h2 style="font-size: 1.45rem; font-weight: 700; margin-bottom: 0.75rem;">This Milestone is Currently Locked</h2>
+  <h2 style="font-size: 1.45rem; font-weight: 700; margin-bottom: 0.75rem; color: #F8FAFC;">This Week is Currently Locked</h2>
   <p style="color: var(--text-muted); max-width: 540px; margin: 0 auto 2rem; line-height: 1.6;">
-    Milestones unlock sequentially. Complete the required deliverables for Week {{ milestone.week_number - 1 }}, submit your work, and attend your scheduled mentor evaluation meeting. Once approved by your mentor, Week {{ milestone.week_number }} will unlock automatically.
+    Milestones unlock sequentially upon administrator evaluation. Complete and get approval for Week {{ milestone.week_number - 1 }} to unlock this week.
   </p>
-  <a href="{{ url_for('student.weekly_progress') }}" class="btn btn-primary">
-    View Active Milestones
+  <a href="{{ url_for('student.dashboard') }}" class="btn btn-primary">
+    Return to Dashboard
   </a>
 </div>
 {% else %}
 
-{% if milestone.admin_notes %}
-<!-- Mentor Evaluation Notes / Feedback Banner -->
-<div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; margin-bottom: 1.75rem; display: flex; gap: 1rem; align-items: flex-start;">
+<!-- REDO REQUIRED Alert Banner if applicable -->
+{% if milestone.status == 'REDO_REQUIRED' %}
+<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem;">
+  <div style="display: flex; gap: 1rem; align-items: flex-start;">
+    <div style="color: #EF4444; flex-shrink: 0; margin-top: 0.15rem;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    </div>
+    <div style="flex: 1;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <h4 style="font-size: 1.05rem; font-weight: 800; color: #EF4444; margin: 0;">
+          REDO REQUIRED: Mentor Evaluation Feedback
+        </h4>
+        <span class="status-badge" style="background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.4);">Action Required</span>
+      </div>
+      <p style="color: #F8FAFC; font-size: 0.95rem; line-height: 1.5; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
+        "{{ milestone.admin_notes or (latest_submission.review_feedback if latest_submission else 'Please address mentor recommendations and submit an updated demonstration and repository.') }}"
+      </p>
+      <p style="font-size: 0.85rem; color: #CBD5E1; margin: 0;">
+        Please review the feedback above, update your implementation, record a new demo video or verify your GitHub repository, and submit below.
+      </p>
+    </div>
+  </div>
+</div>
+{% elif milestone.admin_notes and milestone.status in ['COMPLETED', 'APPROVED'] %}
+<!-- Completed Review Notes Banner -->
+<div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items: flex-start;">
   <div style="color: var(--primary-light); flex-shrink: 0; margin-top: 0.15rem;">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
   </div>
   <div>
     <h4 style="font-size: 0.925rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">
-      Mentor Review & Feedback
+      Admin Verification Remarks
     </h4>
     <p style="color: var(--text-muted); font-size: 0.885rem; line-height: 1.5;">
       {{ milestone.admin_notes }}
@@ -83,40 +116,53 @@
 {% endif %}
 
 <div class="grid-3">
-  <!-- Left 2 Cols: Objective, Checklist, Instructions, Submission -->
+  <!-- Left 2 Columns: Objective, Checklist, Instructions, Submission Form -->
   <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 1.75rem;">
     <!-- Objective Card -->
     <div class="card" style="margin-bottom: 0;">
-      <h3 class="card-title" style="margin-bottom: 0.85rem;">
+      <h3 class="card-title" style="margin-bottom: 0.85rem; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-        Milestone Objective
+        Week Objective
       </h3>
       <p style="color: var(--text-main); font-size: 0.95rem; line-height: 1.65;">
         {{ milestone.objective }}
       </p>
     </div>
 
-    <!-- Task Checklist -->
+    <!-- Task Checklist Card -->
     <div class="card" style="margin-bottom: 0;">
-      <div class="card-header">
-        <h3 class="card-title">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-          Weekly Task Checklist
-        </h3>
-        <span style="font-size: 0.8rem; color: var(--text-muted);">Check off items as you complete them</span>
+      <div class="card-header" style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+        <div>
+          <h3 class="card-title" style="font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+            Task Checklist ({{ milestone.completed_tasks_count }} / {{ milestone.total_tasks_count }} Completed)
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.825rem; margin-top: 0.2rem;">
+            Check off each task as you complete it. All required tasks must be completed before submission is permitted.
+          </p>
+        </div>
+
+        <span id="task-progress-badge" class="meta-badge mono" style="color: {% if milestone.all_tasks_completed %}#10B981{% else %}#F59E0B{% endif %};">
+          {% if milestone.all_tasks_completed %}✓ ALL TASKS DONE{% else %}{{ milestone.completed_tasks_count }}/{{ milestone.total_tasks_count }} TASKS{% endif %}
+        </span>
       </div>
 
-      <ul class="task-checklist">
+      <ul class="task-checklist" style="list-style: none; padding: 0; margin: 1rem 0 0 0; display: flex; flex-direction: column; gap: 0.75rem;">
         {% for task in tasks %}
-          <li class="task-item {% if task.is_completed %}task-completed{% endif %}">
-            <form method="POST" action="{{ url_for('student.toggle_task', milestone_id=milestone.id, task_id=task.id) }}" style="display: flex; align-items: center; width: 100%; gap: 0.75rem;">
+          <li class="task-item {% if task.is_completed %}task-completed{% endif %}" style="display: flex; align-items: center; padding: 0.85rem 1rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); transition: all 0.2s ease;">
+            <form method="POST" action="{{ url_for('student.toggle_task', milestone_id=milestone.id, task_id=task.id) }}" class="task-toggle-form" style="display: flex; align-items: center; width: 100%; gap: 0.85rem;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="checkbox" class="task-checkbox" onchange="this.form.submit()" {% if task.is_completed %}checked{% endif %}>
-              <span class="task-text">{{ task.task_text }}</span>
+              <input type="checkbox" id="task-chk-{{ task.id }}" class="task-checkbox" {% if task.is_completed %}checked{% endif %} {% if milestone.status in ['COMPLETED', 'APPROVED'] %}disabled{% endif %} style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+              <label for="task-chk-{{ task.id }}" class="task-text" style="color: var(--text-main); font-size: 0.925rem; cursor: pointer; flex: 1; margin: 0; {% if task.is_completed %}text-decoration: line-through; opacity: 0.7;{% endif %}">
+                {{ task.task_text }}
+              </label>
+              {% if task.is_completed %}
+                <span style="font-size: 0.75rem; color: #10B981; font-weight: 700; background: rgba(16, 185, 129, 0.1); padding: 0.15rem 0.5rem; border-radius: 9999px;">✓ DONE</span>
+              {% endif %}
             </form>
           </li>
         {% else %}
-          <li style="color: var(--text-muted); font-size: 0.875rem;">No tasks defined for this week.</li>
+          <li style="color: var(--text-muted); font-size: 0.875rem; padding: 1rem;">No tasks defined for this week.</li>
         {% endfor %}
       </ul>
     </div>
@@ -124,9 +170,9 @@
     <!-- Instructions Card -->
     {% if milestone.instructions %}
     <div class="card" style="margin-bottom: 0;">
-      <h3 class="card-title" style="margin-bottom: 0.85rem;">
+      <h3 class="card-title" style="margin-bottom: 0.85rem; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-        Detailed Instructions & Technical Guidance
+        Instructions & Technical Details
       </h3>
       <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.65; white-space: pre-line;">
         {{ milestone.instructions }}
@@ -134,128 +180,266 @@
     </div>
     {% endif %}
 
-    <!-- Deliverables Submission Form -->
-    <div class="card" style="margin-bottom: 0;">
-      <div class="card-header">
-        <h3 class="card-title">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          Submit Milestone Deliverables
-        </h3>
+    <!-- Submission Panel -->
+    <div class="card" style="margin-bottom: 0; border-color: rgba(16, 185, 129, 0.3);">
+      <div class="card-header" style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+        <div>
+          <h3 class="card-title" style="font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            SUBMIT WEEK FOR VERIFICATION
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.825rem; margin-top: 0.2rem;">
+            Provide your Demo Video (.mp4, .mov, .webm) and GitHub Repository URL.
+          </p>
+        </div>
+
         {% if milestone.status in ['COMPLETED', 'APPROVED'] %}
-          <span class="status-badge badge-completed">Approved</span>
-        {% elif milestone.status in ['SUBMITTED', 'UNDER_REVIEW'] %}
-          <span class="status-badge badge-submitted">Pending Review</span>
+          <span class="status-badge badge-completed">✓ VERIFIED & COMPLETED</span>
+        {% elif milestone.status == 'UNDER_REVIEW' or milestone.status == 'SUBMITTED' %}
+          <span class="status-badge badge-submitted">AWAITING EVALUATION</span>
+        {% elif milestone.status == 'REDO_REQUIRED' %}
+          <span class="status-badge badge-revision">RESUBMISSION OPEN</span>
         {% endif %}
       </div>
 
-      {% if milestone.status in ['COMPLETED', 'APPROVED'] %}
-        <div style="background: var(--bg-surface-elevated); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 1.5rem; text-align: center;">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" stroke-width="2" style="margin-bottom: 0.5rem;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">Milestone Verified & Approved</h4>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">This milestone has been formally evaluated and locked as completed.</p>
-        </div>
-      {% else %}
-        <form method="POST" action="{{ url_for('student.submit_milestone', milestone_id=milestone.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-          <div class="form-group">
-            <label class="form-label">GitHub / GitLab Repository URL</label>
-            <input type="url" name="repo_url" class="form-control mono" placeholder="https://github.com/username/project-repo" value="{{ submissions[0].repo_url if submissions else '' }}">
-          </div>
-
-          <div class="grid-2">
-            <div class="form-group">
-              <label class="form-label">Live Deployment / Staging URL (Optional)</label>
-              <input type="url" name="live_demo_url" class="form-control mono" placeholder="https://your-app.render.com" value="{{ submissions[0].live_demo_url if submissions else '' }}">
+      <div style="padding-top: 1.25rem;">
+        {% if milestone.status in ['COMPLETED', 'APPROVED'] %}
+          <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted);">
+            <div style="color: #10B981; margin-bottom: 0.5rem;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
-            <div class="form-group">
-              <label class="form-label">Demo Video / Walkthrough Link (Optional)</label>
-              <input type="url" name="demo_video_url" class="form-control mono" placeholder="https://loom.com/share/... or YouTube" value="{{ submissions[0].demo_video_url if submissions else '' }}">
+            <h4 style="color: #F8FAFC; font-weight: 700;">Week {{ milestone.week_number }} Completed & Approved</h4>
+            <p style="font-size: 0.875rem; margin-top: 0.25rem;">All requirements have been successfully verified by your technical mentor.</p>
+          </div>
+        {% elif milestone.status in ['UNDER_REVIEW', 'SUBMITTED'] %}
+          <div style="text-align: center; padding: 2rem 1rem; background: rgba(6, 182, 212, 0.05); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: var(--radius-md);">
+            <div style="color: #06B6D4; margin-bottom: 0.5rem;">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
             </div>
+            <h4 style="color: #F8FAFC; font-weight: 700; margin-bottom: 0.35rem;">Submission Currently Under Review</h4>
+            <p style="font-size: 0.875rem; color: var(--text-muted); max-width: 480px; margin: 0 auto;">
+              Your deliverables are queued for technical review. You will receive notification as soon as the mentor completes evaluation.
+            </p>
           </div>
+        {% else %}
+          <!-- Active or Redo Submission Form -->
+          {% if not milestone.all_tasks_completed %}
+            <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <div style="font-size: 0.875rem; color: #F8FAFC;">
+                <strong>Complete all required tasks before submitting your work.</strong>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.15rem 0 0 0;">Please check off each item in the task checklist above once executed.</p>
+              </div>
+            </div>
+          {% endif %}
 
-          <div class="form-group">
-            <label class="form-label">Work Summary & Deliverables Description</label>
-            <textarea name="submission_notes" class="form-control" rows="4" placeholder="Summarize your architecture implementation, test cases executed, and any blockers encountered...">{{ submissions[0].submission_notes if submissions else '' }}</textarea>
-          </div>
+          <form method="POST" action="{{ url_for('student.submit_milestone', milestone_id=milestone.id) }}" enctype="multipart/form-data" id="milestone-submission-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-          <button type="submit" class="btn btn-primary btn-lg btn-block">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-            {% if submissions %}Update Milestone Submission{% else %}Submit Week {{ milestone.week_number }} Work for Review{% endif %}
-          </button>
-        </form>
-      {% endif %}
+            <!-- Demo Video Upload -->
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; font-weight: 700;">
+                <span>UPLOAD DEMO VIDEO *</span>
+                <span style="font-size: 0.75rem; color: var(--text-subtle); font-weight: normal;">Supported: MP4, MOV, WEBM (Max 100MB)</span>
+              </label>
+              <input type="file" name="demo_video" accept=".mp4,.mov,.webm,video/mp4,video/quicktime,video/webm" class="form-control" {% if not milestone.all_tasks_completed %}disabled{% endif %} required style="padding: 0.6rem; background: var(--bg-surface-elevated);">
+              <span class="form-hint" style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
+                Record a brief walkthrough showing your working solution and key deliverables.
+              </span>
+            </div>
+
+            <!-- GitHub Repository URL -->
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label class="form-label" style="font-weight: 700;">
+                GITHUB REPOSITORY URL *
+              </label>
+              <input type="url" name="github_url" class="form-control" placeholder="https://github.com/your-username/project-repository" {% if not milestone.all_tasks_completed %}disabled{% endif %} required value="{{ latest_submission.github_url if latest_submission else '' }}">
+              <span class="form-hint" style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
+                Ensure your repository is accessible and contains all weekly commits. (Do not upload source zip files).
+              </span>
+            </div>
+
+            <!-- Notes / Summary -->
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label class="form-label">
+                SUBMISSION NOTES & IMPLEMENTATION SUMMARY
+              </label>
+              <textarea name="submission_notes" class="form-control" rows="3" placeholder="Briefly describe what you built, architecture decisions, and any challenges overcome..." {% if not milestone.all_tasks_completed %}disabled{% endif %}></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary btn-block" {% if not milestone.all_tasks_completed %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              {% if milestone.status == 'REDO_REQUIRED' %}
+                RESUBMIT FOR VERIFICATION
+              {% else %}
+                SUBMIT FOR VERIFICATION
+              {% endif %}
+            </button>
+          </form>
+        {% endif %}
+      </div>
     </div>
   </div>
 
-  <!-- Right Col: Deliverables, Meeting Status -->
-  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-    <!-- Required Deliverables List -->
+  <!-- Right Column: Week Summary & Submission History -->
+  <div style="display: flex; flex-direction: column; gap: 1.75rem;">
+    <!-- Week Metadata Card -->
     <div class="card" style="margin-bottom: 0;">
-      <h3 class="card-title" style="margin-bottom: 0.85rem; font-size: 1rem;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-        Required Deliverables
+      <h3 class="card-title" style="font-size: 1.05rem; margin-bottom: 1rem;">
+        Week Summary
       </h3>
-      <ul class="deliverables-list">
-        {% for d in milestone.deliverables %}
-          <li class="deliverable-item">
-            <span class="deliverable-num">{{ loop.index }}</span>
-            <span>{{ d }}</span>
-          </li>
-        {% else %}
-          <li style="color: var(--text-muted); font-size: 0.85rem;">Standard weekly project code & notes.</li>
-        {% endfor %}
-      </ul>
+      <div style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.4rem;">
+          <span style="color: var(--text-muted);">Week Number:</span>
+          <strong style="color: var(--text-main);">Week {{ milestone.week_number }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.4rem;">
+          <span style="color: var(--text-muted);">Status:</span>
+          <strong style="color: var(--primary-light);">{{ milestone.display_status }}</strong>
+        </div>
+        {% if milestone.due_at %}
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.4rem;">
+          <span style="color: var(--text-muted);">Deadline:</span>
+          <span class="mono" style="color: {% if milestone.is_overdue %}#EF4444{% else %}#94A3B8{% endif %}; font-weight: 600;">
+            {{ milestone.due_at.strftime('%d %b %Y') }}
+          </span>
+        </div>
+        {% endif %}
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.4rem;">
+          <span style="color: var(--text-muted);">Tasks:</span>
+          <strong style="color: var(--text-main);">{{ milestone.completed_tasks_count }} / {{ milestone.total_tasks_count }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Submissions:</span>
+          <strong style="color: var(--text-main);">{{ submissions|length }}</strong>
+        </div>
+      </div>
     </div>
 
-    <!-- Review Meeting Status -->
+    <!-- Submission History Card -->
     <div class="card" style="margin-bottom: 0;">
-      <h3 class="card-title" style="margin-bottom: 0.85rem; font-size: 1rem;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-        Evaluation Meeting
+      <h3 class="card-title" style="font-size: 1.05rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        Submission History
       </h3>
-      {% if meeting %}
-        <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
-          <div>Session: <strong style="color: var(--text-main);">{{ meeting.title }}</strong></div>
-          <div>Date: <strong style="color: var(--text-main);">{{ meeting.meeting_date }}</strong> at {{ meeting.meeting_time }}</div>
-          {% if meeting.meeting_link %}
-            <a href="{{ meeting.meeting_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm" style="margin-top: 0.5rem;">
-              Join Meeting Room →
-            </a>
-          {% endif %}
+
+      {% if submissions %}
+        <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+          {% for sub in submissions %}
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem; font-size: 0.825rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <span style="font-weight: 700; color: var(--text-main);">Submission #{{ loop.revindex }}</span>
+                {% if sub.status in ['COMPLETED', 'APPROVED'] %}
+                  <span class="status-badge badge-completed" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">Approved</span>
+                {% elif sub.status == 'REDO_REQUIRED' %}
+                  <span class="status-badge badge-revision" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">Redo Req.</span>
+                {% else %}
+                  <span class="status-badge badge-submitted" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">Under Review</span>
+                {% endif %}
+              </div>
+
+              <div style="color: var(--text-subtle); font-size: 0.75rem; margin-bottom: 0.4rem;">
+                {{ sub.submitted_at.strftime('%d %b %Y, %H:%M') if sub.submitted_at else 'Submitted' }}
+              </div>
+
+              {% if sub.github_url or sub.repo_url %}
+                <div style="margin-bottom: 0.3rem;">
+                  <a href="{{ sub.github_url or sub.repo_url }}" target="_blank" rel="noopener noreferrer" style="color: #60A5FA; text-decoration: none; word-break: break-all;">
+                    🔗 {{ (sub.github_url or sub.repo_url)[:35] }}...
+                  </a>
+                </div>
+              {% endif %}
+
+              {% if sub.demo_video_path or sub.file_path %}
+                <div style="margin-bottom: 0.3rem;">
+                  <a href="{{ url_for('student.stream_submission_video', sub_id=sub.id) }}" target="_blank" style="color: #34D399; text-decoration: none;">
+                    ▶ Watch Demo Video
+                  </a>
+                </div>
+              {% endif %}
+
+              {% if sub.review_feedback %}
+                <div style="margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed var(--border-subtle); color: {% if sub.status == 'REDO_REQUIRED' %}#EF4444{% else %}#10B981{% endif %}; font-style: italic;">
+                  "{{ sub.review_feedback }}"
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
         </div>
       {% else %}
-        <p style="font-size: 0.85rem; color: var(--text-muted);">
-          Status: <strong style="color: var(--warning);">Pending Mentor Evaluation</strong>
-        </p>
-        <p style="font-size: 0.775rem; color: var(--text-subtle); margin-top: 0.4rem;">
-          Submit your work above to allow your mentor to schedule your 1-on-1 milestone review.
+        <p style="color: var(--text-muted); font-size: 0.825rem; text-align: center; padding: 1rem 0;">
+          No submissions recorded yet for this week.
         </p>
       {% endif %}
     </div>
-
-    <!-- Submissions History -->
-    {% if submissions %}
-    <div class="card" style="margin-bottom: 0;">
-      <h3 class="card-title" style="margin-bottom: 0.75rem; font-size: 1rem;">Submission History</h3>
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        {% for s in submissions %}
-          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.775rem; margin-bottom: 0.35rem;">
-              <span class="mono" style="color: var(--text-muted);">{{ s.submitted_at.strftime('%d %b %Y, %H:%M') if s.submitted_at else 'Submitted' }}</span>
-              <span class="status-badge {% if s.status == 'APPROVED' %}badge-completed{% elif s.status == 'REVISION_REQUIRED' %}badge-revision{% else %}badge-submitted{% endif %}">{{ s.status }}</span>
-            </div>
-            {% if s.repo_url %}
-              <div style="font-size: 0.8rem; margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                <a href="{{ s.repo_url }}" target="_blank" rel="noopener noreferrer" class="mono" style="color: var(--primary-light);">{{ s.repo_url }}</a>
-              </div>
-            {% endif %}
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
   </div>
 </div>
 {% endif %}
+
+<script>
+// Micro-interaction: AJAX Task Toggle
+document.querySelectorAll('.task-checkbox').forEach(function(checkbox) {
+  checkbox.addEventListener('change', function(e) {
+    const form = this.closest('form');
+    const taskItem = this.closest('.task-item');
+    const label = form.querySelector('.task-text');
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.is_completed) {
+          taskItem.classList.add('task-completed');
+          label.style.textDecoration = 'line-through';
+          label.style.opacity = '0.7';
+        } else {
+          taskItem.classList.remove('task-completed');
+          label.style.textDecoration = 'none';
+          label.style.opacity = '1';
+        }
+
+        // Update progress badge & submission form state
+        const badge = document.getElementById('task-progress-badge');
+        if (badge) {
+          if (data.all_completed) {
+            badge.textContent = '✓ ALL TASKS DONE';
+            badge.style.color = '#10B981';
+          } else {
+            badge.textContent = `${data.completed_count}/${data.total_count} TASKS`;
+            badge.style.color = '#F59E0B';
+          }
+        }
+
+        // Enable/disable submission form inputs
+        const subForm = document.getElementById('milestone-submission-form');
+        if (subForm) {
+          const inputs = subForm.querySelectorAll('input, textarea, button[type="submit"]');
+          inputs.forEach(el => {
+            el.disabled = !data.all_completed;
+            if (!data.all_completed) {
+              el.style.opacity = '0.5';
+              el.style.cursor = 'not-allowed';
+            } else {
+              el.style.opacity = '1';
+              el.style.cursor = 'pointer';
+            }
+          });
+        }
+      }
+    })
+    .catch(err => {
+      // Fallback: normal submit if fetch fails
+      form.submit();
+    });
+  });
+});
+</script>
 {% endblock %}

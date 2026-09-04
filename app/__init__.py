@@ -14,6 +14,8 @@ def create_app(config_class=Config):
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'college_ids'), exist_ok=True)
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'photos'), exist_ok=True)
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'generated_docs'), exist_ok=True)
+    if 'VIDEO_UPLOAD_FOLDER' in app.config:
+        os.makedirs(app.config['VIDEO_UPLOAD_FOLDER'], exist_ok=True)
 
     # Initialize extensions
     db.init_app(app)

@@ -132,13 +132,13 @@ class AdminTestCase(unittest.TestCase):
             'application_no': 'AM-APP-2026-001',
             'duration_plan': '1_MONTH_PROJECT'
         }, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-        # Should get conflict error from API
+        # Should return already_exists flag from API to display existing record
         api_resp = self.client.get('/admin/api/application/AM-APP-2026-001')
-        self.assertEqual(api_resp.status_code, 409)
+        self.assertEqual(api_resp.status_code, 200)
         data = api_resp.get_json()
-        self.assertFalse(data['success'])
-        self.assertIn('already created', data['error'].lower())
+        self.assertTrue(data['success'])
+        self.assertTrue(data['already_exists'])
+        self.assertIn('already exists', data['message'].lower())
 
     # ── Test 9: ProjectWeek and ProjectTask models seeded correctly ───────────
 
