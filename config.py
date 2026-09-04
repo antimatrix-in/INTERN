@@ -8,12 +8,17 @@ load_dotenv(BASE_DIR / '.env')
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'anti-matrix-super-secret-key-2026-production')
     
-    # Handle database URL for PostgreSQL (Render/Heroku compatible) and SQLite
-    db_url = os.environ.get('DATABASE_URL', f"sqlite:///{BASE_DIR / 'antimatrix.db'}")
-    if db_url.startswith('postgres://'):
-        db_url = db_url.replace('postgres://', 'postgresql://', 1)
+    # Handle database URL for PostgreSQL (Render/Heroku compatible) and SQLite fallback
+    raw_db_url = os.environ.get('DATABASE_URL')
+    if raw_db_url:
+        if raw_db_url.startswith('postgres://'):
+            raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
+        SQLALCHEMY_DATABASE_URI = raw_db_url
+    else:
+        instance_dir = BASE_DIR / 'instance'
+        os.makedirs(instance_dir, exist_ok=True)
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{instance_dir / 'antimatrix.db'}"
     
-    SQLALCHEMY_DATABASE_URI = db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Upload storage
