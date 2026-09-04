@@ -3,13 +3,11 @@ from app import create_app
 from app.extensions import db
 from app.models import User, Student, ProjectAssignment, WeeklyMilestone, WeeklySubmission, Meeting, Notification
 from app.seed import seed_initial_data
+from tests.test_config import TestConfig
 
 class Phase1PortalTestCase(unittest.TestCase):
     def setUp(self):
-        self.app = create_app()
-        self.app.config['TESTING'] = True
-        self.app.config['WTF_CSRF_ENABLED'] = False
-        self.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        self.app = create_app(TestConfig)
         with self.app.app_context():
             db.drop_all()
             db.create_all()

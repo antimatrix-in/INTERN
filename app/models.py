@@ -145,8 +145,9 @@ class Application(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     application_no = db.Column(db.String(30), unique=True, nullable=False, index=True) # AM-APP-2026-0001
-    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
-    plan_id = db.Column(db.Integer, db.ForeignKey('internship_plans.id'), nullable=False)
+    # student_id is nullable: career applications exist BEFORE employee conversion
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey('internship_plans.id'), nullable=True)
     status = db.Column(db.String(30), default='APPROVED') # DRAFT, SUBMITTED, PAYMENT_PENDING, PAID, DOCUMENT_PENDING, UNDER_REVIEW, VERIFIED, REJECTED, APPROVED
     consent_agreed = db.Column(db.Boolean, default=True)
     consent_version = db.Column(db.String(20), default='v1.0-2026')
@@ -155,6 +156,25 @@ class Application(db.Model):
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Career application candidate fields (populated before student/employee onboarding)
+    candidate_name = db.Column(db.String(150), nullable=True)
+    candidate_email = db.Column(db.String(150), nullable=True)
+    candidate_phone = db.Column(db.String(30), nullable=True)
+    candidate_dob = db.Column(db.String(20), nullable=True)
+    candidate_gender = db.Column(db.String(20), nullable=True)
+    college_name = db.Column(db.String(200), nullable=True)
+    department_name = db.Column(db.String(150), nullable=True)
+    course = db.Column(db.String(100), nullable=True)
+    year_of_study = db.Column(db.String(20), nullable=True)
+    roll_number = db.Column(db.String(50), nullable=True)
+    applied_role = db.Column(db.String(100), nullable=True)
+    city = db.Column(db.String(100), nullable=True)
+    state = db.Column(db.String(100), nullable=True)
+    aadhaar_masked = db.Column(db.String(20), nullable=True)
+    # Employee conversion tracking
+    is_converted_to_employee = db.Column(db.Boolean, default=False)
+    converted_employee_id = db.Column(db.String(50), nullable=True)  # AM-INT-XXXX
 
     # Relationships
     payments = db.relationship('Payment', backref='application', lazy='dynamic')
@@ -269,10 +289,12 @@ class Project(db.Model):
     instructions_md = db.Column(db.Text, nullable=False)
     reference_links_json = db.Column(db.Text, nullable=False)
     duration_weeks = db.Column(db.Integer, default=4) # 4 or 12
+    duration_months = db.Column(db.Integer, default=1) # 1 or 3
     difficulty = db.Column(db.String(20), default='Intermediate') # Beginner, Intermediate, Advanced
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     assignments = db.relationship('ProjectAssignment', backref='project', lazy='dynamic')
+    project_weeks = db.relationship('ProjectWeek', backref='project', lazy='dynamic', cascade='all, delete-orphan', order_by='ProjectWeek.week_number.asc()')
 
     @property
     def objectives(self):
@@ -293,6 +315,51 @@ class Project(db.Model):
     def reference_links(self):
         try: return json.loads(self.reference_links_json)
         except: return []
+
+
+class ProjectWeek(db.Model):
+    """Reusable project template week structure."""
+    __tablename__ = 'project_weeks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
+    week_number = db.Column(db.Integer, nullable=False)  # 1..4 or 1..12
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    objective = db.Column(db.Text, nullable=True)
+    instructions = db.Column(db.Text, nullable=True)
+    deliverables_json = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    tasks = db.relationship('ProjectTask', backref='week', lazy='dynamic', cascade='all, delete-orphan', order_by='ProjectTask.id.asc()')
+
+    @property
+    def deliverables(self):
+        try:
+            return json.loads(self.deliverables_json) if self.deliverables_json else []
+        except:
+            return []
+
+    def __repr__(self):
+        return f'<ProjectWeek Week {self.week_number}: {self.title}>'
+
+
+class ProjectTask(db.Model):
+    """Reusable task template belonging to a ProjectWeek."""
+    __tablename__ = 'project_tasks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    week_id = db.Column(db.Integer, db.ForeignKey('project_weeks.id', ondelete='CASCADE'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    instructions = db.Column(db.Text, nullable=True)
+    expected_output = db.Column(db.Text, nullable=True)
+    priority = db.Column(db.String(20), default='Medium')  # High, Medium, Low
+    estimated_hours = db.Column(db.Float, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<ProjectTask {self.title} ({self.priority})>'
 
 
 class ProjectAssignment(db.Model):

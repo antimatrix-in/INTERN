@@ -34,9 +34,11 @@ def create_app(config_class=Config):
     # Safe database schema initialization & idempotent seeding
     with app.app_context():
         from app import models  # noqa: F401 (Ensure models are registered on db.metadata)
-        db.create_all()
-        from app.seed import seed_initial_data
-        seed_initial_data()
+        if not app.config.get('TESTING', False):
+            db.create_all()
+            from app.seed import seed_initial_data
+            seed_initial_data()
+
 
     # Custom context processors & template filters
     @app.context_processor

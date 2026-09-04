@@ -4,6 +4,7 @@ from app.extensions import db
 from app.models import (
     User, College, Department, Student, InternshipPlan,
     Application, Payment, Internship, Project, ProjectAssignment,
+    ProjectWeek, ProjectTask,
     WeeklyMilestone, WeeklyTask, WeeklySubmission, Meeting,
     CertificateVerification, Notification
 )
@@ -521,8 +522,246 @@ def seed_initial_data():
     try:
         seed_internship_plans()
         seed_colleges_and_departments()
+        seed_admin_user()
         seed_projects_and_students()
+        seed_project_weeks_and_tasks()
+        seed_career_applications()
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error during database seed: {e}")
         raise e
+
+
+def seed_admin_user():
+    """Seed the primary admin user with Admin@12345 password (idempotent)."""
+    # Support login by 'admin' as employee_id
+    admin = User.query.filter_by(employee_id='admin').first()
+    if not admin:
+        admin = User(
+            email='admin@antimatrix.tech',
+            employee_id='admin',
+            role='super_admin',
+            full_name='Anti Matrix Administrator',
+            phone='+91 00000 00001',
+            is_active=True
+        )
+        admin.set_password('Admin@12345')
+        db.session.add(admin)
+        db.session.commit()
+        logger.info('Default admin user seeded with ID=admin password=Admin@12345')
+
+
+def seed_career_applications():
+    """Seed standalone career application records for admin lookup testing."""
+    apps_data = [
+        {
+            'application_no': 'AM-APP-2026-001',
+            'candidate_name': 'Rahul Kumar',
+            'candidate_email': 'rahul.kumar2026@gmail.com',
+            'candidate_phone': '+91 98412 00001',
+            'candidate_dob': '2002-03-15',
+            'candidate_gender': 'Male',
+            'college_name': 'Indian Institute of Technology Madras',
+            'department_name': 'Computer Science and Engineering',
+            'course': 'B.Tech Computer Science',
+            'year_of_study': '3rd Year',
+            'roll_number': '20CS101',
+            'applied_role': 'Python Flask Developer Intern',
+            'city': 'Chennai',
+            'state': 'Tamil Nadu',
+            'aadhaar_masked': 'XXXX XXXX 1234',
+        },
+        {
+            'application_no': 'AM-APP-2026-002',
+            'candidate_name': 'Priya Sharma',
+            'candidate_email': 'priya.sharma2026@gmail.com',
+            'candidate_phone': '+91 98412 00002',
+            'candidate_dob': '2001-11-22',
+            'candidate_gender': 'Female',
+            'college_name': 'Vellore Institute of Technology',
+            'department_name': 'Artificial Intelligence & Machine Learning',
+            'course': 'B.Tech AI & ML',
+            'year_of_study': '4th Year / Final Year',
+            'roll_number': '19AI055',
+            'applied_role': 'AI & Data Science Intern',
+            'city': 'Vellore',
+            'state': 'Tamil Nadu',
+            'aadhaar_masked': 'XXXX XXXX 5678',
+        },
+        {
+            'application_no': 'AM-APP-2026-003',
+            'candidate_name': 'Vikram Reddy',
+            'candidate_email': 'vikram.reddy2026@gmail.com',
+            'candidate_phone': '+91 98412 00003',
+            'candidate_dob': '2003-07-08',
+            'candidate_gender': 'Male',
+            'college_name': 'National Institute of Technology Karnataka',
+            'department_name': 'Computer Science and Engineering',
+            'course': 'B.Tech Computer Science',
+            'year_of_study': '2nd Year',
+            'roll_number': '22CS039',
+            'applied_role': 'Cloud & DevOps Intern',
+            'city': 'Surathkal',
+            'state': 'Karnataka',
+            'aadhaar_masked': 'XXXX XXXX 9012',
+        },
+    ]
+    for app_data in apps_data:
+        existing = Application.query.filter_by(application_no=app_data['application_no']).first()
+        if not existing:
+            app = Application(
+                application_no=app_data['application_no'],
+                status='APPROVED',
+                candidate_name=app_data['candidate_name'],
+                candidate_email=app_data['candidate_email'],
+                candidate_phone=app_data['candidate_phone'],
+                candidate_dob=app_data['candidate_dob'],
+                candidate_gender=app_data['candidate_gender'],
+                college_name=app_data['college_name'],
+                department_name=app_data['department_name'],
+                course=app_data['course'],
+                year_of_study=app_data['year_of_study'],
+                roll_number=app_data['roll_number'],
+                applied_role=app_data['applied_role'],
+                city=app_data['city'],
+                state=app_data['state'],
+                aadhaar_masked=app_data['aadhaar_masked'],
+                is_converted_to_employee=False,
+            )
+            db.session.add(app)
+    db.session.commit()
+
+
+def seed_project_weeks_and_tasks():
+    """Seed ProjectWeek and ProjectTask rows for master projects (idempotent)."""
+    # Project 1: AM-PRJ-001 (4-week 1-month track)
+    proj_1 = Project.query.filter_by(project_code='AM-PRJ-001').first()
+    if proj_1 and proj_1.project_weeks.count() == 0:
+        # Update duration_months if needed
+        proj_1.duration_months = 1
+        weeks_1 = [
+            {
+                'week_number': 1,
+                'title': 'Project Understanding, Architecture & Data Modeling',
+                'description': 'Week 1 focuses on understanding project requirements and creating system architecture.',
+                'objective': 'Analyze academic dataset schemas, understand predictive evaluation metrics, and formulate multi-tier system architecture.',
+                'instructions': 'Review the problem statement and dataset schema. Perform preliminary EDA in Python. Draft the Technical Design Document including ER diagrams and component architecture.',
+                'deliverables': ['System Architecture & Technical Design Document (PDF)', 'Dataset EDA Notebook (.ipynb)', 'Sprint Milestone Execution Plan'],
+                'tasks': [
+                    {'title': 'Understand project requirements & domain problem statement', 'priority': 'High', 'estimated_hours': 4, 'description': 'Thoroughly read all project documentation and understand the business objectives.', 'instructions': 'Read problem statement, identify key entities, list all functional requirements.', 'expected_output': 'Comprehensive requirements summary document.'},
+                    {'title': 'Study required technologies (Python, Flask, Scikit-learn, Pandas)', 'priority': 'High', 'estimated_hours': 6, 'description': 'Build foundational knowledge of required tech stack.', 'instructions': 'Complete beginner tutorials on Flask and Scikit-learn. Practice basic Pandas operations.', 'expected_output': 'Working local environment with demo notebook.'},
+                    {'title': 'Perform Exploratory Data Analysis (EDA) on student performance dataset', 'priority': 'High', 'estimated_hours': 8, 'description': 'Analyze dataset statistics, distributions, and correlations.', 'instructions': 'Use Pandas and Matplotlib/Seaborn to visualize distributions, check for null values, and compute correlation matrices.', 'expected_output': 'Jupyter notebook with complete EDA visualizations.'},
+                    {'title': 'Prepare system architecture & Entity-Relationship (ER) diagram', 'priority': 'Medium', 'estimated_hours': 4, 'description': 'Design the complete system architecture and data models.', 'instructions': 'Create component diagram and ER diagram using draw.io or Lucidchart.', 'expected_output': 'Architecture diagram PDF file.'},
+                    {'title': 'Create sprint execution plan & setup Git version control', 'priority': 'Medium', 'estimated_hours': 2, 'description': 'Initialize repository and plan weekly sprints.', 'instructions': 'Create GitHub repo with README, .gitignore, and initial commit. Document weekly sprint plan.', 'expected_output': 'GitHub repository link and sprint plan document.'}
+                ]
+            },
+            {
+                'week_number': 2,
+                'title': 'Data Preprocessing & Machine Learning Model Pipeline',
+                'description': 'Week 2 covers data pipeline implementation and model training.',
+                'objective': 'Implement data cleaning pipelines, feature engineering, and train predictive ML models.',
+                'instructions': 'Develop automated data normalization routines. Train multiple classification and regression algorithms. Document benchmark metrics.',
+                'deliverables': ['Trained Model Artifacts (.pkl)', 'Model Evaluation & Benchmark Comparison Report', 'Data Preprocessing Pipeline Module'],
+                'tasks': [
+                    {'title': 'Implement data imputation and categorical encoding pipeline', 'priority': 'High', 'estimated_hours': 6, 'description': 'Handle missing values and encode categorical features.', 'instructions': 'Use SimpleImputer for nulls, LabelEncoder/OneHotEncoder for categories.', 'expected_output': 'Clean preprocessing module with unit tests.'},
+                    {'title': 'Develop feature extraction and correlation analysis scripts', 'priority': 'High', 'estimated_hours': 5, 'description': 'Select most important features using statistical methods.', 'instructions': 'Compute Pearson correlation, use SelectKBest or feature importance from Random Forest.', 'expected_output': 'Feature importance chart and selected feature list.'},
+                    {'title': 'Train baseline and advanced supervised learning models', 'priority': 'High', 'estimated_hours': 8, 'description': 'Train Logistic Regression, Random Forest, and XGBoost models.', 'instructions': 'Train each model with the preprocessed dataset, evaluate using accuracy, precision, recall, F1-score.', 'expected_output': 'Model comparison table with all benchmark metrics.'},
+                    {'title': 'Conduct hyperparameter tuning with cross-validation', 'priority': 'Medium', 'estimated_hours': 4, 'description': 'Optimize model parameters for best performance.', 'instructions': 'Use GridSearchCV or RandomizedSearchCV with 5-fold CV.', 'expected_output': 'Best parameter set and corresponding benchmark scores.'},
+                    {'title': 'Serialize final optimized model pipeline', 'priority': 'Medium', 'estimated_hours': 2, 'description': 'Save the best model as a .pkl artifact for API use.', 'instructions': 'Use pickle or joblib to serialize the complete pipeline.', 'expected_output': 'model_pipeline.pkl artifact file.'}
+                ]
+            },
+            {
+                'week_number': 3,
+                'title': 'RESTful API Backend & Interactive Analytics UI',
+                'description': 'Week 3 builds the Flask API and frontend dashboard.',
+                'objective': 'Build Flask REST endpoints for model inference and develop a modern, responsive web dashboard.',
+                'instructions': 'Implement secure API routes and build responsive Jinja2/HTML5 views with Chart.js visualizations.',
+                'deliverables': ['Flask Backend API Modules', 'Interactive Frontend UI Templates & Styles', 'API Testing Collection & Documentation'],
+                'tasks': [
+                    {'title': 'Create Flask API endpoints for real-time model inference', 'priority': 'High', 'estimated_hours': 6, 'description': 'Build POST /predict endpoint accepting student data and returning risk scores.', 'instructions': 'Load serialized model, validate inputs, run inference, return JSON response with confidence.', 'expected_output': 'Working /predict API with Postman collection.'},
+                    {'title': 'Design responsive dashboard UI cards and metric badges', 'priority': 'High', 'estimated_hours': 5, 'description': 'Build responsive HTML/CSS UI for the analytics dashboard.', 'instructions': 'Create scorecards, status badges, and metric widgets using CSS Grid/Flexbox.', 'expected_output': 'Fully responsive dashboard layout.'},
+                    {'title': 'Integrate Chart.js visualizations for grade distribution', 'priority': 'Medium', 'estimated_hours': 4, 'description': 'Add interactive charts for performance visualization.', 'instructions': 'Implement bar charts, pie charts, and line graphs using Chart.js.', 'expected_output': 'At least 3 interactive charts integrated with live data.'},
+                    {'title': 'Add input validation, security sanitization, and error handling', 'priority': 'High', 'estimated_hours': 4, 'description': 'Ensure API is secure and handles all edge cases.', 'instructions': 'Validate all inputs, sanitize strings, return structured error responses.', 'expected_output': 'All edge case error tests passing.'}
+                ]
+            },
+            {
+                'week_number': 4,
+                'title': 'Testing, Deployment, Demonstration & Defense',
+                'description': 'Week 4 finalizes the project with testing, deployment, and documentation.',
+                'objective': 'Perform test verification, deploy live web demo, record technical video walkthrough, and prepare final defense.',
+                'instructions': 'Execute comprehensive unit test suites. Deploy the live web application. Record a 5-minute video walkthrough.',
+                'deliverables': ['Public GitHub Repository URL', 'Live Deployed Web Demo URL', '5-Minute Demonstration Video Link', 'Final Technical Report'],
+                'tasks': [
+                    {'title': 'Write automated unit and integration test suites', 'priority': 'High', 'estimated_hours': 6, 'description': 'Achieve >80% code coverage with automated tests.', 'instructions': 'Use pytest to write unit tests for all API endpoints and ML pipeline functions.', 'expected_output': 'Test suite with coverage report.'},
+                    {'title': 'Deploy application to cloud hosting environment', 'priority': 'High', 'estimated_hours': 4, 'description': 'Deploy the complete application to Render or Railway.', 'instructions': 'Set up production environment, configure environment variables, and verify live demo.', 'expected_output': 'Live public URL accessible online.'},
+                    {'title': 'Record 5-minute video walkthrough explaining architecture & demo', 'priority': 'Medium', 'estimated_hours': 3, 'description': 'Create a professional video demonstration of the project.', 'instructions': 'Record screen capture using OBS or Loom covering architecture, code walkthrough, and live prediction demo.', 'expected_output': 'YouTube/Drive video link.'},
+                    {'title': 'Submit final GitHub repository with comprehensive README', 'priority': 'High', 'estimated_hours': 3, 'description': 'Prepare complete project documentation and submission.', 'instructions': 'Write README with setup instructions, API docs, screenshots, and deployment guide.', 'expected_output': 'Final GitHub repository link and complete README.md.'}
+                ]
+            }
+        ]
+        for w_data in weeks_1:
+            pw = ProjectWeek(
+                project_id=proj_1.id,
+                week_number=w_data['week_number'],
+                title=w_data['title'],
+                description=w_data['description'],
+                objective=w_data['objective'],
+                instructions=w_data['instructions'],
+                deliverables_json=json.dumps(w_data['deliverables'])
+            )
+            db.session.add(pw)
+            db.session.flush()
+            for t_data in w_data['tasks']:
+                pt = ProjectTask(
+                    week_id=pw.id,
+                    title=t_data['title'],
+                    description=t_data.get('description', ''),
+                    instructions=t_data.get('instructions', ''),
+                    expected_output=t_data.get('expected_output', ''),
+                    priority=t_data.get('priority', 'Medium'),
+                    estimated_hours=t_data.get('estimated_hours')
+                )
+                db.session.add(pt)
+
+    # Project 2: AM-PRJ-002 (12-week 3-month track)
+    proj_2 = Project.query.filter_by(project_code='AM-PRJ-002').first()
+    if proj_2 and proj_2.project_weeks.count() == 0:
+        proj_2.duration_months = 3
+        week_titles_2 = [
+            'Enterprise Architecture & Security Threat Modeling',
+            'Token Validation Engine & JWT HMAC Verification',
+            'Redis Token Bucket Rate-Limiting Implementation',
+            'Month 1 Milestone Review & Security Benchmark Defense',
+            'Dynamic Circuit Breaker & Resiliency Handlers',
+            'Centralized Audit Logging & SIEM Event Pipeline',
+            'Intrusion Anomaly Detection Algorithm Integration',
+            'Month 2 Milestone Review & Resiliency Testing',
+            'Admin Security Dashboard & Live Telemetry UI',
+            'Docker Containerization & Kubernetes Orchestration Setup',
+            'End-to-End Penetration Testing & Vulnerability Hardening',
+            'Final Demonstration Defense & Technical Documentation'
+        ]
+        for w_num, w_title in enumerate(week_titles_2, start=1):
+            pw = ProjectWeek(
+                project_id=proj_2.id,
+                week_number=w_num,
+                title=w_title,
+                description=f'Week {w_num} of the Autonomous Cloud Microservices Security Gateway project.',
+                objective=f'Execute Phase {w_num} objectives for the Autonomous Cloud Security Gateway.',
+                instructions=f'Complete all Week {w_num} deliverables and verify with unit tests before milestone submission.',
+                deliverables_json=json.dumps([f'Week {w_num} Technical Artifacts', 'Implementation Source Code', 'Unit Test Report'])
+            )
+            db.session.add(pw)
+            db.session.flush()
+            pt = ProjectTask(
+                week_id=pw.id,
+                title=f'Implement core specifications for Week {w_num}: {w_title}',
+                description=f'Complete all core implementation tasks for {w_title}.',
+                instructions=f'Follow the Week {w_num} instructions in the project specification document.',
+                expected_output=f'Week {w_num} deliverables submitted and passing all tests.',
+                priority='High',
+                estimated_hours=20.0
+            )
+            db.session.add(pt)
+
+    db.session.commit()

@@ -1,0 +1,362 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Create Project — ANTI MATRIX Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+  .week-accordion { margin-bottom: 0.75rem; }
+  .week-header {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.9rem 1.25rem;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle);
+    border-radius: 10px; cursor: pointer; user-select: none;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .week-header:hover { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.25); }
+  .week-header.open { border-radius: 10px 10px 0 0; border-color: rgba(59,130,246,0.3); }
+  .week-body {
+    display: none; padding: 1.25rem;
+    border: 1px solid rgba(59,130,246,0.2); border-top: none;
+    border-radius: 0 0 10px 10px; background: rgba(59,130,246,0.02);
+  }
+  .week-body.open { display: block; }
+  .form-label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .form-input, .form-textarea, .form-select {
+    width: 100%; box-sizing: border-box;
+    padding: 0.65rem 0.9rem; background: var(--bg-input);
+    border: 1px solid var(--border-subtle); border-radius: 8px;
+    color: var(--text-primary); font-size: 0.875rem;
+    font-family: var(--font-sans); outline: none; transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: rgba(59,130,246,0.5); }
+  .form-textarea { resize: vertical; min-height: 70px; }
+  .form-row { display: grid; gap: 1rem; margin-bottom: 1rem; }
+  .form-row.cols2 { grid-template-columns: 1fr 1fr; }
+  .form-row.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+  .task-row {
+    display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.8rem;
+    background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 0.4rem;
+  }
+  .priority-badge {
+    font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 5px; white-space: nowrap;
+  }
+  .priority-High { background: rgba(239,68,68,0.15); color: #F87171; }
+  .priority-Medium { background: rgba(245,158,11,0.15); color: #FBBF24; }
+  .priority-Low { background: rgba(16,185,129,0.15); color: #34D399; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.active { opacity: 1; pointer-events: all; }
+  .modal-box { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.75rem; width: 520px; max-width: 95vw; max-height: 80vh; overflow-y: auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 2rem 2.5rem; max-width: 860px;">
+
+  <div style="margin-bottom: 1.75rem;">
+    <a href="{{ url_for('admin.projects_list') }}" style="display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-muted);font-size:0.85rem;text-decoration:none;margin-bottom:0.75rem;" onmouseover="this.style.color='#60A5FA'" onmouseout="this.style.color='var(--text-muted)'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to Projects
+    </a>
+    <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.25rem;">Create Project</h1>
+    <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0;">Define a reusable project template with a structured weekly roadmap and task library</p>
+  </div>
+
+  <form id="projectForm" method="POST" action="{{ url_for('admin.create_project') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- ── Basic Details ───────────────────────────────────────────────────── -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem;">
+      <h2 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem;">Project Details</h2>
+
+      <div class="form-row" style="margin-bottom:1rem;">
+        <div>
+          <label class="form-label">Project Title *</label>
+          <input type="text" name="title" class="form-input" required placeholder="e.g. E-Commerce Platform with React & Flask">
+        </div>
+      </div>
+
+      <div class="form-row cols2">
+        <div>
+          <label class="form-label">Domain *</label>
+          <input type="text" name="domain" class="form-input" required placeholder="e.g. Full Stack Web Development">
+        </div>
+        <div>
+          <label class="form-label">Difficulty Level</label>
+          <select name="difficulty" class="form-select">
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate" selected>Intermediate</option>
+            <option value="Advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-bottom:1rem;margin-top:1rem;">
+        <div>
+          <label class="form-label">Description *</label>
+          <textarea name="description" class="form-textarea" required placeholder="Brief overview of the project..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-row cols2">
+        <div>
+          <label class="form-label">Problem Statement</label>
+          <textarea name="problem_statement" class="form-textarea" placeholder="What problem does this project solve?"></textarea>
+        </div>
+        <div>
+          <label class="form-label">Expected Outcome</label>
+          <textarea name="expected_outcome" class="form-textarea" placeholder="What should the completed project deliver?"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row cols2" style="margin-top:1rem;">
+        <div>
+          <label class="form-label">Tech Stack (comma-separated)</label>
+          <input type="text" name="tech_stack" class="form-input" placeholder="Python, Flask, React, PostgreSQL...">
+        </div>
+        <div>
+          <label class="form-label">Objectives (one per line)</label>
+          <textarea name="objectives" class="form-textarea" placeholder="Build a RESTful API&#10;Implement JWT auth&#10;Deploy to cloud"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Duration Selection ─────────────────────────────────────────────── -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem;">
+      <h2 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1rem;">Duration & Week Structure</h2>
+      <div style="display: flex; gap: 0.85rem; margin-bottom: 1.5rem;">
+        <label id="dur1m" style="flex:1;display:flex;align-items:center;gap:0.85rem;padding:1rem 1.25rem;border:2px solid rgba(59,130,246,0.45);border-radius:12px;cursor:pointer;background:rgba(59,130,246,0.08);transition:all 0.2s;">
+          <input type="radio" name="duration_months" value="1" checked style="accent-color:#3B82F6;" onchange="changeDuration(1)">
+          <div>
+            <div style="font-weight:700;color:var(--text-primary);">1 Month</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Generates 4 editable weeks</div>
+          </div>
+        </label>
+        <label id="dur3m" style="flex:1;display:flex;align-items:center;gap:0.85rem;padding:1rem 1.25rem;border:2px solid rgba(255,255,255,0.06);border-radius:12px;cursor:pointer;transition:all 0.2s;">
+          <input type="radio" name="duration_months" value="3" style="accent-color:#3B82F6;" onchange="changeDuration(3)">
+          <div>
+            <div style="font-weight:700;color:var(--text-primary);">3 Months</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Generates 12 editable weeks</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Week Accordions (generated by JS) -->
+      <div id="weeksContainer"></div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.9rem;font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:0.6rem;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      Create Project & Save All Weeks
+    </button>
+  </form>
+</div>
+
+<!-- Task Modal -->
+<div id="taskModal" class="modal-overlay">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+      <h3 style="font-size:1rem;font-weight:700;color:var(--text-primary);margin:0;" id="taskModalTitle">Add Task</h3>
+      <button onclick="closeTaskModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.4rem;padding:0;line-height:1;">&times;</button>
+    </div>
+    <div class="form-row" style="margin-bottom:0.85rem;">
+      <div>
+        <label class="form-label">Task Title *</label>
+        <input type="text" id="modalTaskTitle" class="form-input" placeholder="e.g. Build REST API endpoints">
+      </div>
+    </div>
+    <div class="form-row cols2" style="margin-bottom:0.85rem;">
+      <div>
+        <label class="form-label">Priority</label>
+        <select id="modalTaskPriority" class="form-select">
+          <option value="High">High</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Estimated Hours</label>
+        <input type="number" id="modalTaskHours" class="form-input" placeholder="e.g. 8" min="0" step="0.5">
+      </div>
+    </div>
+    <div class="form-row" style="margin-bottom:0.85rem;">
+      <div>
+        <label class="form-label">Description</label>
+        <textarea id="modalTaskDesc" class="form-textarea" placeholder="What does this task involve?"></textarea>
+      </div>
+    </div>
+    <div class="form-row" style="margin-bottom:0.85rem;">
+      <div>
+        <label class="form-label">Instructions</label>
+        <textarea id="modalTaskInstr" class="form-textarea" placeholder="Step-by-step instructions for the intern..."></textarea>
+      </div>
+    </div>
+    <div class="form-row" style="margin-bottom:1.25rem;">
+      <div>
+        <label class="form-label">Expected Output</label>
+        <textarea id="modalTaskOutput" class="form-textarea" placeholder="What should the intern produce / submit?"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+      <button onclick="closeTaskModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="saveTask()" class="btn btn-primary">Add Task</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let currentWeekNum = null;
+  const weekTasks = {}; // weekNum -> array of task objects
+
+  function changeDuration(months) {
+    const d1 = document.getElementById('dur1m');
+    const d3 = document.getElementById('dur3m');
+    const weeks = months === 1 ? 4 : 12;
+
+    if (months === 1) {
+      d1.style.borderColor = 'rgba(59,130,246,0.45)'; d1.style.background = 'rgba(59,130,246,0.08)';
+      d3.style.borderColor = 'rgba(255,255,255,0.06)'; d3.style.background = 'transparent';
+    } else {
+      d3.style.borderColor = 'rgba(59,130,246,0.45)'; d3.style.background = 'rgba(59,130,246,0.08)';
+      d1.style.borderColor = 'rgba(255,255,255,0.06)'; d1.style.background = 'transparent';
+    }
+    renderWeeks(weeks);
+  }
+
+  function renderWeeks(count) {
+    const container = document.getElementById('weeksContainer');
+    container.innerHTML = '';
+    for (let i = 1; i <= count; i++) {
+      if (!weekTasks[i]) weekTasks[i] = [];
+      container.innerHTML += `
+        <div class="week-accordion">
+          <div class="week-header" onclick="toggleWeek(${i})" id="weekHeader${i}">
+            <div style="width:28px;height:28px;border-radius:50%;background:rgba(59,130,246,0.2);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#60A5FA;flex-shrink:0;">${i}</div>
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:0.875rem;color:var(--text-primary);">Week ${i}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);" id="weekSubtitle${i}">0 tasks</div>
+            </div>
+            <svg id="weekChevron${i}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="week-body" id="weekBody${i}">
+            <div class="form-row cols2" style="margin-bottom:0.85rem;">
+              <div>
+                <label class="form-label">Week Title</label>
+                <input type="text" name="week_${i}_title" class="form-input" placeholder="e.g. Setup & Architecture">
+              </div>
+              <div>
+                <label class="form-label">Objective</label>
+                <input type="text" name="week_${i}_objective" class="form-input" placeholder="e.g. Build foundational system structure">
+              </div>
+            </div>
+            <div class="form-row" style="margin-bottom:1rem;">
+              <div>
+                <label class="form-label">Instructions for Interns</label>
+                <textarea name="week_${i}_instructions" class="form-textarea" placeholder="What should the intern do this week?"></textarea>
+              </div>
+            </div>
+
+            <!-- Tasks List -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;">
+              <span style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Tasks</span>
+              <button type="button" onclick="openTaskModal(${i})" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;gap:0.35rem;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Task
+              </button>
+            </div>
+            <div id="taskList${i}" style="min-height:40px;"></div>
+            <input type="hidden" name="week_${i}_tasks" id="weekTasksInput${i}" value="[]">
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function toggleWeek(n) {
+    const body = document.getElementById(`weekBody${n}`);
+    const header = document.getElementById(`weekHeader${n}`);
+    const chevron = document.getElementById(`weekChevron${n}`);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    header.classList.toggle('open', !isOpen);
+    chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  }
+
+  function openTaskModal(weekNum) {
+    currentWeekNum = weekNum;
+    document.getElementById('taskModalTitle').textContent = `Add Task — Week ${weekNum}`;
+    document.getElementById('modalTaskTitle').value = '';
+    document.getElementById('modalTaskPriority').value = 'Medium';
+    document.getElementById('modalTaskHours').value = '';
+    document.getElementById('modalTaskDesc').value = '';
+    document.getElementById('modalTaskInstr').value = '';
+    document.getElementById('modalTaskOutput').value = '';
+    document.getElementById('taskModal').classList.add('active');
+    document.getElementById('modalTaskTitle').focus();
+  }
+
+  function closeTaskModal() {
+    document.getElementById('taskModal').classList.remove('active');
+    currentWeekNum = null;
+  }
+
+  function saveTask() {
+    const title = document.getElementById('modalTaskTitle').value.trim();
+    if (!title) { alert('Task title is required.'); return; }
+
+    const task = {
+      title,
+      priority: document.getElementById('modalTaskPriority').value,
+      estimated_hours: document.getElementById('modalTaskHours').value,
+      description: document.getElementById('modalTaskDesc').value.trim(),
+      instructions: document.getElementById('modalTaskInstr').value.trim(),
+      expected_output: document.getElementById('modalTaskOutput').value.trim(),
+    };
+
+    weekTasks[currentWeekNum].push(task);
+    renderTaskList(currentWeekNum);
+    updateSubtitle(currentWeekNum);
+    closeTaskModal();
+  }
+
+  function renderTaskList(weekNum) {
+    const el = document.getElementById(`taskList${weekNum}`);
+    const tasks = weekTasks[weekNum];
+    const colors = { High: 'priority-High', Medium: 'priority-Medium', Low: 'priority-Low' };
+
+    el.innerHTML = tasks.length === 0 ? `<div style="font-size:0.8rem;color:var(--text-muted);padding:0.5rem 0;">No tasks added yet.</div>` :
+      tasks.map((t, idx) => `
+        <div class="task-row">
+          <span class="priority-badge ${colors[t.priority]}">${t.priority}</span>
+          <span style="flex:1;font-size:0.845rem;color:var(--text-primary);font-weight:500;">${t.title}</span>
+          ${t.estimated_hours ? `<span style="font-size:0.75rem;color:var(--text-muted);">${t.estimated_hours}h</span>` : ''}
+          <button type="button" onclick="removeTask(${weekNum}, ${idx})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0.2rem;line-height:1;" title="Remove task">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      `).join('');
+
+    document.getElementById(`weekTasksInput${weekNum}`).value = JSON.stringify(tasks);
+  }
+
+  function removeTask(weekNum, idx) {
+    weekTasks[weekNum].splice(idx, 1);
+    renderTaskList(weekNum);
+    updateSubtitle(weekNum);
+  }
+
+  function updateSubtitle(weekNum) {
+    const count = weekTasks[weekNum].length;
+    document.getElementById(`weekSubtitle${weekNum}`).textContent = `${count} task${count !== 1 ? 's' : ''}`;
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('taskModal').addEventListener('click', function(e) {
+    if (e.target === this) closeTaskModal();
+  });
+
+  // Init with 4 weeks (1 month default)
+  window.addEventListener('DOMContentLoaded', () => renderWeeks(4));
+</script>
+{% endblock %}

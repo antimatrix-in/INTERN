@@ -1,0 +1,78 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Assign Tasks — ANTI MATRIX Admin{% endblock %}
+
+{% block content %}
+<div style="padding: 2rem 2.5rem;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.2rem;">Assign Tasks</h1>
+      <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0;">Select an employee to assign a project and task roadmap</p>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <form method="get" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; gap: 0.75rem;">
+      <input type="text" name="q" value="{{ search_query }}"
+             placeholder="Search by employee name or ID..."
+             style="flex:1;padding:0.65rem 1rem;background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-primary);font-size:0.875rem;outline:none;font-family:var(--font-sans);">
+      <button type="submit" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.4rem;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+      </button>
+      {% if search_query %}<a href="{{ url_for('admin.assign_tasks') }}" class="btn btn-secondary">Clear</a>{% endif %}
+    </div>
+  </form>
+
+  <!-- Employee Directory -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+    {% for student in students %}
+    {% set internship = student.active_internship %}
+    {% set assignment = internship.active_assignment if internship else None %}
+    <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 1.25rem; display:flex;flex-direction:column;gap:1rem;">
+      <!-- Employee Info -->
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(139,92,246,0.2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#60A5FA;flex-shrink:0;">{{ student.user.full_name[:1] }}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ student.user.full_name }}</div>
+          <div style="font-family:var(--font-mono);font-size:0.75rem;color:#60A5FA;">{{ student.student_uid }}</div>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+        {% if internship %}
+        <span style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:999px;{% if internship.status == 'ACTIVE' %}background:rgba(16,185,129,0.12);color:#34D399;{% else %}background:rgba(100,116,139,0.12);color:#94A3B8;{% endif %}">
+          {{ internship.status }}
+        </span>
+        {% endif %}
+        {% if assignment %}
+        <span style="font-size:0.7rem;color:var(--text-muted);">Project: <strong style="color:var(--text-primary);">{{ assignment.project.title[:30] }}{% if assignment.project.title|length > 30 %}...{% endif %}</strong></span>
+        {% else %}
+        <span style="font-size:0.72rem;font-weight:600;padding:0.2rem 0.6rem;border-radius:999px;background:rgba(239,68,68,0.1);color:#F87171;">No Project Assigned</span>
+        {% endif %}
+      </div>
+
+      <!-- Action -->
+      {% if internship %}
+      <a href="{{ url_for('admin.assign_project_to_student', student_id=student.id) }}"
+         class="btn {% if assignment %}btn-secondary{% else %}btn-primary{% endif %}"
+         style="display:flex;align-items:center;justify-content:center;gap:0.5rem;width:100%;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        {% if assignment %}Reassign Project{% else %}Assign Project{% endif %}
+      </a>
+      {% else %}
+      <span style="font-size:0.78rem;color:var(--text-muted);text-align:center;">No active internship — create employee first.</span>
+      {% endif %}
+    </div>
+    {% else %}
+    <div style="grid-column:1/-1;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;padding:3rem;text-align:center;color:var(--text-muted);font-size:0.875rem;">
+      {% if search_query %}No employees matching "{{ search_query }}".{% else %}No employees yet. <a href="{{ url_for('admin.create_employee') }}" style="color:#60A5FA;">Create first employee →</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}
