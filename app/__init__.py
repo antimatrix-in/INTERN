@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from INTERN.config import Config
+from config import Config
 from app.extensions import db, login_manager, csrf
 
 def create_app(config_class=Config):
