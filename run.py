@@ -1,7 +1,17 @@
 import os
 from app import create_app
+from flask import jsonify
+from datetime import datetime
 
 app = create_app()
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'OK',
+        'message': 'Your API is running',
+        'timestamp': datetime.utcnow().isoformat()
+    })
 
 #run code
 if __name__ == '__main__':
