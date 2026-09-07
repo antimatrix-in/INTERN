@@ -1,8 +1,19 @@
 <header class="navbar">
   <div class="container navbar-inner">
-    <a href="{{ url_for('main.index') }}" class="brand-logo">
-      <div class="brand-symbol">AM</div>
-      <span>ANTI MATRIX</span>
+    <a href="{{ url_for('main.index') }}" class="brand-logo" style="display: inline-flex; align-items: center; gap: 0.65rem; text-decoration: none;">
+      <div class="brand-symbol" style="background: transparent; border: none; box-shadow: none; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+        <svg viewBox="0 0 100 100" width="32" height="32">
+          <path d="M 18,12 L 64,12 L 64,25 L 30,25 L 30,82 L 85,82 L 85,45 L 98,45 L 98,95 L 18,95 Z" fill="var(--text-main)" />
+          <g transform="translate(62, 2) scale(0.75)">
+            <polygon points="20,0 36,0 28,16 12,16" fill="#86EFAC" />
+            <polygon points="36,0 48,20 28,16" fill="#10B981" />
+            <polygon points="20,0 28,16 4,20" fill="#34D399" />
+            <polygon points="12,16 28,16 28,40 4,20" fill="#059669" />
+            <polygon points="28,16 48,20 28,40" fill="#047857" />
+          </g>
+        </svg>
+      </div>
+      <span style="font-weight: 800; letter-spacing: 0.05em; font-size: 1.1rem; color: var(--text-main);">ANTI-MATRIX</span>
     </a>
 
     <div class="nav-actions" style="margin-left: auto;">

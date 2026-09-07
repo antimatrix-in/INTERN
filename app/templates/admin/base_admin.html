@@ -32,9 +32,20 @@
     <aside class="portal-sidebar" style="background: #060A11; border-right-color: rgba(59, 130, 246, 0.2);">
       <div class="sidebar-header">
         <a href="{{ url_for('admin.dashboard') }}" class="sidebar-brand">
-          <div class="brand-symbol" style="background: linear-gradient(135deg, #3B82F6, #8B5CF6); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);">AM</div>
+          <div class="brand-symbol" style="background: transparent; border: none; box-shadow: none; padding: 0; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">
+            <svg viewBox="0 0 100 100" width="34" height="34">
+              <path d="M 18,12 L 64,12 L 64,25 L 30,25 L 30,82 L 85,82 L 85,45 L 98,45 L 98,95 L 18,95 Z" fill="var(--text-main)" />
+              <g transform="translate(62, 2) scale(0.75)">
+                <polygon points="20,0 36,0 28,16 12,16" fill="#86EFAC" />
+                <polygon points="36,0 48,20 28,16" fill="#10B981" />
+                <polygon points="20,0 28,16 4,20" fill="#34D399" />
+                <polygon points="12,16 28,16 28,40 4,20" fill="#059669" />
+                <polygon points="28,16 48,20 28,40" fill="#047857" />
+              </g>
+            </svg>
+          </div>
           <div>
-            <div class="sidebar-brand-name">ANTI MATRIX</div>
+            <div class="sidebar-brand-name" style="font-weight: 800; letter-spacing: 0.05em; font-family: var(--font-main);">ANTI-MATRIX</div>
             <span class="sidebar-badge" style="color: #60A5FA;">Administration</span>
           </div>
         </a>

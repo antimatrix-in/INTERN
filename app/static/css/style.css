@@ -4,37 +4,37 @@
    ========================================================================== */
 
 :root {
-  /* Color Tokens */
-  --bg-main: #080C14;
-  --bg-surface: #0F172A;
-  --bg-surface-elevated: #1E293B;
-  --bg-glass: rgba(15, 23, 42, 0.85);
+  /* Color Tokens — Clean White Light Theme with Official ANTI-MATRIX Emerald Brand Accents */
+  --bg-main: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #F1F5F9;
+  --bg-glass: rgba(255, 255, 255, 0.92);
   
-  --primary: #10B981;
-  --primary-hover: #059669;
-  --primary-light: #34D399;
-  --primary-glow: rgba(16, 185, 129, 0.25);
+  --primary: #059669;
+  --primary-hover: #047857;
+  --primary-light: #10B981;
+  --primary-glow: rgba(16, 185, 129, 0.2);
   
-  --secondary: #06B6D4;
-  --secondary-glow: rgba(6, 182, 212, 0.25);
+  --secondary: #16A34A;
+  --secondary-glow: rgba(22, 163, 74, 0.2);
   
-  --accent-cyan: #22D3EE;
-  --accent-blue: #3B82F6;
-  --accent-purple: #8B5CF6;
+  --accent-cyan: #059669;
+  --accent-blue: #0284C7;
+  --accent-purple: #0D9488;
 
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
+  --text-main: #0F172A;
+  --text-muted: #475569;
   --text-subtle: #64748B;
-  --text-inverse: #080C14;
+  --text-inverse: #FFFFFF;
 
-  --border-subtle: #1E293B;
-  --border-medium: #334155;
-  --border-accent: rgba(16, 185, 129, 0.4);
+  --border-subtle: #E2E8F0;
+  --border-medium: #CBD5E1;
+  --border-accent: rgba(16, 185, 129, 0.45);
 
-  --success: #10B981;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --info: #3B82F6;
+  --success: #059669;
+  --warning: #D97706;
+  --danger: #DC2626;
+  --info: #0284C7;
 
   /* Typography */
   --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -46,10 +46,10 @@
   --radius-lg: 16px;
   --radius-full: 9999px;
   
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 25px var(--primary-glow);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 20px var(--primary-glow);
 
   --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   --max-width: 1200px;
@@ -76,8 +76,9 @@ body {
   display: flex;
   flex-direction: column;
   background-image: 
-    radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
-    radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.04) 0%, transparent 40%);
+    radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(34, 197, 94, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 50% 30%, rgba(74, 222, 128, 0.05) 0%, transparent 55%);
   background-attachment: fixed;
 }
 
@@ -325,7 +326,7 @@ img {
 
 .portal-sidebar {
   width: 270px;
-  background: #090E17;
+  background: #FFFFFF;
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
@@ -334,6 +335,7 @@ img {
   height: 100vh;
   z-index: 100;
   flex-shrink: 0;
+  box-shadow: 1px 0 10px rgba(0, 0, 0, 0.03);
 }
 
 .sidebar-header {
@@ -410,7 +412,7 @@ img {
 .sidebar-footer {
   padding: 1.25rem 1rem;
   border-top: 1px solid var(--border-subtle);
-  background: rgba(8, 12, 20, 0.6);
+  background: #F8FAFC;
 }
 
 .user-profile-widget {
@@ -465,7 +467,7 @@ img {
 .portal-topbar {
   height: 68px;
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
@@ -559,8 +561,8 @@ img {
 .stat-icon {
   width: 48px;
   height: 48px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -570,8 +572,8 @@ img {
 }
 
 .stat-icon.cyan {
-  background: rgba(6, 182, 212, 0.1);
-  border-color: rgba(6, 182, 212, 0.2);
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.25);
   color: var(--accent-cyan);
 }
 
@@ -607,12 +609,12 @@ img {
    PROMINENT PROJECT CARD
    ========================================================================== */
 .project-banner-card {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-lg);
   padding: 2rem;
   margin-bottom: 2rem;
-  box-shadow: 0 0 25px rgba(16, 185, 129, 0.08);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.08);
 }
 
 .project-meta-badges {
@@ -693,11 +695,11 @@ img {
 
 .week-card.status-available-card {
   border-color: rgba(16, 185, 129, 0.4);
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.04) 0%, rgba(15, 23, 42, 0.9) 100%);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, rgba(15, 23, 42, 0.9) 100%);
 }
 
 .week-card.status-completed-card {
-  border-color: rgba(52, 211, 153, 0.3);
+  border-color: rgba(16, 185, 129, 0.35);
 }
 
 .week-card.status-locked-card {
@@ -758,15 +760,15 @@ img {
 }
 
 .badge-available {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34D399;
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(0, 210, 255, 0.15);
+  color: var(--primary-light);
+  border: 1px solid rgba(0, 210, 255, 0.35);
 }
 
 .badge-completed, .badge-approved {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10B981;
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: rgba(0, 210, 255, 0.2);
+  color: var(--primary);
+  border: 1px solid rgba(0, 210, 255, 0.45);
 }
 
 .badge-locked {
@@ -809,8 +811,8 @@ img {
 }
 
 .task-item.task-completed {
-  border-color: rgba(16, 185, 129, 0.3);
-  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(0, 210, 255, 0.3);
+  background: rgba(0, 210, 255, 0.05);
 }
 
 .task-checkbox {
@@ -911,9 +913,9 @@ img {
 }
 
 .alert-success {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34D399;
-  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(0, 210, 255, 0.15);
+  color: var(--primary-light);
+  border-color: rgba(0, 210, 255, 0.35);
 }
 
 .alert-danger {

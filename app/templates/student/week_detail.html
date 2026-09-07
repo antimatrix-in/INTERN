@@ -12,7 +12,7 @@
   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
     <div>
       <div style="display: flex; gap: 0.65rem; margin-bottom: 0.4rem; align-items: center;">
-        <span class="meta-badge mono" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border-color: rgba(16, 185, 129, 0.3);">WEEK {{ milestone.week_number }}</span>
+        <span class="meta-badge mono" style="background: rgba(0, 210, 255, 0.15); color: var(--primary); border-color: rgba(0, 210, 255, 0.35);">WEEK {{ milestone.week_number }}</span>
         <span class="meta-badge mono">{{ assignment.project.project_code }}</span>
         {% if milestone.due_at %}
           <span class="meta-badge mono" style="color: {% if milestone.is_overdue %}#EF4444{% else %}#94A3B8{% endif %};">
@@ -142,7 +142,7 @@
           </p>
         </div>
 
-        <span id="task-progress-badge" class="meta-badge mono" style="color: {% if milestone.all_tasks_completed %}#10B981{% else %}#F59E0B{% endif %};">
+        <span id="task-progress-badge" class="meta-badge mono" style="color: {% if milestone.all_tasks_completed %}var(--primary){% else %}#F59E0B{% endif %};">
           {% if milestone.all_tasks_completed %}✓ ALL TASKS DONE{% else %}{{ milestone.completed_tasks_count }}/{{ milestone.total_tasks_count }} TASKS{% endif %}
         </span>
       </div>
@@ -157,7 +157,7 @@
                 {{ task.task_text }}
               </label>
               {% if task.is_completed %}
-                <span style="font-size: 0.75rem; color: #10B981; font-weight: 700; background: rgba(16, 185, 129, 0.1); padding: 0.15rem 0.5rem; border-radius: 9999px;">✓ DONE</span>
+                <span style="font-size: 0.75rem; color: var(--primary); font-weight: 700; background: rgba(0, 210, 255, 0.1); padding: 0.15rem 0.5rem; border-radius: 9999px;">✓ DONE</span>
               {% endif %}
             </form>
           </li>
@@ -205,7 +205,7 @@
       <div style="padding-top: 1.25rem;">
         {% if milestone.status in ['COMPLETED', 'APPROVED'] %}
           <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted);">
-            <div style="color: #10B981; margin-bottom: 0.5rem;">
+            <div style="color: var(--primary); margin-bottom: 0.5rem;">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
             <h4 style="color: #F8FAFC; font-weight: 700;">Week {{ milestone.week_number }} Completed & Approved</h4>
@@ -360,7 +360,7 @@
               {% endif %}
 
               {% if sub.review_feedback %}
-                <div style="margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed var(--border-subtle); color: {% if sub.status == 'REDO_REQUIRED' %}#EF4444{% else %}#10B981{% endif %}; font-style: italic;">
+                <div style="margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed var(--border-subtle); color: {% if sub.status == 'REDO_REQUIRED' %}#EF4444{% else %}var(--primary){% endif %}; font-style: italic;">
                   "{{ sub.review_feedback }}"
                 </div>
               {% endif %}
@@ -411,7 +411,7 @@ document.querySelectorAll('.task-checkbox').forEach(function(checkbox) {
         if (badge) {
           if (data.all_completed) {
             badge.textContent = '✓ ALL TASKS DONE';
-            badge.style.color = '#10B981';
+            badge.style.color = 'var(--primary)';
           } else {
             badge.textContent = `${data.completed_count}/${data.total_count} TASKS`;
             badge.style.color = '#F59E0B';
