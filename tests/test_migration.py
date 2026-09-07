@@ -139,6 +139,21 @@ class DatabaseMigrationTestCase(unittest.TestCase):
                     f"Column '{table.name}.{col.name}' should exist after migration."
                 )
 
+    def test_06_user_name_and_full_name_synchronization(self):
+        """Verify that setting full_name automatically syncs with name for portfolio compatibility."""
+        u1 = User(
+            email='portfolio_test@example.com',
+            full_name='Portfolio User',
+            employee_id='AM-TEST-100',
+            password_hash='hash123'
+        )
+        db.session.add(u1)
+        db.session.commit()
+
+        loaded = User.query.filter_by(email='portfolio_test@example.com').first()
+        self.assertEqual(loaded.full_name, 'Portfolio User')
+        self.assertEqual(loaded.name, 'Portfolio User')
+
 
 if __name__ == '__main__':
     unittest.main()

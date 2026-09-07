@@ -57,9 +57,17 @@ def run_safe_schema_migrations(app=None):
                     conn.execute(text("ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);"))
                     conn.execute(text("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);"))
                     conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_employee_id ON users (employee_id) WHERE employee_id IS NOT NULL;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.users ALTER COLUMN name DROP NOT NULL;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS users ALTER COLUMN name DROP NOT NULL;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS full_name VARCHAR(100);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS full_name VARCHAR(100);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS name VARCHAR(100);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS name VARCHAR(100);"))
+                    conn.execute(text("UPDATE public.users SET full_name = name WHERE full_name IS NULL AND name IS NOT NULL;"))
+                    conn.execute(text("UPDATE public.users SET name = full_name WHERE name IS NULL AND full_name IS NOT NULL;"))
                     conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN student_id DROP NOT NULL;"))
                     conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN plan_id DROP NOT NULL;"))
-            logger.info("Immediate PostgreSQL DDL for users.employee_id executed successfully.")
+            logger.info("Immediate PostgreSQL DDL for users (employee_id, name, full_name) and applications executed successfully.")
         except Exception as e:
             logger.warning(f"Immediate PostgreSQL DDL notice: {e}")
 

@@ -14,6 +14,13 @@ BEGIN;
 
 -- 1. Migrate `users` table
 ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(100);
+ALTER TABLE users ALTER COLUMN name DROP NOT NULL;
+
+-- Sync name and full_name between Portfolio and Internship Portal
+UPDATE users SET full_name = name WHERE full_name IS NULL AND name IS NOT NULL;
+UPDATE users SET name = full_name WHERE name IS NULL AND full_name IS NOT NULL;
 
 -- Create partial unique index (prevents collisions between active IDs while safely allowing multiple NULLs)
 CREATE UNIQUE INDEX IF NOT EXISTS ix_users_employee_id ON users (employee_id) WHERE employee_id IS NOT NULL;

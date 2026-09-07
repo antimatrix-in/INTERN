@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timezone
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import event
 from app.extensions import db, login_manager
 
 @login_manager.user_loader
@@ -17,12 +18,20 @@ class User(db.Model, UserMixin):
     employee_id = db.Column(db.String(50), unique=True, nullable=True, index=True) # AM-ADM-..., AM-MTR-...
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='student') # super_admin, admin, hr, mentor, evaluator, student
+    name = db.Column(db.String(100), nullable=True) # Portfolio compatibility
     full_name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(20), nullable=True)
     avatar_url = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __init__(self, **kwargs):
+        if 'full_name' in kwargs and 'name' not in kwargs:
+            kwargs['name'] = kwargs['full_name']
+        elif 'name' in kwargs and 'full_name' not in kwargs:
+            kwargs['full_name'] = kwargs['name']
+        super().__init__(**kwargs)
 
     # Relationships
     student_profile = db.relationship('Student', backref='user', uselist=False, cascade='all, delete-orphan')
@@ -41,6 +50,16 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return f'<User {self.email} ({self.role})>'
+
+
+@event.listens_for(User, 'before_insert')
+@event.listens_for(User, 'before_update')
+def sync_user_names(mapper, connection, target):
+    """Ensure both name and full_name are populated for cross-system Supabase compatibility."""
+    if target.full_name and not target.name:
+        target.name = target.full_name
+    elif target.name and not target.full_name:
+        target.full_name = target.name
 
 
 class College(db.Model):
