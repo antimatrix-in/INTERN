@@ -247,6 +247,48 @@ def seed_projects_and_students():
         db.session.add(proj_2)
         db.session.flush()
 
+    # Master Problem Pool: 1 Month Projects
+    p1m_003 = Project.query.filter_by(project_code='AM-PRJ-003').first()
+    if not p1m_003:
+        p1m_003 = Project(
+            project_code='AM-PRJ-003',
+            title='Python Flask Web Development & RESTful Analytics Engine',
+            domain='Python Flask Developer Intern',
+            description='Design and build a modular Flask RESTful API with database persistence, authentication, and live KPI dashboard metrics.',
+            problem_statement='Organizations need fast, scalable web backend services with comprehensive API documentation and role-based access controls.',
+            expected_outcome='A robust Flask web application with clean architecture, Swagger documentation, and automated test coverage.',
+            objectives_json=json.dumps(['RESTful API architecture', 'Authentication & JWT', 'Relational database ORM', 'Interactive analytics UI']),
+            tech_stack_json=json.dumps(['Python', 'Flask', 'SQLAlchemy', 'PostgreSQL', 'HTML5', 'CSS3', 'Chart.js']),
+            requirements_json=json.dumps(['Secure password hashing', 'REST API standards', 'Unit test coverage > 80%']),
+            instructions_md='Complete the 4-week milestone roadmap and submit deliverables.',
+            duration_weeks=4,
+            duration_months=1,
+            difficulty='Intermediate'
+        )
+        db.session.add(p1m_003)
+        db.session.flush()
+
+    # Master Problem Pool: 3 Month Projects
+    p3m_001 = Project.query.filter_by(project_code='AM-PRJ-004').first()
+    if not p3m_001:
+        p3m_001 = Project(
+            project_code='AM-PRJ-004',
+            title='AI-Based Student Performance Prediction & Personalized Learning System',
+            domain='AI & ML',
+            description='Develop an end-to-end intelligent adaptive learning platform that forecasts student learning curves and personalizes educational curriculum paths using advanced deep learning.',
+            problem_statement='Static educational curricula fail to adapt to individual student learning paces, causing dropouts and poor retention.',
+            expected_outcome='A comprehensive 12-week AI platform deployed with dynamic curriculum adaptation and predictive intervention dashboards.',
+            objectives_json=json.dumps(['Multi-tier deep learning models', 'Real-time adaptive recommendation engine', 'Interactive educator dashboard', 'Containerized cloud deployment']),
+            tech_stack_json=json.dumps(['Python', 'PyTorch', 'Flask', 'PostgreSQL', 'Redis', 'Docker', 'Chart.js']),
+            requirements_json=json.dumps(['Adaptive model inference < 150ms', 'Comprehensive evaluation benchmarks', 'CI/CD deployment pipeline']),
+            instructions_md='Complete all 4 phases across 12 structured weeks.',
+            duration_weeks=12,
+            duration_months=3,
+            difficulty='Advanced'
+        )
+        db.session.add(p3m_001)
+        db.session.flush()
+
     # 3. Demo Student 1: Aarav Kumar (1-Month Track, Project 1)
     student1_user = User.query.filter_by(email='aarav.kumar@example.com').first()
     if not student1_user:
@@ -883,6 +925,58 @@ def seed_project_weeks_and_tasks():
                 description=f'Complete all core implementation tasks for {w_title}.',
                 instructions=f'Follow the Week {w_num} instructions in the project specification document.',
                 expected_output=f'Week {w_num} deliverables submitted and passing all tests.',
+                priority='High',
+                estimated_hours=20.0
+            )
+            db.session.add(pt)
+
+    # Additional 1-Month and 3-Month Pool Weeks Setup
+    for p_code in ['AM-PRJ-003']:
+        proj = Project.query.filter_by(project_code=p_code).first()
+        if proj and proj.project_weeks.count() == 0:
+            for w_num in range(1, 5):
+                pw = ProjectWeek(
+                    project_id=proj.id,
+                    week_number=w_num,
+                    title=f'Week {w_num}: {proj.title} Phase {w_num}',
+                    description=f'Week {w_num} tasks for {proj.title}.',
+                    objective=f'Complete week {w_num} objectives.',
+                    instructions='Follow weekly roadmap instructions.',
+                    deliverables_json=json.dumps([f'Week {w_num} Deliverables', 'Source Code'])
+                )
+                db.session.add(pw)
+                db.session.flush()
+                pt = ProjectTask(
+                    week_id=pw.id,
+                    title=f'Execute Milestone Tasks for Week {w_num}',
+                    description=f'Implement week {w_num} core features.',
+                    instructions='Complete all assigned tasks.',
+                    expected_output='Deliverables submitted.',
+                    priority='High',
+                    estimated_hours=15.0
+                )
+                db.session.add(pt)
+
+    p3m_1 = Project.query.filter_by(project_code='AM-PRJ-004').first()
+    if p3m_1 and p3m_1.project_weeks.count() == 0:
+        for w_num in range(1, 13):
+            pw = ProjectWeek(
+                project_id=p3m_1.id,
+                week_number=w_num,
+                title=f'Week {w_num}: {p3m_1.title} Milestone {w_num}',
+                description=f'Week {w_num} of {p3m_1.title}.',
+                objective=f'Execute Phase {w_num} objectives.',
+                instructions='Complete all Week deliverables.',
+                deliverables_json=json.dumps([f'Week {w_num} Artifacts', 'Source Code'])
+            )
+            db.session.add(pw)
+            db.session.flush()
+            pt = ProjectTask(
+                week_id=pw.id,
+                title=f'Implement specifications for Week {w_num}',
+                description=f'Complete tasks for week {w_num}.',
+                instructions='Follow project roadmap.',
+                expected_output='Weekly deliverables submitted.',
                 priority='High',
                 estimated_hours=20.0
             )

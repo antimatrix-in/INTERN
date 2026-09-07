@@ -2,6 +2,7 @@ import os
 import json
 import random
 import string
+import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, current_app, send_file
 from flask_login import login_required, current_user
@@ -9,8 +10,11 @@ from app.extensions import db
 from app.models import (
     User, Student, Internship, Project, ProjectAssignment, ProjectWeek, ProjectTask,
     WeeklyMilestone, WeeklyTask, WeeklySubmission, Meeting, Notification,
-    AuditLog, Application, Payment, College, Department, InternshipPlan, Evaluation
+    AuditLog, Application, Payment, College, Department, InternshipPlan, Evaluation,
+    TaskImportHistory
 )
+
+logger = logging.getLogger(__name__)
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -90,6 +94,8 @@ def dashboard():
 def api_application_lookup(app_id):
     """Server-side AJAX endpoint: look up a career application by its Application ID."""
     from app.services.career_integration import CareerIntegrationService
+    from app.services.problem_allocation_service import ProblemAllocationService
+
     app = CareerIntegrationService.get_application_by_id(app_id)
     if not app:
         return jsonify({'success': False, 'error': 'Application ID not found.'}), 404
@@ -109,22 +115,25 @@ def api_application_lookup(app_id):
     if not has_payment:
         return jsonify({'success': False, 'error': 'Payment has not been completed for this application.'}), 400
 
-    # Determine duration display
-    duration_months = 1
-    if app.plan:
-        duration_months = app.plan.duration_months
-    elif app.applied_role:
-        role_lower = app.applied_role.lower()
-        if '3 month' in role_lower or 'professional' in role_lower:
-            duration_months = 3
-
+    # Determine duration from application source of truth
+    duration_months = CareerIntegrationService.get_application_duration_months(app)
     duration_str = f"{duration_months} Month{'s' if duration_months > 1 else ''}"
     plan_code = '3_MONTH_PROFESSIONAL' if duration_months == 3 else '1_MONTH_PROJECT'
+
+    # College resolution
+    college_obj = None
+    if app.college_name:
+        college_obj = College.query.filter(College.name.ilike(f"%{app.college_name.strip()}%")).first()
+    if not college_obj:
+        college_obj = College.query.filter_by(code='OTHER-COLLEGE').first() or College.query.first()
 
     # Check if already converted / employee exists
     student, user = CareerIntegrationService.get_employee_by_application_id(app.application_no)
     if app.is_converted_to_employee or student:
         emp_id = app.converted_employee_id or (user.employee_id if user else (student.student_uid if student else ''))
+        username_val = user.email if user else (app.candidate_email or '')
+        assigned_proj = student.active_internship.active_assignment.project if (student and student.active_internship and student.active_internship.active_assignment) else None
+
         return jsonify({
             'success': True,
             'already_exists': True,
@@ -135,15 +144,42 @@ def api_application_lookup(app_id):
             'candidate_phone': app.candidate_phone or '',
             'college_name': app.college_name or (student.college.name if student and student.college else ''),
             'department_name': app.department_name or (student.department.name if student and student.department else ''),
+            'course': app.course or (student.degree if student else (app.department_name or 'Engineering')),
             'applied_role': app.applied_role or 'Intern',
             'duration': duration_str,
+            'duration_months': duration_months,
             'duration_plan': plan_code,
             'payment_status': 'SUCCESS',
             'status': 'APPROVED',
             'employee_id': emp_id,
-            'student_id': student.id if student else None
+            'username': username_val,
+            'student_id': student.id if student else None,
+            'problem_id': assigned_proj.project_code if assigned_proj else None,
+            'problem_title': assigned_proj.title if assigned_proj else None
         }), 200
 
+    # Look up eligible problems for this college & duration pool
+    eligible_problems = ProblemAllocationService.get_eligible_problems(
+        college_id=college_obj.id if college_obj else 1,
+        duration_months=duration_months,
+        domain=app.applied_role
+    )
+
+    allocated_preview = None
+    allocation_warning = None
+    if eligible_problems:
+        p_preview = eligible_problems[0]
+        allocated_preview = {
+            'problem_id': p_preview.project_code,
+            'title': p_preview.title,
+            'domain': p_preview.domain,
+            'duration': f"{p_preview.duration_months} Month{'s' if p_preview.duration_months > 1 else ''}",
+            'available_pool_count': len(eligible_problems)
+        }
+    else:
+        allocation_warning = f"No available {duration_months} Month problem for {college_obj.name if college_obj else 'this college'}. Please upload another {duration_months} Month problem before creating this employee."
+
+    username_val = app.candidate_email or ''
     return jsonify({
         'success': True,
         'already_exists': False,
@@ -153,20 +189,24 @@ def api_application_lookup(app_id):
         'candidate_phone': app.candidate_phone or '',
         'candidate_dob': app.candidate_dob or '',
         'candidate_gender': app.candidate_gender or '',
-        'college_name': app.college_name or '',
+        'college_name': app.college_name or (college_obj.name if college_obj else ''),
         'department_name': app.department_name or '',
-        'course': app.course or '',
+        'course': app.course or (app.department_name or 'Engineering'),
         'year_of_study': app.year_of_study or '',
         'roll_number': app.roll_number or '',
         'applied_role': app.applied_role or 'Intern',
         'duration': duration_str,
+        'duration_months': duration_months,
         'duration_plan': plan_code,
         'payment_status': 'SUCCESS',
         'status': 'APPROVED',
         'employee_id': app.converted_employee_id or 'Generated on Creation',
+        'username': username_val,
         'city': app.city or '',
         'state': app.state or '',
         'aadhaar_masked': app.aadhaar_masked or '',
+        'allocated_problem_preview': allocated_preview,
+        'allocation_warning': allocation_warning
     })
 
 
@@ -278,14 +318,15 @@ def create_employee():
             return render_template('admin/create_employee.html', plans=plans)
 
         try:
-            student, new_user, emp_id, temp_password = CareerIntegrationService.create_or_link_employee_from_application(
+            student, new_user, emp_id, temp_password, allocated_problem = CareerIntegrationService.create_or_link_employee_from_application(
                 app=app,
                 duration_plan=duration_plan,
                 admin_user=current_user,
                 raw_ip=request.remote_addr
             )
 
-            flash(f'Employee {new_user.full_name} ({emp_id}) created successfully from Application {app.application_no}!', 'success')
+            problem_text = f" and assigned Problem {allocated_problem.project_code} ({allocated_problem.title})" if allocated_problem else ""
+            flash(f'Employee {new_user.full_name} ({emp_id}) created successfully from Application {app.application_no}{problem_text}!', 'success')
             return render_template(
                 'admin/create_employee.html',
                 plans=plans,
@@ -294,7 +335,10 @@ def create_employee():
                 created_temp_password=temp_password,
                 created_name=new_user.full_name,
                 created_email=new_user.email,
-                created_student_id=student.id
+                created_student_id=student.id,
+                created_problem_id=allocated_problem.project_code if allocated_problem else None,
+                created_problem_title=allocated_problem.title if allocated_problem else None,
+                allocated_problem=allocated_problem
             )
 
         except Exception as e:
@@ -482,6 +526,105 @@ def create_project():
         suggested_1m_code=suggested_1m_code,
         suggested_3m_code=suggested_3m_code
     )
+
+
+# ─── Upload Tasks (JSON Import) ───────────────────────────────────────────────
+
+@admin_bp.route('/upload-tasks')
+@login_required
+def upload_tasks():
+    recent_imports = TaskImportHistory.query.order_by(TaskImportHistory.id.desc()).limit(15).all()
+    total_projects = Project.query.count()
+    return render_template('admin/upload_tasks.html', recent_imports=recent_imports, total_projects=total_projects)
+
+
+@admin_bp.route('/upload-tasks/validate', methods=['POST'])
+@login_required
+def validate_task_upload():
+    from app.services.task_import_service import TaskImportService
+    selected_duration = request.form.get('duration', '1 Month').strip()
+
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file uploaded. Please choose a JSON file.'}), 400
+
+    file = request.files['file']
+    if not file or file.filename == '':
+        return jsonify({'success': False, 'error': 'No file selected. Please choose a JSON file.'}), 400
+
+    if not file.filename.lower().endswith('.json'):
+        return jsonify({'success': False, 'error': 'Invalid file type. Only .json files are permitted.'}), 400
+
+    try:
+        content = file.read().decode('utf-8')
+        is_valid, err_msg, preview_data, parsed_payload = TaskImportService.validate_and_parse(
+            json_content=content,
+            selected_duration=selected_duration,
+            filename=file.filename
+        )
+        if not is_valid:
+            return jsonify({'success': False, 'error': err_msg}), 400
+
+        return jsonify({
+            'success': True,
+            'preview': preview_data,
+            'is_duplicate': preview_data['is_duplicate'],
+            'existing_project_code': preview_data['existing_project_code']
+        })
+    except Exception as e:
+        logger.exception("Error validating task plan JSON")
+        return jsonify({'success': False, 'error': f"Failed to validate JSON: {str(e)}"}), 500
+
+
+@admin_bp.route('/upload-tasks/import', methods=['POST'])
+@login_required
+def import_task_upload():
+    from app.services.task_import_service import TaskImportService
+    selected_duration = request.form.get('duration', '1 Month').strip()
+    overwrite = request.form.get('overwrite', 'false').lower() in ['true', '1', 'yes']
+
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file uploaded. Please choose a JSON file.'}), 400
+
+    file = request.files['file']
+    if not file or not file.filename.lower().endswith('.json'):
+        return jsonify({'success': False, 'error': 'Invalid file type. Only .json files are permitted.'}), 400
+
+    try:
+        content = file.read().decode('utf-8')
+        is_valid, err_msg, preview_data, parsed_payload = TaskImportService.validate_and_parse(
+            json_content=content,
+            selected_duration=selected_duration,
+            filename=file.filename
+        )
+        if not is_valid:
+            return jsonify({'success': False, 'error': err_msg}), 400
+
+        project, action_type = TaskImportService.commit_import(
+            parsed_payload=parsed_payload,
+            admin_user=current_user,
+            overwrite=overwrite
+        )
+
+        flash(f'Task plan "{project.title}" ({project.project_code}) {action_type.lower()} successfully!', 'success')
+        return jsonify({
+            'success': True,
+            'project_id': project.id,
+            'project_code': project.project_code,
+            'action': action_type,
+            'redirect_url': url_for('admin.projects_list')
+        })
+    except ValueError as ve:
+        return jsonify({'success': False, 'error': str(ve), 'is_duplicate': True}), 400
+    except Exception as e:
+        logger.exception("Error importing task plan JSON")
+        return jsonify({'success': False, 'error': f"Task plan could not be imported. No changes were made. ({str(e)})"}), 500
+
+
+@admin_bp.route('/task-imports')
+@login_required
+def task_imports_history():
+    imports = TaskImportHistory.query.order_by(TaskImportHistory.id.desc()).all()
+    return render_template('admin/upload_tasks.html', recent_imports=imports, total_projects=Project.query.count())
 
 
 # ─── Edit Project ─────────────────────────────────────────────────────────────

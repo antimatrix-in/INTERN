@@ -3,6 +3,8 @@ __pycache__/
 *$py.class
 instance/
 .env
+.env.*
+!.env.example
 *.sqlite
 *.sqlite3
 *.db
@@ -18,3 +20,4 @@ env/
 venv/
 node_modules/
 client/
+

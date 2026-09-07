@@ -280,23 +280,63 @@ class Project(db.Model):
     project_code = db.Column(db.String(30), unique=True, nullable=False)
     title = db.Column(db.String(200), nullable=False)
     domain = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text, nullable=True, default='')
     problem_statement = db.Column(db.Text, nullable=True)
     expected_outcome = db.Column(db.Text, nullable=True)
-    objectives_json = db.Column(db.Text, nullable=False)
-    tech_stack_json = db.Column(db.Text, nullable=False)
-    requirements_json = db.Column(db.Text, nullable=False)
-    instructions_md = db.Column(db.Text, nullable=False)
-    reference_links_json = db.Column(db.Text, nullable=False)
+    objectives_json = db.Column(db.Text, nullable=True, default='[]')
+    tech_stack_json = db.Column(db.Text, nullable=True, default='[]')
+    requirements_json = db.Column(db.Text, nullable=True, default='[]')
+    instructions_md = db.Column(db.Text, nullable=True, default='')
+    reference_links_json = db.Column(db.Text, nullable=True, default='[]')
+    project_type = db.Column(db.String(100), nullable=True) # Real-Time AI/ML Web Application, etc.
+    deployment = db.Column(db.String(100), nullable=True) # Localhost, Cloud, etc.
+    cloud_required = db.Column(db.Boolean, default=False)
+    paid_api_required = db.Column(db.Boolean, default=False)
+    github_required = db.Column(db.Boolean, default=True)
+    modules_json = db.Column(db.Text, nullable=True)
+    restrictions_json = db.Column(db.Text, nullable=True)
+    final_deliverable_json = db.Column(db.Text, nullable=True)
+    evaluation_json = db.Column(db.Text, nullable=True)
+    source_json = db.Column(db.Text, nullable=True)
+    source_json_name = db.Column(db.String(255), nullable=True)
     duration_weeks = db.Column(db.Integer, default=4) # 4 or 12
     duration_months = db.Column(db.Integer, default=1) # 1 or 3
-    difficulty = db.Column(db.String(20), default='Intermediate') # Beginner, Intermediate, Advanced
+    difficulty = db.Column(db.String(50), default='Intermediate') # Beginner, Intermediate, Advanced, Easy to Medium, etc.
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     assignments = db.relationship('ProjectAssignment', backref='project', lazy='dynamic')
     project_weeks = db.relationship('ProjectWeek', backref='project', lazy='dynamic', cascade='all, delete-orphan', order_by='ProjectWeek.week_number.asc()')
+
+    @property
+    def problem_id(self):
+        """Alias for project_code ensuring seamless Problem ID compatibility."""
+        return self.project_code
+
+    @problem_id.setter
+    def problem_id(self, val):
+        self.project_code = val
+
+    @property
+    def project_title(self):
+        return self.title
+
+    @project_title.setter
+    def project_title(self, val):
+        self.title = val
+
+    @property
+    def level(self):
+        return self.difficulty
+
+    @level.setter
+    def level(self, val):
+        self.difficulty = val
+
+    @property
+    def duration_display(self):
+        return f"{self.duration_months} Month{'s' if self.duration_months > 1 else ''}"
 
     @property
     def status(self):
@@ -312,6 +352,13 @@ class Project(db.Model):
     @property
     def total_weeks(self):
         return self.duration_weeks or (4 if self.duration_months == 1 else 12)
+
+    @property
+    def total_tasks_count(self):
+        try:
+            return sum(w.tasks.count() for w in self.project_weeks.all())
+        except Exception:
+            return 0
 
     @property
     def active_colleges_count(self):
@@ -349,23 +396,43 @@ class Project(db.Model):
 
     @property
     def objectives(self):
-        try: return json.loads(self.objectives_json)
+        try: return json.loads(self.objectives_json) if self.objectives_json else []
         except: return []
 
     @property
     def tech_stack(self):
-        try: return json.loads(self.tech_stack_json)
+        try: return json.loads(self.tech_stack_json) if self.tech_stack_json else []
         except: return []
 
     @property
     def requirements(self):
-        try: return json.loads(self.requirements_json)
+        try: return json.loads(self.requirements_json) if self.requirements_json else []
         except: return []
 
     @property
     def reference_links(self):
-        try: return json.loads(self.reference_links_json)
+        try: return json.loads(self.reference_links_json) if self.reference_links_json else []
         except: return []
+
+    @property
+    def modules(self):
+        try: return json.loads(self.modules_json) if self.modules_json else []
+        except: return []
+
+    @property
+    def restrictions(self):
+        try: return json.loads(self.restrictions_json) if self.restrictions_json else []
+        except: return []
+
+    @property
+    def final_deliverable(self):
+        try: return json.loads(self.final_deliverable_json) if self.final_deliverable_json else {}
+        except: return {}
+
+    @property
+    def evaluation(self):
+        try: return json.loads(self.evaluation_json) if self.evaluation_json else {}
+        except: return {}
 
 
 class ProjectWeek(db.Model):
@@ -381,9 +448,21 @@ class ProjectWeek(db.Model):
     objective = db.Column(db.Text, nullable=True)
     instructions = db.Column(db.Text, nullable=True)
     deliverables_json = db.Column(db.Text, nullable=True)
+
+    # Extended metadata from task plan JSON
+    phase_number = db.Column(db.Integer, nullable=True) # 1..4 for 3-Month projects
+    phase_title = db.Column(db.String(200), nullable=True)
+    weeks_label = db.Column(db.String(50), nullable=True) # "1-3", "4-6", etc.
+    completion_percentage = db.Column(db.String(20), nullable=True) # "25%", "50%", etc.
+    goal = db.Column(db.Text, nullable=True)
+    expected_features_json = db.Column(db.Text, nullable=True)
+    demo_output_json = db.Column(db.Text, nullable=True)
+    github_requirement = db.Column(db.Text, nullable=True)
+    completion_condition = db.Column(db.Text, nullable=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    tasks = db.relationship('ProjectTask', backref='week', lazy='dynamic', cascade='all, delete-orphan', order_by='ProjectTask.id.asc()')
+    tasks = db.relationship('ProjectTask', backref='week', lazy='dynamic', cascade='all, delete-orphan', order_by='ProjectTask.order_num.asc(), ProjectTask.id.asc()')
 
     @property
     def deliverables(self):
@@ -391,6 +470,20 @@ class ProjectWeek(db.Model):
             return json.loads(self.deliverables_json) if self.deliverables_json else []
         except:
             return []
+
+    @property
+    def expected_features(self):
+        try:
+            return json.loads(self.expected_features_json) if self.expected_features_json else []
+        except:
+            return []
+
+    @property
+    def demo_output(self):
+        try:
+            return json.loads(self.demo_output_json) if self.demo_output_json else {}
+        except:
+            return {}
 
     def __repr__(self):
         return f'<ProjectWeek Week {self.week_number}: {self.title}>'
@@ -408,11 +501,41 @@ class ProjectTask(db.Model):
     expected_output = db.Column(db.Text, nullable=True)
     priority = db.Column(db.String(20), default='Medium')  # High, Medium, Low
     estimated_hours = db.Column(db.Float, nullable=True)
+    order_num = db.Column(db.Integer, default=1)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
         return f'<ProjectTask {self.title} ({self.priority})>'
+
+
+class TaskImportHistory(db.Model):
+    """Audit log of all uploaded JSON task plans."""
+    __tablename__ = 'task_import_history'
+
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='SET NULL'), nullable=True)
+    project_code = db.Column(db.String(50), nullable=True) # Problem ID
+    project_title = db.Column(db.String(200), nullable=False)
+    domain = db.Column(db.String(100), nullable=False)
+    duration_months = db.Column(db.Integer, nullable=False)
+    total_weeks = db.Column(db.Integer, default=4)
+    total_tasks = db.Column(db.Integer, default=0)
+    imported_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    status = db.Column(db.String(30), default='IMPORTED') # IMPORTED, UPDATED, FAILED
+    error_message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    importer = db.relationship('User', foreign_keys=[imported_by])
+    project = db.relationship('Project', foreign_keys=[project_id])
+
+    @property
+    def duration_display(self):
+        return f"{self.duration_months} Month{'s' if self.duration_months > 1 else ''}"
+
+    def __repr__(self):
+        return f'<TaskImportHistory {self.filename} -> {self.project_code} ({self.status})>'
 
 
 class ProjectAssignment(db.Model):

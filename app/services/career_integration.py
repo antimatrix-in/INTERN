@@ -24,15 +24,53 @@ class CareerIntegrationService:
     @staticmethod
     def get_application_by_id(application_no):
         """
-        Query an application by its unique Application ID (e.g. AM-APP-2026-1024).
-        Normalizes and searches case-insensitively.
+        Query an application by its unique Application ID (e.g. AM-APP-2026-001, AM-APP-000123, APP-1001, or numeric ID).
+        Normalizes and searches case-insensitively across application_no, ID, and formatting variations.
         """
         if not application_no:
             return None
-        app_id_clean = application_no.strip().upper()
-        return Application.query.filter(
+        app_id_clean = str(application_no).strip().upper()
+        
+        # 1. Exact match on application_no (case-insensitive)
+        app = Application.query.filter(
             db.func.upper(Application.application_no) == app_id_clean
         ).first()
+        if app:
+            return app
+
+        # 2. Check if numeric or prefix variations (e.g. AM-APP-000123, APP-1001, AM-APP-2026-001)
+        if app_id_clean.startswith('AM-APP-'):
+            rem = app_id_clean[len('AM-APP-'):]
+            if '-' in rem:
+                # E.g. 2026-001 -> also try matching suffix
+                parts = rem.split('-')
+                if len(parts) == 2 and parts[1].isdigit():
+                    num = int(parts[1])
+                    app = Application.query.filter(Application.id == num).first()
+                    if app:
+                        return app
+            elif rem.isdigit():
+                num = int(rem)
+                app = Application.query.filter(Application.id == num).first()
+                if app:
+                    return app
+        elif app_id_clean.startswith('APP-'):
+            num_part = app_id_clean[len('APP-'):]
+            if num_part.isdigit():
+                num = int(num_part)
+                app = Application.query.filter(Application.id == num).first()
+                if app:
+                    return app
+        elif app_id_clean.isdigit():
+            app = Application.query.get(int(app_id_clean))
+            if app:
+                return app
+
+        # 3. Partial substring search for code suffix
+        app = Application.query.filter(
+            Application.application_no.ilike(f"%{app_id_clean}%")
+        ).first()
+        return app
 
     @staticmethod
     def get_employee_by_application_id(application_no):
@@ -55,8 +93,14 @@ class CareerIntegrationService:
             user = User.query.filter(
                 db.func.lower(User.employee_id) == app.converted_employee_id.strip().lower()
             ).first()
-            if user and user.student_profile:
+            if user:
                 return user.student_profile, user
+            
+            student = Student.query.filter(
+                db.func.lower(Student.student_uid) == app.converted_employee_id.strip().lower()
+            ).first()
+            if student:
+                return student, student.user
 
         # 3. Check candidate email match
         if app.candidate_email:
@@ -67,6 +111,7 @@ class CareerIntegrationService:
                 return user.student_profile, user
 
         return None, None
+
 
     @staticmethod
     def get_employee_by_employee_id(employee_id):
@@ -154,29 +199,38 @@ class CareerIntegrationService:
         return True, None, 200
 
     @staticmethod
+    def get_application_duration_months(app, duration_plan=None):
+        """Extract authoritative internship duration (1 or 3) from the career application."""
+        if duration_plan:
+            if '3' in str(duration_plan) or '3_month' in str(duration_plan).lower():
+                return 3
+            if '1' in str(duration_plan) or '1_month' in str(duration_plan).lower():
+                return 1
+
+        if app.plan and app.plan.duration_months in [1, 3]:
+            return app.plan.duration_months
+
+        role_str = (app.applied_role or '').lower()
+        if '3 month' in role_str or '3month' in role_str or 'professional' in role_str:
+            return 3
+        return 1
+
+    @staticmethod
     def create_or_link_employee_from_application(app, duration_plan=None, admin_user=None, raw_ip=None):
         """
-        Create and link an active employee from a validated Career Portal application.
-        Preserves the source-of-truth Employee ID from the Career Portal whenever present.
+        Create and link an active employee from a validated Career Portal application,
+        automatically allocating an eligible random Problem ID respecting college uniqueness.
         """
-        # Determine duration plan
-        if not duration_plan:
-            # Check applied role or application plan
-            if app.plan:
-                plan = app.plan
-            else:
-                # Default to 1 Month or 3 Month based on applied_role or default
-                role_str = (app.applied_role or '').lower()
-                plan_code = '3_MONTH_PROFESSIONAL' if ('3 month' in role_str or 'professional' in role_str) else '1_MONTH_PROJECT'
-                plan = InternshipPlan.query.filter_by(plan_code=plan_code).first()
-                if not plan:
-                    plan = InternshipPlan.query.first()
-        else:
-            plan = InternshipPlan.query.filter_by(plan_code=duration_plan).first()
-            if not plan:
-                plan = InternshipPlan.query.first()
+        from app.services.problem_allocation_service import ProblemAllocationService
 
-        # College and Department resolution
+        # 1. Determine authoritative duration (1 Month or 3 Months)
+        duration_months = CareerIntegrationService.get_application_duration_months(app, duration_plan)
+        plan_code = '3_MONTH_PROFESSIONAL' if duration_months == 3 else '1_MONTH_PROJECT'
+        plan = InternshipPlan.query.filter_by(plan_code=plan_code).first()
+        if not plan:
+            plan = InternshipPlan.query.filter_by(duration_months=duration_months).first() or InternshipPlan.query.first()
+
+        # 2. College and Department resolution
         college = None
         if app.college_name:
             college = College.query.filter(College.name.ilike(f"%{app.college_name.strip()}%")).first()
@@ -192,27 +246,22 @@ class CareerIntegrationService:
         if not department and college:
             department = Department.query.filter_by(college_id=college.id).first()
 
-        # Preserve Career Portal Employee ID (Source of Truth)
-        # If Career Portal has already assigned an Employee ID (e.g., AM4827 or converted_employee_id), USE THAT!
+        # 3. Check for existing User / Student
         source_employee_id = None
         if app.converted_employee_id and app.converted_employee_id.strip():
             source_employee_id = app.converted_employee_id.strip()
-        
-        # Check if user already exists with candidate email or employee id
+
         existing_user = None
         if source_employee_id:
             existing_user = User.query.filter_by(employee_id=source_employee_id).first()
         if not existing_user and app.candidate_email:
             existing_user = User.query.filter_by(email=app.candidate_email.strip().lower()).first()
 
-        # Generate a temporary password if new user is created
         from app.admin.routes import generate_temp_password, generate_next_employee_id
         temp_password = generate_temp_password()
 
         if not existing_user:
-            # If no Employee ID was set by Career Portal, assign the sequential ID
             assigned_emp_id = source_employee_id if source_employee_id else generate_next_employee_id()
-            
             user = User(
                 email=app.candidate_email.strip().lower() if app.candidate_email else f"{assigned_emp_id.lower()}@antimatrix.tech",
                 employee_id=assigned_emp_id,
@@ -230,7 +279,7 @@ class CareerIntegrationService:
             if not user.employee_id:
                 user.employee_id = assigned_emp_id
 
-        # Create or update Student record
+        # 4. Create or update Student profile
         student = user.student_profile
         if not student:
             student = Student(
@@ -250,16 +299,12 @@ class CareerIntegrationService:
             db.session.add(student)
             db.session.flush()
         else:
-            # Sync college / department
             if college: student.college_id = college.id
             if department: student.department_id = department.id
 
-        # Create Internship record
+        # 5. Create or retrieve active Internship
         start_dt = date.today()
-        if plan and plan.duration_months == 3:
-            end_dt = start_dt + relativedelta(months=3)
-        else:
-            end_dt = start_dt + relativedelta(months=1)
+        end_dt = start_dt + relativedelta(months=duration_months)
 
         internship = Internship.query.filter_by(student_id=student.id, status='ACTIVE').first()
         if not internship:
@@ -273,20 +318,44 @@ class CareerIntegrationService:
                 start_date=start_dt.strftime('%d %b %Y'),
                 end_date=end_dt.strftime('%d %b %Y'),
                 progress_percent=0,
-                current_stage='Week 1 Requirement & Architecture',
+                current_stage='Week 1 Understanding & Setup',
                 mentor_id=mentor.id if mentor else None
             )
             db.session.add(internship)
             db.session.flush()
 
-        # Update application conversion status
+        # 6. Automatic Problem Allocation (Same-College Unique, Random Choice from Duration Pool)
+        allocated_problem = None
+        existing_assignment = internship.active_assignment
+        if not existing_assignment:
+            domain_name = app.applied_role or None
+            allocated_problem, alloc_err = ProblemAllocationService.allocate_random_problem(
+                college_id=student.college_id,
+                duration_months=duration_months,
+                domain=domain_name,
+                exclude_student_id=student.id
+            )
+            if not allocated_problem:
+                db.session.rollback()
+                raise ValueError(alloc_err or f"No available {duration_months} Month problem for this college.")
+
+            # Assign problem and build weekly milestones
+            ProblemAllocationService.assign_problem_to_internship(
+                internship=internship,
+                project=allocated_problem,
+                assigned_by_user=admin_user
+            )
+        else:
+            allocated_problem = existing_assignment.project
+
+        # 7. Update Application status
         app.student_id = student.id
         app.is_converted_to_employee = True
         app.converted_employee_id = assigned_emp_id
         if plan:
             app.plan_id = plan.id
 
-        # Audit log
+        # 8. Audit Log
         if admin_user:
             audit = AuditLog(
                 actor_id=admin_user.id,
@@ -298,11 +367,14 @@ class CareerIntegrationService:
                     'application_no': app.application_no,
                     'employee_id': assigned_emp_id,
                     'student_id': student.id,
-                    'plan': plan.title if plan else 'Standard'
+                    'plan': plan.title if plan else 'Standard',
+                    'duration_months': duration_months,
+                    'allocated_problem_id': allocated_problem.project_code if allocated_problem else None,
+                    'allocated_problem_title': allocated_problem.title if allocated_problem else None
                 }),
                 ip_address=raw_ip
             )
             db.session.add(audit)
 
         db.session.commit()
-        return student, user, assigned_emp_id, temp_password
+        return student, user, assigned_emp_id, temp_password, allocated_problem
