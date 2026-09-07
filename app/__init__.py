@@ -37,7 +37,8 @@ def create_app(config_class=Config):
     with app.app_context():
         from app import models  # noqa: F401 (Ensure models are registered on db.metadata)
         if not app.config.get('TESTING', False):
-            db.create_all()
+            from app.db_migration import run_safe_schema_migrations
+            run_safe_schema_migrations(app)
             from app.seed import seed_initial_data
             seed_initial_data()
 

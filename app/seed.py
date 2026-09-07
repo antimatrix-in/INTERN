@@ -601,6 +601,14 @@ def seed_admin_user():
     # Support login by 'admin' as employee_id
     admin = User.query.filter_by(employee_id='admin').first()
     if not admin:
+        admin = User.query.filter_by(email='admin@antimatrix.tech').first()
+        if admin:
+            admin.employee_id = 'admin'
+            db.session.commit()
+            logger.info('Existing admin user updated with employee_id=admin')
+            return
+
+    if not admin:
         admin = User(
             email='admin@antimatrix.tech',
             employee_id='admin',
