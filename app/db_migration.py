@@ -49,6 +49,20 @@ def run_safe_schema_migrations(app=None):
     is_postgres = (dialect_name == 'postgresql')
     is_sqlite = (dialect_name == 'sqlite')
 
+    # Step 0: Immediate raw DDL execution on PostgreSQL for guaranteed users.employee_id column
+    if is_postgres:
+        try:
+            with engine.connect() as conn:
+                with conn.begin():
+                    conn.execute(text("ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);"))
+                    conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_employee_id ON users (employee_id) WHERE employee_id IS NOT NULL;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN student_id DROP NOT NULL;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN plan_id DROP NOT NULL;"))
+            logger.info("Immediate PostgreSQL DDL for users.employee_id executed successfully.")
+        except Exception as e:
+            logger.warning(f"Immediate PostgreSQL DDL notice: {e}")
+
     inspector = inspect(engine)
     existing_tables = set(inspector.get_table_names())
 
