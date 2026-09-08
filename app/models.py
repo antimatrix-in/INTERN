@@ -102,16 +102,16 @@ class Student(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False)
-    student_uid = db.Column(db.String(30), unique=True, nullable=False, index=True) # AM-INT-2026-001 / AM-STU-...
+    student_uid = db.Column(db.String(50), unique=True, nullable=False, index=True) # AM-INT-2026-001 / AM-STU-...
     dob = db.Column(db.String(20), nullable=True)
-    gender = db.Column(db.String(20), nullable=True)
+    gender = db.Column(db.String(30), nullable=True)
     college_id = db.Column(db.Integer, db.ForeignKey('colleges.id'), nullable=False)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
     roll_number = db.Column(db.String(50), nullable=False)
-    degree = db.Column(db.String(100), nullable=False)
-    current_year = db.Column(db.String(20), nullable=False)
+    degree = db.Column(db.String(150), nullable=False)
+    current_year = db.Column(db.String(50), nullable=False)
     graduation_year = db.Column(db.String(10), nullable=False)
-    aadhaar_masked = db.Column(db.String(20), nullable=True) # XXXX XXXX 4821
+    aadhaar_masked = db.Column(db.String(30), nullable=True) # XXXX XXXX 4821
     is_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -181,16 +181,16 @@ class Application(db.Model):
     candidate_email = db.Column(db.String(150), nullable=True)
     candidate_phone = db.Column(db.String(30), nullable=True)
     candidate_dob = db.Column(db.String(20), nullable=True)
-    candidate_gender = db.Column(db.String(20), nullable=True)
+    candidate_gender = db.Column(db.String(30), nullable=True)
     college_name = db.Column(db.String(200), nullable=True)
     department_name = db.Column(db.String(150), nullable=True)
-    course = db.Column(db.String(100), nullable=True)
-    year_of_study = db.Column(db.String(20), nullable=True)
+    course = db.Column(db.String(150), nullable=True)
+    year_of_study = db.Column(db.String(50), nullable=True)
     roll_number = db.Column(db.String(50), nullable=True)
     applied_role = db.Column(db.String(100), nullable=True)
     city = db.Column(db.String(100), nullable=True)
     state = db.Column(db.String(100), nullable=True)
-    aadhaar_masked = db.Column(db.String(20), nullable=True)
+    aadhaar_masked = db.Column(db.String(30), nullable=True)
     # Employee conversion tracking
     is_converted_to_employee = db.Column(db.Boolean, default=False)
     converted_employee_id = db.Column(db.String(50), nullable=True)  # AM-INT-XXXX

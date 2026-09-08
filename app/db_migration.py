@@ -49,7 +49,7 @@ def run_safe_schema_migrations(app=None):
     is_postgres = (dialect_name == 'postgresql')
     is_sqlite = (dialect_name == 'sqlite')
 
-    # Step 0: Immediate raw DDL execution on PostgreSQL for guaranteed users.employee_id column
+    # Step 0: Immediate raw DDL execution on PostgreSQL for guaranteed users.employee_id column and expanded column types
     if is_postgres:
         try:
             with engine.connect() as conn:
@@ -67,7 +67,33 @@ def run_safe_schema_migrations(app=None):
                     conn.execute(text("UPDATE public.users SET name = full_name WHERE name IS NULL AND full_name IS NOT NULL;"))
                     conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN student_id DROP NOT NULL;"))
                     conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN plan_id DROP NOT NULL;"))
-            logger.info("Immediate PostgreSQL DDL for users (employee_id, name, full_name) and applications executed successfully.")
+
+                    # Safe non-destructive column expansion for students table (avoids StringDataRightTruncation)
+                    conn.execute(text("ALTER TABLE IF EXISTS public.students ALTER COLUMN student_uid TYPE VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS students ALTER COLUMN student_uid TYPE VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.students ALTER COLUMN gender TYPE VARCHAR(30);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS students ALTER COLUMN gender TYPE VARCHAR(30);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.students ALTER COLUMN roll_number TYPE VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS students ALTER COLUMN roll_number TYPE VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.students ALTER COLUMN degree TYPE VARCHAR(150);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS students ALTER COLUMN degree TYPE VARCHAR(150);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.students ALTER COLUMN current_year TYPE VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS students ALTER COLUMN current_year TYPE VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.students ALTER COLUMN graduation_year TYPE VARCHAR(10);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS students ALTER COLUMN graduation_year TYPE VARCHAR(10);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.students ALTER COLUMN aadhaar_masked TYPE VARCHAR(30);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS students ALTER COLUMN aadhaar_masked TYPE VARCHAR(30);"))
+
+                    # Safe non-destructive column expansion for applications table
+                    conn.execute(text("ALTER TABLE IF EXISTS public.applications ALTER COLUMN candidate_gender TYPE VARCHAR(30);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN candidate_gender TYPE VARCHAR(30);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.applications ALTER COLUMN course TYPE VARCHAR(150);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN course TYPE VARCHAR(150);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.applications ALTER COLUMN year_of_study TYPE VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN year_of_study TYPE VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.applications ALTER COLUMN aadhaar_masked TYPE VARCHAR(30);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN aadhaar_masked TYPE VARCHAR(30);"))
+            logger.info("Immediate PostgreSQL DDL for users, students, and applications executed successfully.")
         except Exception as e:
             logger.warning(f"Immediate PostgreSQL DDL notice: {e}")
 
@@ -170,6 +196,30 @@ def run_safe_schema_migrations(app=None):
                         logger.debug(f"Column '{table.name}.{column.name}' already exists.")
                     else:
                         logger.error(f"Failed to add column '{table.name}.{column.name}': {ex}")
+
+        # Step 4b: Check for existing VARCHAR column length expansion on PostgreSQL
+        if is_postgres:
+            try:
+                table_cols_info = inspector.get_columns(table.name)
+                for col_info in table_cols_info:
+                    c_name = col_info['name']
+                    c_type = col_info.get('type')
+                    c_len = getattr(c_type, 'length', None)
+                    if c_len:
+                        model_col = table.columns.get(c_name)
+                        if model_col is not None:
+                            m_len = getattr(model_col.type, 'length', None)
+                            if m_len and m_len > c_len:
+                                logger.info(f"Expanding column '{table.name}.{c_name}' from VARCHAR({c_len}) to VARCHAR({m_len})...")
+                                try:
+                                    with engine.connect() as conn:
+                                        with conn.begin():
+                                            conn.execute(text(f'ALTER TABLE "{table.name}" ALTER COLUMN "{c_name}" TYPE VARCHAR({m_len});'))
+                                    logger.info(f"Successfully expanded column '{table.name}.{c_name}' to VARCHAR({m_len}).")
+                                except Exception as ex:
+                                    logger.warning(f"Notice on expanding column '{table.name}.{c_name}': {ex}")
+            except Exception as e:
+                logger.debug(f"Column length sync check for '{table.name}': {e}")
 
     logger.info("Database schema inspection and migration completed successfully.")
 

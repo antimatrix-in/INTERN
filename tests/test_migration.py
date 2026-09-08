@@ -154,6 +154,79 @@ class DatabaseMigrationTestCase(unittest.TestCase):
         self.assertEqual(loaded.full_name, 'Portfolio User')
         self.assertEqual(loaded.name, 'Portfolio User')
 
+    def test_07_failing_student_record_insertion_and_fidelity(self):
+        """Verify that the exact failing student record with long degree and current_year inserts without truncation."""
+        col = College(code='TST02', name='Tech College', state='TN', city='Coimbatore')
+        db.session.add(col)
+        db.session.flush()
+        dept = Department(college_id=col.id, code='IT', name='Information Technology')
+        db.session.add(dept)
+        db.session.flush()
+
+        u = User(
+            email='sneha.patel.test@example.com',
+            full_name='Sneha Patel',
+            employee_id='AM-INT-2026-002',
+            password_hash='hash123'
+        )
+        db.session.add(u)
+        db.session.flush()
+
+        exact_student_uid = 'AM-INT-2026-002'
+        exact_gender = 'Female'
+        exact_roll_number = '21IT092'
+        exact_degree = 'B.Tech / B.E (Information Technology)'
+        exact_current_year = '4th Year / Final Year'
+        exact_graduation_year = '2026'
+        exact_aadhaar_masked = 'XXXX XXXX 9124'
+
+        student = Student(
+            user_id=u.id,
+            student_uid=exact_student_uid,
+            gender=exact_gender,
+            college_id=col.id,
+            department_id=dept.id,
+            roll_number=exact_roll_number,
+            degree=exact_degree,
+            current_year=exact_current_year,
+            graduation_year=exact_graduation_year,
+            aadhaar_masked=exact_aadhaar_masked,
+            is_verified=True
+        )
+        db.session.add(student)
+        db.session.commit()
+
+        saved = Student.query.filter_by(student_uid=exact_student_uid).first()
+        self.assertIsNotNone(saved)
+        self.assertEqual(saved.student_uid, exact_student_uid)
+        self.assertEqual(saved.gender, exact_gender)
+        self.assertEqual(saved.roll_number, exact_roll_number)
+        self.assertEqual(saved.degree, exact_degree)
+        self.assertEqual(saved.current_year, exact_current_year)
+        self.assertEqual(saved.graduation_year, exact_graduation_year)
+        self.assertEqual(saved.aadhaar_masked, exact_aadhaar_masked)
+        self.assertEqual(len(saved.degree), 37)
+        self.assertEqual(len(saved.current_year), 21)
+
+    def test_08_student_model_column_lengths(self):
+        """Verify Student model column lengths are properly expanded to accommodate realistic data."""
+        from app.models import Student
+        self.assertGreaterEqual(Student.student_uid.type.length, 50)
+        self.assertGreaterEqual(Student.gender.type.length, 30)
+        self.assertGreaterEqual(Student.roll_number.type.length, 50)
+        self.assertGreaterEqual(Student.degree.type.length, 150)
+        self.assertGreaterEqual(Student.current_year.type.length, 50)
+        self.assertGreaterEqual(Student.graduation_year.type.length, 10)
+        self.assertGreaterEqual(Student.aadhaar_masked.type.length, 30)
+
+    def test_09_application_model_column_lengths(self):
+        """Verify Application model candidate column lengths match Student expanded types."""
+        from app.models import Application
+        self.assertGreaterEqual(Application.candidate_gender.type.length, 30)
+        self.assertGreaterEqual(Application.course.type.length, 150)
+        self.assertGreaterEqual(Application.year_of_study.type.length, 50)
+        self.assertGreaterEqual(Application.aadhaar_masked.type.length, 30)
+
 
 if __name__ == '__main__':
     unittest.main()
