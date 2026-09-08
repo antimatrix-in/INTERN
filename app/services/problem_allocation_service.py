@@ -185,3 +185,43 @@ class ProblemAllocationService:
         # Update internship stage
         internship.current_stage = f"Week 1 ({template_weeks[0].title if template_weeks else 'Available'})"
         return assignment
+
+    @staticmethod
+    def allocate_and_assign_with_retry(internship, assigned_by_user=None, max_retries=3):
+        """
+        Atomically allocate and assign a unique problem for the student's internship with retry on collision.
+        Enforces same-college uniqueness, duration pool separation, and domain matching.
+        """
+        student = internship.student
+        if not student:
+            return None, "No student profile linked to internship."
+
+        duration_months = internship.plan.duration_months if (internship.plan and internship.plan.duration_months) else 1
+        app_record = student.applications.first()
+        domain = app_record.applied_role if app_record and app_record.applied_role else None
+
+        for attempt in range(max_retries):
+            try:
+                selected_problem, err = ProblemAllocationService.allocate_random_problem(
+                    college_id=student.college_id,
+                    duration_months=duration_months,
+                    domain=domain,
+                    exclude_student_id=student.id
+                )
+                if not selected_problem:
+                    return None, err
+
+                assignment = ProblemAllocationService.assign_problem_to_internship(
+                    internship=internship,
+                    project=selected_problem,
+                    assigned_by_user=assigned_by_user
+                )
+                db.session.commit()
+                return assignment, None
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"Problem allocation attempt {attempt + 1} failed: {e}")
+                if attempt == max_retries - 1:
+                    return None, str(e)
+
+        return None, "Could not assign unique problem after retries."

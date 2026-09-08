@@ -764,8 +764,8 @@ def seed_career_applications():
     ]
 
     for app_data in apps_data:
-        existing = Application.query.filter_by(application_no=app_data['application_no']).first()
-        if not existing:
+        app = Application.query.filter_by(application_no=app_data['application_no']).first()
+        if not app:
             app = Application(
                 application_no=app_data['application_no'],
                 status=app_data['status'],
@@ -790,16 +790,25 @@ def seed_career_applications():
             db.session.add(app)
             db.session.flush()
 
-            if app_data.get('has_payment'):
+        if app_data.get('has_payment'):
+            txn_id = f"AM-TXN-{app.application_no}"
+            ord_id = f"AM-ORD-{app.application_no}"
+            existing_payment = Payment.query.filter(
+                (Payment.transaction_id == txn_id) | (Payment.application_id == app.id)
+            ).first()
+            if not existing_payment:
+                st = Student.query.first()
                 payment = Payment(
                     application_id=app.id,
-                    student_id=1,  # initial placeholder student reference
-                    transaction_id=f"AM-TXN-{app.application_no}",
-                    order_id=f"AM-ORD-{app.application_no}",
+                    student_id=st.id if st else None,
+                    transaction_id=txn_id,
+                    order_id=ord_id,
+                    cashfree_order_id=ord_id,
                     amount=1499.00 if app_data.get('plan_id') == 1 else 3999.00,
                     currency='INR',
                     status='SUCCESSFUL',
-                    payment_method='ONLINE_GATEWAY'
+                    payment_method='ONLINE_GATEWAY',
+                    paid_at=datetime.utcnow()
                 )
                 db.session.add(payment)
 

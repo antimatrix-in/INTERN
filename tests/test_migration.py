@@ -227,6 +227,69 @@ class DatabaseMigrationTestCase(unittest.TestCase):
         self.assertGreaterEqual(Application.year_of_study.type.length, 50)
         self.assertGreaterEqual(Application.aadhaar_masked.type.length, 30)
 
+    def test_10_payment_order_id_and_cashfree_order_id_sync(self):
+        """Verify Payment model bi-directionally synchronizes order_id and cashfree_order_id."""
+        from app.models import Payment, Application
+        app = Application(
+            application_no='AM-APP-TEST-999',
+            status='APPROVED'
+        )
+        db.session.add(app)
+        db.session.flush()
+
+        # Test creating payment with order_id only -> cashfree_order_id is auto-populated
+        p1 = Payment(
+            application_id=app.id,
+            transaction_id='AM-TXN-TEST-001',
+            order_id='AM-ORD-TEST-001',
+            amount=1499.00,
+            status='SUCCESSFUL'
+        )
+        db.session.add(p1)
+        db.session.commit()
+
+        loaded1 = Payment.query.filter_by(transaction_id='AM-TXN-TEST-001').first()
+        self.assertIsNotNone(loaded1)
+        self.assertEqual(loaded1.order_id, 'AM-ORD-TEST-001')
+        self.assertEqual(loaded1.cashfree_order_id, 'AM-ORD-TEST-001')
+
+        # Test creating payment with cashfree_order_id only -> order_id is auto-populated
+        p2 = Payment(
+            application_id=app.id,
+            transaction_id='AM-TXN-TEST-002',
+            cashfree_order_id='AM-ORD-TEST-002',
+            amount=3999.00,
+            status='SUCCESSFUL'
+        )
+        db.session.add(p2)
+        db.session.commit()
+
+        loaded2 = Payment.query.filter_by(transaction_id='AM-TXN-TEST-002').first()
+        self.assertIsNotNone(loaded2)
+        self.assertEqual(loaded2.order_id, 'AM-ORD-TEST-002')
+        self.assertEqual(loaded2.cashfree_order_id, 'AM-ORD-TEST-002')
+
+    def test_11_career_payment_seeding_with_not_null_cashfree_order_id(self):
+        """Verify exact failing career payment seed record has non-null cashfree_order_id."""
+        from app.seed import seed_career_applications
+        from app.models import Payment, Application
+
+        # Run career applications seed
+        seed_career_applications()
+
+        # Find the exact application AM-APP-2026-1024 and its payment
+        app_1024 = Application.query.filter_by(application_no='AM-APP-2026-1024').first()
+        self.assertIsNotNone(app_1024)
+        
+        payment = Payment.query.filter_by(application_id=app_1024.id).first()
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment.transaction_id, 'AM-TXN-AM-APP-2026-1024')
+        self.assertEqual(payment.order_id, 'AM-ORD-AM-APP-2026-1024')
+        self.assertEqual(payment.cashfree_order_id, 'AM-ORD-AM-APP-2026-1024')
+        self.assertIsNotNone(payment.cashfree_order_id)
+        self.assertEqual(payment.status, 'SUCCESSFUL')
+        self.assertEqual(payment.payment_method, 'ONLINE_GATEWAY')
+
 
 if __name__ == '__main__':
     unittest.main()

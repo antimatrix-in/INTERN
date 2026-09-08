@@ -64,7 +64,10 @@ def run_safe_schema_migrations(app=None):
                     conn.execute(text("ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS name VARCHAR(100);"))
                     conn.execute(text("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS name VARCHAR(100);"))
                     conn.execute(text("UPDATE public.users SET full_name = name WHERE full_name IS NULL AND name IS NOT NULL;"))
-                    conn.execute(text("UPDATE public.users SET name = full_name WHERE name IS NULL AND full_name IS NOT NULL;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP;"))
                     conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN student_id DROP NOT NULL;"))
                     conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN plan_id DROP NOT NULL;"))
 
@@ -93,7 +96,19 @@ def run_safe_schema_migrations(app=None):
                     conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN year_of_study TYPE VARCHAR(50);"))
                     conn.execute(text("ALTER TABLE IF EXISTS public.applications ALTER COLUMN aadhaar_masked TYPE VARCHAR(30);"))
                     conn.execute(text("ALTER TABLE IF EXISTS applications ALTER COLUMN aadhaar_masked TYPE VARCHAR(30);"))
-            logger.info("Immediate PostgreSQL DDL for users, students, and applications executed successfully.")
+
+                    # Safe synchronization and non-destructive DDL for payments table (Cashfree & order_id compatibility)
+                    conn.execute(text("ALTER TABLE IF EXISTS public.payments ADD COLUMN IF NOT EXISTS cashfree_order_id VARCHAR(100);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS payments ADD COLUMN IF NOT EXISTS cashfree_order_id VARCHAR(100);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.payments ADD COLUMN IF NOT EXISTS order_id VARCHAR(100);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS payments ADD COLUMN IF NOT EXISTS order_id VARCHAR(100);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.payments ALTER COLUMN student_id DROP NOT NULL;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS payments ALTER COLUMN student_id DROP NOT NULL;"))
+                    conn.execute(text("UPDATE public.payments SET cashfree_order_id = order_id WHERE cashfree_order_id IS NULL AND order_id IS NOT NULL;"))
+                    conn.execute(text("UPDATE payments SET cashfree_order_id = order_id WHERE cashfree_order_id IS NULL AND order_id IS NOT NULL;"))
+                    conn.execute(text("UPDATE public.payments SET order_id = cashfree_order_id WHERE order_id IS NULL AND cashfree_order_id IS NOT NULL;"))
+                    conn.execute(text("UPDATE payments SET order_id = cashfree_order_id WHERE order_id IS NULL AND cashfree_order_id IS NOT NULL;"))
+            logger.info("Immediate PostgreSQL DDL for users, students, applications, and payments executed successfully.")
         except Exception as e:
             logger.warning(f"Immediate PostgreSQL DDL notice: {e}")
 
@@ -164,6 +179,16 @@ def run_safe_schema_migrations(app=None):
                             conn.execute(text("PRAGMA foreign_keys = ON;"))
         except Exception as e:
             logger.debug(f"Applications nullability sync: {e}")
+
+    # Step 3c: Ensure payments table synchronizes cashfree_order_id and order_id
+    if 'payments' in existing_tables:
+        try:
+            with engine.connect() as conn:
+                with conn.begin():
+                    conn.execute(text("UPDATE payments SET cashfree_order_id = order_id WHERE cashfree_order_id IS NULL AND order_id IS NOT NULL;"))
+                    conn.execute(text("UPDATE payments SET order_id = cashfree_order_id WHERE order_id IS NULL AND cashfree_order_id IS NOT NULL;"))
+        except Exception as e:
+            logger.debug(f"Payments order_id synchronization: {e}")
 
     # Step 4: Comprehensive Column Sync across all other registered models
     # Prevents any subsequent UndefinedColumn errors on other tables

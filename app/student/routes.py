@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.models import (
-    Student, Internship, ProjectAssignment, WeeklyMilestone,
+    User, Student, Application, Internship, InternshipPlan, ProjectAssignment, WeeklyMilestone,
     WeeklyTask, WeeklySubmission, Meeting, Notification
 )
 
@@ -57,17 +57,65 @@ def dashboard():
     student = get_current_student()
     internship = student.active_internship
 
-    assignment = None
+    # Ensure student has an active internship record
+    if not internship:
+        from app.services.career_integration import CareerIntegrationService
+        app_record = student.applications.order_by(Application.id.desc()).first()
+        duration_months = CareerIntegrationService.get_application_duration_months(app_record) if app_record else 1
+        plan_code = '3_MONTH_PROFESSIONAL' if duration_months == 3 else '1_MONTH_PROJECT'
+        plan = InternshipPlan.query.filter_by(plan_code=plan_code).first() or InternshipPlan.query.first()
+        start_dt = datetime.utcnow().strftime('%d %b %Y')
+        from dateutil.relativedelta import relativedelta
+        from datetime import date
+        end_dt = (date.today() + relativedelta(months=duration_months)).strftime('%d %b %Y')
+        mentor = User.query.filter_by(role='mentor').first() or User.query.filter_by(role='super_admin').first()
+        internship = Internship(
+            internship_no=student.student_uid or current_user.employee_id or f"AM-INT-{student.id}",
+            student_id=student.id,
+            application_id=app_record.id if app_record else None,
+            plan_id=plan.id if plan else 1,
+            status='ACTIVE',
+            start_date=start_dt,
+            end_date=end_dt,
+            progress_percent=0,
+            current_stage='Week 1 Understanding & Setup',
+            mentor_id=mentor.id if mentor else None
+        )
+        db.session.add(internship)
+        db.session.commit()
+
+    # Ensure student has an active project assignment (auto-allocate if none exists)
+    assignment = internship.active_assignment if internship else None
+    if internship and not assignment:
+        from app.services.problem_allocation_service import ProblemAllocationService
+        duration_months = internship.plan.duration_months if (internship.plan and internship.plan.duration_months) else 1
+        app_record = student.applications.first()
+        domain = app_record.applied_role if app_record and app_record.applied_role else None
+        try:
+            allocated_problem, err = ProblemAllocationService.allocate_random_problem(
+                college_id=student.college_id,
+                duration_months=duration_months,
+                domain=domain,
+                exclude_student_id=student.id
+            )
+            if allocated_problem:
+                ProblemAllocationService.assign_problem_to_internship(
+                    internship=internship,
+                    project=allocated_problem
+                )
+                db.session.commit()
+                assignment = internship.active_assignment
+        except Exception:
+            db.session.rollback()
+
     milestones = []
     current_milestone = None
     project = None
 
-    if internship:
-        assignment = internship.active_assignment
-        if assignment:
-            project = assignment.project
-            milestones = assignment.weekly_milestones.all()
-            current_milestone = assignment.current_milestone
+    if assignment:
+        project = assignment.project
+        milestones = assignment.weekly_milestones.all()
+        current_milestone = assignment.current_milestone
 
     upcoming_meeting = Meeting.query.filter_by(
         student_id=student.id,

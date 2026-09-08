@@ -39,8 +39,10 @@ def create_app(config_class=Config):
         if not app.config.get('TESTING', False):
             from app.db_migration import run_safe_schema_migrations
             run_safe_schema_migrations(app)
-            from app.seed import seed_initial_data
-            seed_initial_data()
+            should_seed = os.environ.get('SEED_INITIAL_DATA', 'true').strip().lower() not in ('0', 'false', 'no', 'off')
+            if should_seed:
+                from app.seed import seed_initial_data
+                seed_initial_data()
 
 
     # Custom context processors & template filters

@@ -23,6 +23,8 @@ class User(db.Model, UserMixin):
     phone = db.Column(db.String(20), nullable=True)
     avatar_url = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
+    must_change_password = db.Column(db.Boolean, default=False)
+    password_changed_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -42,7 +44,38 @@ class User(db.Model, UserMixin):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        if not self.password_hash or not password:
+            return False
+
+        # 1. Standard Werkzeug hash check (scrypt, pbkdf2:sha256, sha256, etc.)
+        try:
+            if check_password_hash(self.password_hash, password):
+                return True
+        except Exception:
+            pass
+
+        # 2. Check for bcrypt hash ($2b$, $2a$, $2y$, etc.)
+        if isinstance(self.password_hash, str) and self.password_hash.startswith(('$2b$', '$2a$', '$2y$', '$2x$')):
+            try:
+                import bcrypt
+                if bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8')):
+                    return True
+            except Exception:
+                pass
+
+        # 3. Check for raw SHA256 hex digest
+        try:
+            import hashlib
+            if hashlib.sha256(password.encode('utf-8')).hexdigest() == self.password_hash:
+                return True
+        except Exception:
+            pass
+
+        # 4. Fallback if stored as plaintext during temporary credential migration
+        if self.password_hash == password:
+            return True
+
+        return False
 
     @property
     def is_admin_or_staff(self):
@@ -208,9 +241,10 @@ class Payment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=False)
-    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=True)
     transaction_id = db.Column(db.String(50), unique=True, nullable=False, index=True) # AM-TXN-2026-XXXXX
-    order_id = db.Column(db.String(50), nullable=False)
+    order_id = db.Column(db.String(100), nullable=False)
+    cashfree_order_id = db.Column(db.String(100), nullable=True) # Cashfree gateway / Supabase compatibility
     amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(10), default='INR')
     status = db.Column(db.String(20), default='SUCCESSFUL') # PENDING, SUCCESSFUL, FAILED, REFUNDED
@@ -219,8 +253,25 @@ class Payment(db.Model):
     paid_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def __init__(self, **kwargs):
+        if 'order_id' in kwargs and 'cashfree_order_id' not in kwargs:
+            kwargs['cashfree_order_id'] = kwargs['order_id']
+        elif 'cashfree_order_id' in kwargs and 'order_id' not in kwargs:
+            kwargs['order_id'] = kwargs['cashfree_order_id']
+        super().__init__(**kwargs)
+
     def __repr__(self):
         return f'<Payment {self.transaction_id} - {self.status}>'
+
+
+@event.listens_for(Payment, 'before_insert')
+@event.listens_for(Payment, 'before_update')
+def sync_payment_order_ids(mapper, connection, target):
+    """Ensure both order_id and cashfree_order_id are populated for cross-system Supabase compatibility."""
+    if target.order_id and not target.cashfree_order_id:
+        target.cashfree_order_id = target.order_id
+    elif target.cashfree_order_id and not target.order_id:
+        target.order_id = target.cashfree_order_id
 
 
 class Internship(db.Model):

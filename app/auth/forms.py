@@ -22,3 +22,16 @@ class AdminLoginForm(FlaskForm):
     ])
     remember_me = BooleanField('Remember me on this device')
     submit = SubmitField('Sign In to Admin Portal')
+
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField('Current Temporary Password', validators=[
+        DataRequired(message='Please enter your current temporary password.')
+    ])
+    new_password = PasswordField('New Password', validators=[
+        DataRequired(message='Please enter your new password.')
+    ])
+    confirm_password = PasswordField('Confirm New Password', validators=[
+        DataRequired(message='Please confirm your new password.')
+    ])
+    submit = SubmitField('Set New Password & Open Dashboard')
