@@ -290,6 +290,80 @@ class DatabaseMigrationTestCase(unittest.TestCase):
         self.assertEqual(payment.status, 'SUCCESSFUL')
         self.assertEqual(payment.payment_method, 'ONLINE_GATEWAY')
 
+    def test_12_payment_status_and_status_bidirectional_sync(self):
+        """Verify Payment model bi-directionally synchronizes status and payment_status."""
+        from app.models import Payment, Application
+        app = Application(
+            application_no='AM-APP-TEST-STATUS-SYNC',
+            status='APPROVED'
+        )
+        db.session.add(app)
+        db.session.flush()
+
+        # 1. Test creating payment with status only -> payment_status is auto-populated
+        p1 = Payment(
+            application_id=app.id,
+            transaction_id='AM-TXN-STATUS-001',
+            order_id='AM-ORD-STATUS-001',
+            amount=1499.00,
+            status='SUCCESSFUL'
+        )
+        db.session.add(p1)
+        db.session.commit()
+
+        loaded1 = Payment.query.filter_by(transaction_id='AM-TXN-STATUS-001').first()
+        self.assertIsNotNone(loaded1)
+        self.assertEqual(loaded1.status, 'SUCCESSFUL')
+        self.assertEqual(loaded1.payment_status, 'paid')
+
+        # 2. Test creating payment with payment_status only -> status is auto-populated
+        p2 = Payment(
+            application_id=app.id,
+            transaction_id='AM-TXN-STATUS-002',
+            order_id='AM-ORD-STATUS-002',
+            amount=3999.00,
+            payment_status='paid'
+        )
+        db.session.add(p2)
+        db.session.commit()
+
+        loaded2 = Payment.query.filter_by(transaction_id='AM-TXN-STATUS-002').first()
+        self.assertIsNotNone(loaded2)
+        self.assertEqual(loaded2.payment_status, 'paid')
+        self.assertEqual(loaded2.status, 'SUCCESSFUL')
+
+    def test_13_career_payment_seeding_with_not_null_payment_status_and_idempotency(self):
+        """Verify career payment seed populates non-null payment_status and is strictly idempotent."""
+        from app.seed import seed_career_applications
+        from app.models import Payment, Application
+
+        # 1. Run career applications seed
+        seed_career_applications()
+
+        # 2. Verify payment for AM-APP-2026-1024 has valid payment_status
+        app_1024 = Application.query.filter_by(application_no='AM-APP-2026-1024').first()
+        self.assertIsNotNone(app_1024)
+        
+        payment = Payment.query.filter_by(application_id=app_1024.id).first()
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment.status, 'SUCCESSFUL')
+        self.assertEqual(payment.payment_status, 'paid')
+        self.assertIsNotNone(payment.payment_status)
+
+        initial_payment_count = Payment.query.count()
+        initial_app_count = Application.query.count()
+
+        # 3. Re-run career applications seed to test idempotency
+        seed_career_applications()
+
+        self.assertEqual(Payment.query.count(), initial_payment_count, "Payments must not be duplicated on repeated seed runs")
+        self.assertEqual(Application.query.count(), initial_app_count, "Applications must not be duplicated on repeated seed runs")
+
+        # 4. Verify original record was not modified or overwritten
+        payment_after = Payment.query.filter_by(application_id=app_1024.id).first()
+        self.assertEqual(payment_after.id, payment.id)
+        self.assertEqual(payment_after.transaction_id, payment.transaction_id)
+
 
 if __name__ == '__main__':
     unittest.main()

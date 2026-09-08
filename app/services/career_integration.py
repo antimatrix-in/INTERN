@@ -177,23 +177,40 @@ class CareerIntegrationService:
             return False, 'Application ID not found.', 404
 
         # 1. Check Application Status
-        app_status_upper = (app.status or '').upper()
+        app_status_upper = (getattr(app, 'status', None) or '').upper()
         if app_status_upper in ['REJECTED', 'CANCELLED']:
             return False, 'Application has been rejected or cancelled.', 400
 
         # 2. Check Payment Status
-        # Check if there is a successful Payment record or application status indicates PAID / APPROVED / SUCCESS
+        # Canonical Anti-Matrix check: payment_status in ('paid', 'success', 'successful')
         has_successful_payment = False
-        if app.payments.filter(Payment.status.in_(['SUCCESS', 'SUCCESSFUL', 'PAID', 'COMPLETED'])).first():
-            has_successful_payment = True
-        elif app_status_upper in ['APPROVED', 'PAID', 'SUCCESS', 'VERIFIED']:
+        app_id_val = getattr(app, 'id', None)
+        if app_id_val is not None:
+            pay_rec = Payment.query.filter(
+                (Payment.application_id == app_id_val) &
+                (
+                    (Payment.payment_status.in_(['paid', 'SUCCESS', 'SUCCESSFUL', 'COMPLETED'])) |
+                    (Payment.status.in_(['paid', 'SUCCESS', 'SUCCESSFUL', 'PAID', 'COMPLETED']))
+                )
+            ).first()
+            if pay_rec:
+                has_successful_payment = True
+
+        if not has_successful_payment and hasattr(app, 'payments'):
+            if app.payments.filter(
+                (Payment.payment_status.in_(['paid', 'SUCCESS', 'SUCCESSFUL', 'COMPLETED'])) |
+                (Payment.status.in_(['paid', 'SUCCESS', 'SUCCESSFUL', 'PAID', 'COMPLETED']))
+            ).first():
+                has_successful_payment = True
+
+        if not has_successful_payment and app_status_upper in ['APPROVED', 'PAID', 'SUCCESS', 'VERIFIED']:
             has_successful_payment = True
 
         if not has_successful_payment:
             return False, 'Payment has not been completed for this application.', 400
 
         # 3. Check if already converted to employee
-        if app.is_converted_to_employee:
+        if getattr(app, 'is_converted_to_employee', False):
             return False, 'Employee already exists.', 200
 
         return True, None, 200

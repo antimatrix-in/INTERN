@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import event
+from sqlalchemy.orm import foreign
 from app.extensions import db, login_manager
 
 @login_manager.user_loader
@@ -152,7 +153,7 @@ class Student(db.Model):
     applications = db.relationship('Application', backref='student', lazy='dynamic', cascade='all, delete-orphan')
     internships = db.relationship('Internship', backref='student', lazy='dynamic')
     documents = db.relationship('Document', backref='student', lazy='dynamic', cascade='all, delete-orphan')
-    payments = db.relationship('Payment', backref='student', lazy='dynamic')
+    payments = db.relationship('Payment', primaryjoin="foreign(Payment.student_id) == Student.id", lazy='dynamic')
     submissions = db.relationship('WeeklySubmission', back_populates='student', lazy='dynamic', cascade='all, delete-orphan')
     meetings = db.relationship('Meeting', back_populates='student', lazy='dynamic')
 
@@ -229,7 +230,7 @@ class Application(db.Model):
     converted_employee_id = db.Column(db.String(50), nullable=True)  # AM-INT-XXXX
 
     # Relationships
-    payments = db.relationship('Payment', backref='application', lazy='dynamic')
+    payments = db.relationship('Payment', primaryjoin="foreign(Payment.application_id) == Application.id", lazy='dynamic')
     internship = db.relationship('Internship', backref='application', uselist=False)
 
     def __repr__(self):
@@ -240,28 +241,68 @@ class Payment(db.Model):
     __tablename__ = 'payments'
 
     id = db.Column(db.Integer, primary_key=True)
-    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=False)
-    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=True)
-    transaction_id = db.Column(db.String(50), unique=True, nullable=False, index=True) # AM-TXN-2026-XXXXX
-    order_id = db.Column(db.String(100), nullable=False)
-    cashfree_order_id = db.Column(db.String(100), nullable=True) # Cashfree gateway / Supabase compatibility
+    # Canonical Anti-Matrix Corporate fields:
+    application_id = db.Column(db.Integer, nullable=False) # Foreign key to job_applications.id in production
+    cashfree_order_id = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    cashfree_payment_session_id = db.Column(db.String(255), nullable=True)
     amount = db.Column(db.Float, nullable=False)
-    currency = db.Column(db.String(10), default='INR')
-    status = db.Column(db.String(20), default='SUCCESSFUL') # PENDING, SUCCESSFUL, FAILED, REFUNDED
-    payment_method = db.Column(db.String(50), default='ONLINE')
+    currency = db.Column(db.String(10), default='INR', nullable=False)
+    payment_status = db.Column(db.String(50), default='paid', nullable=False) # Canonical: 'paid', 'pending', 'failed'
+    gateway = db.Column(db.String(50), default='cashfree', nullable=False)
+    cf_payment_id = db.Column(db.String(100), nullable=True)
+    gateway_response = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Additional backward-compatible columns used by Internship Portal:
+    student_id = db.Column(db.Integer, nullable=True)
+    transaction_id = db.Column(db.String(100), nullable=True, index=True)
+    order_id = db.Column(db.String(100), nullable=True)
+    status = db.Column(db.String(20), nullable=True) # Secondary alias for payment_status
+    payment_method = db.Column(db.String(50), default='ONLINE', nullable=True)
     gateway_response_json = db.Column(db.Text, nullable=True)
     paid_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    student = db.relationship('Student', primaryjoin="foreign(Payment.student_id) == Student.id", uselist=False, overlaps="payments")
 
     def __init__(self, **kwargs):
+        # 1. Synchronize order_id and cashfree_order_id
         if 'order_id' in kwargs and 'cashfree_order_id' not in kwargs:
             kwargs['cashfree_order_id'] = kwargs['order_id']
         elif 'cashfree_order_id' in kwargs and 'order_id' not in kwargs:
             kwargs['order_id'] = kwargs['cashfree_order_id']
+
+        # 2. Normalize and synchronize status and payment_status
+        if 'status' in kwargs and 'payment_status' not in kwargs:
+            st = str(kwargs['status']).lower()
+            if st in ('successful', 'success', 'paid', 'completed'):
+                kwargs['payment_status'] = 'paid'
+            elif st in ('failed', 'rejected', 'cancelled'):
+                kwargs['payment_status'] = 'failed'
+            else:
+                kwargs['payment_status'] = 'pending'
+        elif 'payment_status' in kwargs and 'status' not in kwargs:
+            ps = str(kwargs['payment_status']).lower()
+            if ps in ('paid', 'success', 'successful'):
+                kwargs['status'] = 'SUCCESSFUL'
+            elif ps in ('failed', 'rejected'):
+                kwargs['status'] = 'FAILED'
+            else:
+                kwargs['status'] = 'PENDING'
+
+        # 3. Ensure mandatory defaults
+        if 'gateway' not in kwargs:
+            kwargs['gateway'] = 'cashfree'
+        if 'currency' not in kwargs:
+            kwargs['currency'] = 'INR'
+        if 'updated_at' not in kwargs:
+            kwargs['updated_at'] = datetime.utcnow()
+
         super().__init__(**kwargs)
 
     def __repr__(self):
-        return f'<Payment {self.transaction_id} - {self.status}>'
+        return f'<Payment {self.cashfree_order_id or self.transaction_id} - {self.payment_status}>'
 
 
 @event.listens_for(Payment, 'before_insert')
@@ -272,6 +313,31 @@ def sync_payment_order_ids(mapper, connection, target):
         target.cashfree_order_id = target.order_id
     elif target.cashfree_order_id and not target.order_id:
         target.order_id = target.cashfree_order_id
+
+
+@event.listens_for(Payment, 'before_insert')
+@event.listens_for(Payment, 'before_update')
+def sync_payment_status(mapper, connection, target):
+    """Ensure canonical payment_status ('paid', 'pending', 'failed') and secondary status are synchronized."""
+    if not target.payment_status:
+        if target.status:
+            st = str(target.status).lower()
+            if st in ('successful', 'success', 'paid', 'completed'):
+                target.payment_status = 'paid'
+            elif st in ('failed', 'rejected', 'cancelled'):
+                target.payment_status = 'failed'
+            else:
+                target.payment_status = 'pending'
+        else:
+            target.payment_status = 'paid'
+    if not target.status:
+        target.status = 'SUCCESSFUL' if str(target.payment_status).lower() in ('paid', 'success', 'successful') else ('FAILED' if str(target.payment_status).lower() in ('failed', 'rejected') else 'PENDING')
+    if not target.gateway:
+        target.gateway = 'cashfree'
+    if not target.currency:
+        target.currency = 'INR'
+    if not target.updated_at:
+        target.updated_at = datetime.utcnow()
 
 
 class Internship(db.Model):

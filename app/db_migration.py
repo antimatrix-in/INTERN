@@ -108,6 +108,26 @@ def run_safe_schema_migrations(app=None):
                     conn.execute(text("UPDATE payments SET cashfree_order_id = order_id WHERE cashfree_order_id IS NULL AND order_id IS NOT NULL;"))
                     conn.execute(text("UPDATE public.payments SET order_id = cashfree_order_id WHERE order_id IS NULL AND cashfree_order_id IS NOT NULL;"))
                     conn.execute(text("UPDATE payments SET order_id = cashfree_order_id WHERE order_id IS NULL AND cashfree_order_id IS NOT NULL;"))
+
+                    # Safe synchronization and non-destructive DDL for payments status & payment_status compatibility
+                    conn.execute(text("ALTER TABLE IF EXISTS public.payments ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS payments ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.payments ADD COLUMN IF NOT EXISTS status VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS payments ADD COLUMN IF NOT EXISTS status VARCHAR(50);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.payments ADD COLUMN IF NOT EXISTS gateway VARCHAR(50) DEFAULT 'cashfree';"))
+                    conn.execute(text("ALTER TABLE IF EXISTS payments ADD COLUMN IF NOT EXISTS gateway VARCHAR(50) DEFAULT 'cashfree';"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.payments ALTER COLUMN payment_status SET DEFAULT 'paid';"))
+                    conn.execute(text("ALTER TABLE IF EXISTS payments ALTER COLUMN payment_status SET DEFAULT 'paid';"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.payments ALTER COLUMN gateway SET DEFAULT 'cashfree';"))
+                    conn.execute(text("ALTER TABLE IF EXISTS payments ALTER COLUMN gateway SET DEFAULT 'cashfree';"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.payments ALTER COLUMN status SET DEFAULT 'paid';"))
+                    conn.execute(text("ALTER TABLE IF EXISTS payments ALTER COLUMN status SET DEFAULT 'paid';"))
+                    conn.execute(text("UPDATE public.payments SET payment_status = CASE WHEN status IN ('SUCCESSFUL', 'SUCCESS', 'COMPLETED', 'paid') THEN 'paid' ELSE status END WHERE payment_status IS NULL AND status IS NOT NULL;"))
+                    conn.execute(text("UPDATE payments SET payment_status = CASE WHEN status IN ('SUCCESSFUL', 'SUCCESS', 'COMPLETED', 'paid') THEN 'paid' ELSE status END WHERE payment_status IS NULL AND status IS NOT NULL;"))
+                    conn.execute(text("UPDATE public.payments SET status = payment_status WHERE status IS NULL AND payment_status IS NOT NULL;"))
+                    conn.execute(text("UPDATE payments SET status = payment_status WHERE status IS NULL AND payment_status IS NOT NULL;"))
+                    conn.execute(text("UPDATE public.payments SET gateway = 'cashfree' WHERE gateway IS NULL;"))
+                    conn.execute(text("UPDATE payments SET gateway = 'cashfree' WHERE gateway IS NULL;"))
             logger.info("Immediate PostgreSQL DDL for users, students, applications, and payments executed successfully.")
         except Exception as e:
             logger.warning(f"Immediate PostgreSQL DDL notice: {e}")
@@ -180,15 +200,21 @@ def run_safe_schema_migrations(app=None):
         except Exception as e:
             logger.debug(f"Applications nullability sync: {e}")
 
-    # Step 3c: Ensure payments table synchronizes cashfree_order_id and order_id
+    # Step 3c: Ensure payments table synchronizes cashfree_order_id/order_id and payment_status/status
     if 'payments' in existing_tables:
         try:
             with engine.connect() as conn:
                 with conn.begin():
                     conn.execute(text("UPDATE payments SET cashfree_order_id = order_id WHERE cashfree_order_id IS NULL AND order_id IS NOT NULL;"))
                     conn.execute(text("UPDATE payments SET order_id = cashfree_order_id WHERE order_id IS NULL AND cashfree_order_id IS NOT NULL;"))
+                    existing_payment_cols = {c['name'] for c in inspector.get_columns('payments')}
+                    if 'payment_status' in existing_payment_cols and 'status' in existing_payment_cols:
+                        conn.execute(text("UPDATE payments SET payment_status = CASE WHEN status IN ('SUCCESSFUL', 'SUCCESS', 'COMPLETED', 'paid') THEN 'paid' ELSE status END WHERE payment_status IS NULL AND status IS NOT NULL;"))
+                        conn.execute(text("UPDATE payments SET status = payment_status WHERE status IS NULL AND payment_status IS NOT NULL;"))
+                    if 'gateway' in existing_payment_cols:
+                        conn.execute(text("UPDATE payments SET gateway = 'cashfree' WHERE gateway IS NULL;"))
         except Exception as e:
-            logger.debug(f"Payments order_id synchronization: {e}")
+            logger.debug(f"Payments order_id and status synchronization: {e}")
 
     # Step 4: Comprehensive Column Sync across all other registered models
     # Prevents any subsequent UndefinedColumn errors on other tables

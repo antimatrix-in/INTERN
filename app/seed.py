@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 from datetime import datetime, timedelta
@@ -624,7 +625,15 @@ def seed_admin_user():
 
 
 def seed_career_applications():
-    """Seed standalone career application records for admin lookup testing."""
+    """Seed standalone career application records for admin lookup testing (Development / Test only)."""
+    # In production (PostgreSQL / Render), the Anti-Matrix corporate website manages job_applications and payments.
+    # Never insert fake demo payment or application records into the shared production database!
+    is_postgres = (db.engine.dialect.name == 'postgresql')
+    is_prod = is_postgres or os.environ.get('RENDER') or (os.environ.get('FLASK_ENV') == 'production')
+    if is_prod:
+        logger.info("Production environment detected: Skipping demo career application & payment seeding to protect production data integrity.")
+        return
+
     plan_1m = InternshipPlan.query.filter_by(plan_code='1_MONTH_PROJECT').first()
     plan_3m = InternshipPlan.query.filter_by(plan_code='3_MONTH_PROFESSIONAL').first()
 
@@ -763,54 +772,60 @@ def seed_career_applications():
         }
     ]
 
-    for app_data in apps_data:
-        app = Application.query.filter_by(application_no=app_data['application_no']).first()
-        if not app:
-            app = Application(
-                application_no=app_data['application_no'],
-                status=app_data['status'],
-                candidate_name=app_data['candidate_name'],
-                candidate_email=app_data['candidate_email'],
-                candidate_phone=app_data['candidate_phone'],
-                candidate_dob=app_data['candidate_dob'],
-                candidate_gender=app_data['candidate_gender'],
-                college_name=app_data['college_name'],
-                department_name=app_data['department_name'],
-                course=app_data['course'],
-                year_of_study=app_data['year_of_study'],
-                roll_number=app_data['roll_number'],
-                applied_role=app_data['applied_role'],
-                city=app_data['city'],
-                state=app_data['state'],
-                aadhaar_masked=app_data['aadhaar_masked'],
-                plan_id=app_data.get('plan_id'),
-                converted_employee_id=app_data.get('converted_employee_id'),
-                is_converted_to_employee=app_data.get('is_converted_to_employee', False)
-            )
-            db.session.add(app)
-            db.session.flush()
-
-        if app_data.get('has_payment'):
-            txn_id = f"AM-TXN-{app.application_no}"
-            ord_id = f"AM-ORD-{app.application_no}"
-            existing_payment = Payment.query.filter(
-                (Payment.transaction_id == txn_id) | (Payment.application_id == app.id)
-            ).first()
-            if not existing_payment:
-                st = Student.query.first()
-                payment = Payment(
-                    application_id=app.id,
-                    student_id=st.id if st else None,
-                    transaction_id=txn_id,
-                    order_id=ord_id,
-                    cashfree_order_id=ord_id,
-                    amount=1499.00 if app_data.get('plan_id') == 1 else 3999.00,
-                    currency='INR',
-                    status='SUCCESSFUL',
-                    payment_method='ONLINE_GATEWAY',
-                    paid_at=datetime.utcnow()
+    with db.session.no_autoflush:
+        for app_data in apps_data:
+            app = Application.query.filter_by(application_no=app_data['application_no']).first()
+            if not app:
+                app = Application(
+                    application_no=app_data['application_no'],
+                    status=app_data['status'],
+                    candidate_name=app_data['candidate_name'],
+                    candidate_email=app_data['candidate_email'],
+                    candidate_phone=app_data['candidate_phone'],
+                    candidate_dob=app_data['candidate_dob'],
+                    candidate_gender=app_data['candidate_gender'],
+                    college_name=app_data['college_name'],
+                    department_name=app_data['department_name'],
+                    course=app_data['course'],
+                    year_of_study=app_data['year_of_study'],
+                    roll_number=app_data['roll_number'],
+                    applied_role=app_data['applied_role'],
+                    city=app_data['city'],
+                    state=app_data['state'],
+                    aadhaar_masked=app_data['aadhaar_masked'],
+                    plan_id=app_data.get('plan_id'),
+                    converted_employee_id=app_data.get('converted_employee_id'),
+                    is_converted_to_employee=app_data.get('is_converted_to_employee', False)
                 )
-                db.session.add(payment)
+                db.session.add(app)
+                db.session.flush()
+
+            if app_data.get('has_payment'):
+                txn_id = f"AM-TXN-{app.application_no}"
+                ord_id = f"AM-ORD-{app.application_no}"
+                existing_payment = Payment.query.filter(
+                    (Payment.transaction_id == txn_id) |
+                    (Payment.application_id == app.id) |
+                    (Payment.order_id == ord_id) |
+                    (Payment.cashfree_order_id == ord_id)
+                ).first()
+                if not existing_payment:
+                    st = Student.query.first()
+                    payment = Payment(
+                        application_id=app.id,
+                        student_id=st.id if st else None,
+                        transaction_id=txn_id,
+                        order_id=ord_id,
+                        cashfree_order_id=ord_id,
+                        amount=1499.00 if app_data.get('plan_id') == 1 else 3999.00,
+                        currency='INR',
+                        status='SUCCESSFUL',
+                        payment_status='paid',
+                        gateway='cashfree',
+                        payment_method='ONLINE_GATEWAY',
+                        paid_at=datetime.utcnow()
+                    )
+                    db.session.add(payment)
 
     db.session.commit()
 

@@ -107,7 +107,10 @@ def api_application_lookup(app_id):
 
     # Validate payment status
     has_payment = False
-    if app.payments.filter(Payment.status.in_(['SUCCESS', 'SUCCESSFUL', 'PAID', 'COMPLETED'])).first():
+    if app.payments.filter(
+        (Payment.status.in_(['paid', 'PAID', 'SUCCESS', 'SUCCESSFUL', 'COMPLETED', 'completed'])) |
+        (Payment.payment_status.in_(['paid', 'PAID', 'SUCCESS', 'SUCCESSFUL', 'COMPLETED', 'completed']))
+    ).first():
         has_payment = True
     elif app_status in ['APPROVED', 'PAID', 'SUCCESS', 'VERIFIED']:
         has_payment = True
