@@ -2,7 +2,10 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db, csrf
-from app.models import User, Student, Application, Internship, InternshipPlan, AuditLog
+from app.models import (
+    User, Student, Application, Internship, InternshipPlan, AuditLog,
+    Employee, EmployeeOnboardingCredential, JobApplication, College, Department
+)
 from app.auth.forms import LoginForm, AdminLoginForm, ChangePasswordForm
 
 auth_bp = Blueprint('auth', __name__)
@@ -43,6 +46,180 @@ def find_user_by_identifier(identifier):
         return app_record.student.user
 
     return None
+
+
+def authenticate_employee_or_user(identifier, password):
+    """
+    Authenticate employee against the shared Anti-Matrix Supabase database.
+    1. First, checks the dedicated `employee_onboarding_credentials` table by employee_id.
+    2. Checks the authoritative `employees` table by employee_id.
+    3. Verifies account_status == 'active'.
+    4. If active temporary onboarding credential exists, verifies password against temporary_password_hash.
+       If match, authenticates employee and sets must_change_password=True.
+    5. If permanent password, verifies password against employee.password_hash.
+       If match, authenticates employee (must_change_password=False unless credential still active).
+    6. If onboarding credential status is 'RESET', old temporary password will fail verification.
+    7. On successful verification, provisions or synchronizes the local User and Student
+       session records without modifying production corporate data.
+    8. Falls back to find_user_by_identifier() for administrative/staff accounts.
+    Returns: (user: User or None, error_message: str or None, status_code: int)
+    """
+    if not identifier or not str(identifier).strip():
+        return None, "Please provide your Employee ID.", 400
+    if not password:
+        return None, "Please provide your password.", 400
+
+    clean_id = str(identifier).strip()
+
+    # 1. Search dedicated `employee_onboarding_credentials` table in shared Supabase database
+    onboarding_cred = EmployeeOnboardingCredential.query.filter(
+        db.func.upper(EmployeeOnboardingCredential.employee_id) == clean_id.upper()
+    ).first()
+
+    # 2. Search authoritative Anti-Matrix Corporate `employees` table
+    employee = Employee.query.filter(
+        db.func.upper(Employee.employee_id) == clean_id.upper()
+    ).first()
+
+    if not employee and onboarding_cred and hasattr(onboarding_cred, 'employee') and onboarding_cred.employee:
+        employee = onboarding_cred.employee
+
+    if employee and not onboarding_cred and hasattr(employee, 'onboarding_credential') and employee.onboarding_credential:
+        onboarding_cred = employee.onboarding_credential
+
+    if employee or onboarding_cred:
+        # Check employee account status
+        if employee and employee.account_status != 'active':
+            return None, "Your account has been deactivated. Please contact Anti Matrix support.", 403
+
+        is_authenticated = False
+        must_change_pw = False
+
+        # Mode A: Active temporary onboarding credential verification
+        # Strictly only allows temporary password while status is 'ACTIVE'
+        if onboarding_cred and onboarding_cred.status == 'ACTIVE':
+            if onboarding_cred.verify_password(password):
+                is_authenticated = True
+                must_change_pw = True
+
+        # Mode B: Permanent password verification against employee record
+        if not is_authenticated and employee:
+            if employee.check_password(password):
+                is_authenticated = True
+                if onboarding_cred and onboarding_cred.status == 'ACTIVE':
+                    must_change_pw = True
+                elif employee.temporary_password_active and (not onboarding_cred or onboarding_cred.status != 'RESET'):
+                    must_change_pw = True
+                else:
+                    must_change_pw = False
+
+        if is_authenticated:
+            emp_id = (employee.employee_id if employee else onboarding_cred.employee_id).strip()
+
+            # Resolve / link the User session object for Flask-Login
+            job_app = None
+            if employee and employee.application_id:
+                job_app = JobApplication.query.get(employee.application_id)
+
+            user = User.query.filter(
+                (db.func.upper(User.employee_id) == emp_id.upper()) |
+                (db.func.lower(User.email) == (job_app.email.lower() if job_app and job_app.email else ''))
+            ).first()
+
+            candidate_name = job_app.full_name if job_app and job_app.full_name else emp_id
+            candidate_email = job_app.email if job_app and job_app.email else f"{emp_id.lower()}@antimatrix.tech"
+
+            active_hash = (
+                employee.password_hash if (employee and employee.password_hash)
+                else (onboarding_cred.temporary_password_hash if onboarding_cred else None)
+            )
+
+            if not user:
+                # Provision local User record linked to this Anti-Matrix Employee
+                user = User(
+                    employee_id=emp_id,
+                    email=candidate_email,
+                    full_name=candidate_name,
+                    role='student',
+                    phone=job_app.phone if job_app else None,
+                    is_active=True
+                )
+                user.password_hash = active_hash or ''
+                user.must_change_password = must_change_pw
+                db.session.add(user)
+                db.session.flush()
+
+                # Ensure Student profile exists
+                college_name = job_app.college if job_app and job_app.college else None
+                college = College.query.filter(College.name.ilike(f"%{college_name.strip()}%")).first() if college_name else None
+                if not college:
+                    college = College.query.filter_by(code='OTHER-COLLEGE').first() or College.query.first()
+
+                dept_name = job_app.department if job_app and job_app.department else None
+                department = Department.query.filter_by(college_id=college.id).first() if college else Department.query.first()
+
+                student = Student(
+                    user_id=user.id,
+                    student_uid=emp_id,
+                    roll_number=emp_id,
+                    college_id=college.id if college else 1,
+                    department_id=department.id if department else 1,
+                    degree=job_app.degree if job_app and job_app.degree else 'B.Tech',
+                    current_year='3rd Year',
+                    graduation_year=job_app.graduation_year if job_app and job_app.graduation_year else '2026',
+                    is_verified=True
+                )
+                db.session.add(student)
+                db.session.flush()
+
+                # Create Application record in Internship Portal matching duration
+                dur_str = (job_app.duration or '').lower() if job_app else ''
+                duration_months = 3 if ('3' in dur_str or 'professional' in dur_str) else 1
+                plan_code = '3_MONTH_PROFESSIONAL' if duration_months == 3 else '1_MONTH_PROJECT'
+                plan = InternshipPlan.query.filter_by(plan_code=plan_code).first() or InternshipPlan.query.first()
+
+                app_record = Application(
+                    application_no=job_app.application_code if (job_app and job_app.application_code) else f"AM-APP-{emp_id}",
+                    student_id=student.id,
+                    plan_id=plan.id if plan else None,
+                    status='APPROVED',
+                    candidate_name=candidate_name,
+                    candidate_email=candidate_email,
+                    converted_employee_id=emp_id,
+                    is_converted_to_employee=True
+                )
+                db.session.add(app_record)
+                db.session.flush()
+                db.session.commit()
+
+                _ensure_student_project_allocation(user)
+            else:
+                # Sync password hash and must_change_password flag
+                if active_hash:
+                    user.password_hash = active_hash
+                user.must_change_password = must_change_pw
+                if not user.employee_id:
+                    user.employee_id = emp_id
+                user.is_active = True
+                db.session.commit()
+                if not user.student_profile or not user.student_profile.active_internship:
+                    _ensure_student_project_allocation(user)
+
+            return user, None, 200
+
+        # If employee/onboarding_cred exists but password was wrong, do not return distinct error
+        # Fall through to generic error or fallback accounts
+
+    # 2. Fallback to existing Internship Portal user accounts (e.g. Admin, Mentors, Evaluators)
+    user = find_user_by_identifier(clean_id)
+    if user:
+        if not user.check_password(password):
+            return None, "Invalid Employee ID or password.", 401
+        if not user.is_active:
+            return None, "Your account has been deactivated. Please contact Anti Matrix support.", 403
+        return user, None, 200
+
+    return None, "Invalid Employee ID or password.", 401
 
 
 @auth_bp.before_app_request
@@ -96,62 +273,53 @@ def login():
         password = data.get('password')
         remember = bool(data.get('remember_me', False))
 
-        if not emp_id or not password:
-            return jsonify({'success': False, 'error': 'Employee ID and password are required.'}), 400
+        user, err_msg, status_code = authenticate_employee_or_user(emp_id, password)
+        if not user:
+            return jsonify({'success': False, 'error': err_msg}), status_code
 
-        user = find_user_by_identifier(emp_id)
-        if user and user.check_password(password):
-            if not user.is_active:
-                return jsonify({'success': False, 'error': 'Your account has been deactivated. Please contact Anti Matrix support.'}), 403
+        login_user(user, remember=remember)
+        _log_login_audit(user, request.remote_addr)
 
-            login_user(user, remember=remember)
-            _log_login_audit(user, request.remote_addr)
-
-            if getattr(user, 'must_change_password', False):
-                return jsonify({
-                    'success': True,
-                    'must_change_password': True,
-                    'message': 'Temporary password change required before accessing the portal.',
-                    'redirect_url': url_for('auth.change_password'),
-                    'user': _safe_user_dict(user)
-                }), 200
-
-            redirect_url = url_for('admin.dashboard') if user.is_admin_or_staff else url_for('student.dashboard')
+        if getattr(user, 'must_change_password', False):
             return jsonify({
                 'success': True,
-                'must_change_password': False,
-                'message': f'Welcome back, {user.full_name}!',
-                'redirect_url': redirect_url,
+                'must_change_password': True,
+                'message': 'Temporary password change required before accessing the portal.',
+                'redirect_url': url_for('auth.change_password'),
                 'user': _safe_user_dict(user)
             }), 200
-        else:
-            return jsonify({'success': False, 'error': 'Invalid Employee ID or password.'}), 401
+
+        redirect_url = url_for('admin.dashboard') if user.is_admin_or_staff else url_for('student.dashboard')
+        return jsonify({
+            'success': True,
+            'must_change_password': False,
+            'message': f'Welcome back, {user.full_name}!',
+            'redirect_url': redirect_url,
+            'user': _safe_user_dict(user)
+        }), 200
 
     form = LoginForm()
     if form.validate_on_submit():
-        user = find_user_by_identifier(form.employee_id.data)
-        if user and user.check_password(form.password.data):
-            if not user.is_active:
-                flash('Your account has been deactivated. Please contact Anti Matrix support.', 'danger')
-                return render_template('auth/login.html', form=form)
+        user, err_msg, status_code = authenticate_employee_or_user(form.employee_id.data, form.password.data)
+        if not user:
+            flash(err_msg, 'danger')
+            return render_template('auth/login.html', form=form)
 
-            login_user(user, remember=form.remember_me.data)
-            _log_login_audit(user, request.remote_addr)
+        login_user(user, remember=form.remember_me.data)
+        _log_login_audit(user, request.remote_addr)
 
-            if getattr(user, 'must_change_password', False):
-                flash('First login detected. Please change your temporary password to proceed.', 'info')
-                return redirect(url_for('auth.change_password'))
+        if getattr(user, 'must_change_password', False):
+            flash('First login detected. Please change your temporary password to proceed.', 'info')
+            return redirect(url_for('auth.change_password'))
 
-            flash(f'Welcome back, {user.full_name}!', 'success')
-            next_page = request.args.get('next')
-            if next_page and next_page.startswith('/'):
-                return redirect(next_page)
+        flash(f'Welcome back, {user.full_name}!', 'success')
+        next_page = request.args.get('next')
+        if next_page and next_page.startswith('/'):
+            return redirect(next_page)
 
-            if user.is_admin_or_staff:
-                return redirect(url_for('admin.dashboard'))
-            return redirect(url_for('student.dashboard'))
-        else:
-            flash('Invalid Employee ID or password. Please try again.', 'danger')
+        if user.is_admin_or_staff:
+            return redirect(url_for('admin.dashboard'))
+        return redirect(url_for('student.dashboard'))
 
     return render_template('auth/login.html', form=form)
 
@@ -169,42 +337,30 @@ def employee_login_api():
     password = data.get('password')
     remember_me = bool(data.get('remember_me', False))
 
-    if not employee_id or not str(employee_id).strip():
-        return jsonify({'success': False, 'error': 'Please provide your Employee ID.'}), 400
+    user, err_msg, status_code = authenticate_employee_or_user(employee_id, password)
+    if not user:
+        return jsonify({'success': False, 'error': err_msg}), status_code
 
-    if not password:
-        return jsonify({'success': False, 'error': 'Please provide your password.'}), 400
+    login_user(user, remember=remember_me)
+    _log_login_audit(user, request.remote_addr)
 
-    user = find_user_by_identifier(employee_id)
-    if user and user.check_password(password):
-        if not user.is_active:
-            return jsonify({
-                'success': False,
-                'error': 'Your account has been deactivated. Please contact Anti Matrix support.'
-            }), 403
-
-        login_user(user, remember=remember_me)
-        _log_login_audit(user, request.remote_addr)
-
-        if getattr(user, 'must_change_password', False):
-            return jsonify({
-                'success': True,
-                'must_change_password': True,
-                'message': 'First login detected. Temporary password change required before accessing portal.',
-                'redirect_url': url_for('auth.change_password'),
-                'user': _safe_user_dict(user)
-            }), 200
-
-        redirect_url = url_for('admin.dashboard') if user.is_admin_or_staff else url_for('student.dashboard')
+    if getattr(user, 'must_change_password', False):
         return jsonify({
             'success': True,
-            'must_change_password': False,
-            'message': 'Employee authentication successful.',
-            'redirect_url': redirect_url,
+            'must_change_password': True,
+            'message': 'First login detected. Temporary password change required before accessing portal.',
+            'redirect_url': url_for('auth.change_password'),
             'user': _safe_user_dict(user)
         }), 200
 
-    return jsonify({'success': False, 'error': 'Invalid Employee ID or password.'}), 401
+    redirect_url = url_for('admin.dashboard') if user.is_admin_or_staff else url_for('student.dashboard')
+    return jsonify({
+        'success': True,
+        'must_change_password': False,
+        'message': 'Employee authentication successful.',
+        'redirect_url': redirect_url,
+        'user': _safe_user_dict(user)
+    }), 200
 
 
 @auth_bp.route('/change-password', methods=['GET', 'POST'])
@@ -245,6 +401,21 @@ def change_password():
         current_user.set_password(new_pw)
         current_user.must_change_password = False
         current_user.password_changed_at = datetime.utcnow()
+
+        # Update authoritative Employee and EmployeeOnboardingCredential in shared Supabase table if linked
+        if current_user.employee_id:
+            emp = Employee.query.filter(
+                db.func.upper(Employee.employee_id) == current_user.employee_id.strip().upper()
+            ).first()
+            if emp:
+                emp.reset_password(new_pw)
+
+            cred = EmployeeOnboardingCredential.query.filter(
+                db.func.upper(EmployeeOnboardingCredential.employee_id) == current_user.employee_id.strip().upper()
+            ).first()
+            if cred:
+                cred.mark_reset()
+
         db.session.commit()
 
         # Ensure project allocation
@@ -297,6 +468,21 @@ def _process_password_change(data):
     current_user.set_password(new_pw)
     current_user.must_change_password = False
     current_user.password_changed_at = datetime.utcnow()
+
+    # Update authoritative Employee and EmployeeOnboardingCredential in shared Supabase table if linked
+    if current_user.employee_id:
+        emp = Employee.query.filter(
+            db.func.upper(Employee.employee_id) == current_user.employee_id.strip().upper()
+        ).first()
+        if emp:
+            emp.reset_password(new_pw)
+
+        cred = EmployeeOnboardingCredential.query.filter(
+            db.func.upper(EmployeeOnboardingCredential.employee_id) == current_user.employee_id.strip().upper()
+        ).first()
+        if cred:
+            cred.mark_reset()
+
     db.session.commit()
 
     # Ensure project allocation

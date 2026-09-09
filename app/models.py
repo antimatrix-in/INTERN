@@ -977,3 +977,159 @@ class AuditLog(db.Model):
     details_json = db.Column(db.Text, nullable=True)
     ip_address = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class JobApplication(db.Model):
+    """
+    Anti-Matrix Corporate Job Application model (shared PostgreSQL database).
+    Read-only mapping used by Internship Portal to resolve employee details and duration.
+    """
+    __tablename__ = 'job_applications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, nullable=True)
+    user_id = db.Column(db.Integer, nullable=True)
+    application_code = db.Column(db.String(50), nullable=True)
+    first_name = db.Column(db.String(100), nullable=True)
+    last_name = db.Column(db.String(100), nullable=True)
+    full_name = db.Column(db.String(150), nullable=True)
+    email = db.Column(db.String(150), nullable=True)
+    phone = db.Column(db.String(30), nullable=True)
+    duration = db.Column(db.String(50), nullable=True)  # '1_month', '3_months'
+    college = db.Column(db.String(200), nullable=True)
+    department = db.Column(db.String(150), nullable=True)
+    degree = db.Column(db.String(150), nullable=True)
+    graduation_year = db.Column(db.String(10), nullable=True)
+    payment_status = db.Column(db.String(50), nullable=True)
+    status = db.Column(db.String(50), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<JobApplication id={self.id} code='{self.application_code}' email='{self.email}'>"
+
+
+class Employee(db.Model):
+    """
+    Anti-Matrix Corporate Employee model (shared PostgreSQL database).
+    Authoritative source for Employee ID login credentials and temporary password lifecycle.
+    """
+    __tablename__ = 'employees'
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    application_id = db.Column(db.Integer, nullable=True, index=True)
+    password_hash = db.Column(db.String(256), nullable=False)
+    temp_password_encrypted = db.Column(db.String(500), nullable=True)
+    temporary_password_active = db.Column(db.Boolean, default=True, nullable=False)
+    account_status = db.Column(db.String(30), default='active', nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    application = db.relationship(
+        'JobApplication',
+        primaryjoin="foreign(Employee.application_id) == JobApplication.id",
+        uselist=False
+    )
+
+    def check_password(self, password: str) -> bool:
+        """Verifies candidate password against stored secure Werkzeug hash."""
+        if not self.password_hash or not password:
+            return False
+        try:
+            return check_password_hash(self.password_hash, password)
+        except Exception:
+            return False
+
+    def set_password(self, password: str):
+        """Hashes plaintext password using Werkzeug secure password hashing."""
+        self.password_hash = generate_password_hash(password)
+
+    def reset_password(self, new_password: str):
+        """
+        Updates password hash upon password change/reset.
+        Marks temporary_password_active = False and purges temp_password_encrypted.
+        Also marks onboarding_credential as RESET if present.
+        """
+        self.set_password(new_password)
+        self.temporary_password_active = False
+        self.temp_password_encrypted = None
+        self.updated_at = datetime.utcnow()
+        if hasattr(self, 'onboarding_credential') and self.onboarding_credential:
+            self.onboarding_credential.mark_reset()
+
+    def __repr__(self):
+        return f"<Employee id={self.id} employee_id='{self.employee_id}' status='{self.account_status}'>"
+
+
+class EmployeeOnboardingCredential(db.Model):
+    """
+    Dedicated table for the temporary employee onboarding credential lifecycle.
+    Stores temporary password encrypted at rest and one-way password hash for verification.
+    Shared with the Anti-Matrix platform via Supabase.
+    """
+    __tablename__ = 'employee_onboarding_credentials'
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(
+        db.String(20),
+        db.ForeignKey('employees.employee_id', ondelete='CASCADE'),
+        unique=True,
+        nullable=False,
+        index=True
+    )
+    temporary_password_encrypted = db.Column(db.Text, nullable=True)
+    temporary_password_hash = db.Column(db.String(256), nullable=False)
+    status = db.Column(db.String(20), default='ACTIVE', nullable=False, index=True)  # 'ACTIVE', 'RESET', 'EXPIRED'
+    password_reset_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    # Relationships
+    employee = db.relationship('Employee', backref=db.backref('onboarding_credential', uselist=False, cascade='all, delete-orphan'))
+
+    @property
+    def is_active(self) -> bool:
+        """Returns True if the temporary credential is still active."""
+        return self.status == 'ACTIVE'
+
+    def verify_password(self, candidate_password: str) -> bool:
+        """
+        Verifies candidate password against temporary_password_hash for initial portal activation.
+        Strictly returns False if credential status is not ACTIVE.
+        """
+        if self.status != 'ACTIVE' or not self.temporary_password_hash or not candidate_password:
+            return False
+        try:
+            return check_password_hash(self.temporary_password_hash, candidate_password)
+        except Exception:
+            return False
+
+    def mark_reset(self):
+        """
+        Transitions temporary credential status to RESET upon successful password change.
+        Permanently invalidates and purges the encrypted temporary password.
+        """
+        self.status = 'RESET'
+        self.password_reset_at = datetime.now(timezone.utc)
+        self.temporary_password_encrypted = None
+        self.updated_at = datetime.now(timezone.utc)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'employee_id': self.employee_id,
+            'status': self.status,
+            'password_reset_at': self.password_reset_at.isoformat() if self.password_reset_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self):
+        return f"<EmployeeOnboardingCredential id={self.id} employee_id='{self.employee_id}' status='{self.status}'>"
+

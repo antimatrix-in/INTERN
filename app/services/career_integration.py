@@ -12,7 +12,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from app.extensions import db
 from app.models import (
     User, Student, Application, Payment, Internship, InternshipPlan,
-    College, Department, AuditLog
+    College, Department, AuditLog, Employee, EmployeeOnboardingCredential
 )
 
 logger = logging.getLogger(__name__)
@@ -150,20 +150,39 @@ class CareerIntegrationService:
         """
         Securely verify employee login credentials against stored password hashes.
         Never returns or logs raw hashes.
+        Checks User account, EmployeeOnboardingCredential, and Employee records.
         Returns authenticated User object or None.
         """
         if not employee_id or not password:
             return None
 
+        # 1. Check local User
         user = CareerIntegrationService.get_employee_by_employee_id(employee_id)
-        if not user:
-            return None
-
-        if not user.is_active:
-            return None
-
-        if user.check_password(password):
+        if user and user.is_active and user.check_password(password):
             return user
+
+        # 2. Check EmployeeOnboardingCredential in Supabase
+        clean_id = str(employee_id).strip()
+        cred = EmployeeOnboardingCredential.query.filter(
+            db.func.upper(EmployeeOnboardingCredential.employee_id) == clean_id.upper()
+        ).first()
+        if cred and cred.status == 'ACTIVE' and cred.verify_password(password):
+            if user:
+                return user
+            from app.auth.routes import authenticate_employee_or_user
+            auth_user, _, _ = authenticate_employee_or_user(employee_id, password)
+            return auth_user
+
+        # 3. Check Employee permanent password in Supabase
+        emp = Employee.query.filter(
+            db.func.upper(Employee.employee_id) == clean_id.upper()
+        ).first()
+        if emp and emp.account_status == 'active' and emp.check_password(password):
+            if user:
+                return user
+            from app.auth.routes import authenticate_employee_or_user
+            auth_user, _, _ = authenticate_employee_or_user(employee_id, password)
+            return auth_user
 
         return None
 
