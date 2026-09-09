@@ -148,62 +148,16 @@ def authenticate_employee_or_user(identifier, password):
                 user.must_change_password = must_change_pw
                 db.session.add(user)
                 db.session.flush()
-
-                # Ensure Student profile exists
-                college_name = job_app.college if job_app and job_app.college else None
-                college = College.query.filter(College.name.ilike(f"%{college_name.strip()}%")).first() if college_name else None
-                if not college:
-                    college = College.query.filter_by(code='OTHER-COLLEGE').first() or College.query.first()
-
-                dept_name = job_app.department if job_app and job_app.department else None
-                department = Department.query.filter_by(college_id=college.id).first() if college else Department.query.first()
-
-                student = Student(
-                    user_id=user.id,
-                    student_uid=emp_id,
-                    roll_number=emp_id,
-                    college_id=college.id if college else 1,
-                    department_id=department.id if department else 1,
-                    degree=job_app.degree if job_app and job_app.degree else 'B.Tech',
-                    current_year='3rd Year',
-                    graduation_year=job_app.graduation_year if job_app and job_app.graduation_year else '2026',
-                    is_verified=True
-                )
-                db.session.add(student)
-                db.session.flush()
-
-                # Create Application record in Internship Portal matching duration
-                dur_str = (job_app.duration or '').lower() if job_app else ''
-                duration_months = 3 if ('3' in dur_str or 'professional' in dur_str) else 1
-                plan_code = '3_MONTH_PROFESSIONAL' if duration_months == 3 else '1_MONTH_PROJECT'
-                plan = InternshipPlan.query.filter_by(plan_code=plan_code).first() or InternshipPlan.query.first()
-
-                app_record = Application(
-                    application_no=job_app.application_code if (job_app and job_app.application_code) else f"AM-APP-{emp_id}",
-                    student_id=student.id,
-                    plan_id=plan.id if plan else None,
-                    status='APPROVED',
-                    candidate_name=candidate_name,
-                    candidate_email=candidate_email,
-                    converted_employee_id=emp_id,
-                    is_converted_to_employee=True
-                )
-                db.session.add(app_record)
-                db.session.flush()
-                db.session.commit()
-
-                _ensure_student_project_allocation(user)
+                _ensure_student_profile(user, emp_id=emp_id, employee=employee, job_app=job_app)
             else:
-                # Sync password hash and must_change_password flag
+                # Sync password hash, must_change_password flag, and employee_id
                 if active_hash:
                     user.password_hash = active_hash
                 user.must_change_password = must_change_pw
-                if not user.employee_id:
-                    user.employee_id = emp_id
+                user.employee_id = emp_id
                 user.is_active = True
                 db.session.commit()
-                if not user.student_profile or not user.student_profile.active_internship:
-                    _ensure_student_project_allocation(user)
+                _ensure_student_profile(user, emp_id=emp_id, employee=employee, job_app=job_app)
 
             return user, None, 200
 
@@ -363,66 +317,119 @@ def employee_login_api():
     }), 200
 
 
+def _perform_atomic_password_change(user, current_pw, new_pw, confirm_pw):
+    """
+    Atomically updates password across User, Employee, and EmployeeOnboardingCredential.
+    Clears first login flags, synchronizes hashes, provisions student profile, and preserves session.
+    Returns: (success: bool, error_message: str or None, status_code: int)
+    """
+    if not current_pw:
+        return False, 'Current temporary password is required.', 400
+
+    if not new_pw:
+        return False, 'New password is required.', 400
+
+    if not confirm_pw:
+        return False, 'Confirmation password is required.', 400
+
+    target_emp_id = (user.employee_id or '').strip()
+    if not target_emp_id and user.student_profile and user.student_profile.student_uid:
+        target_emp_id = user.student_profile.student_uid.strip()
+
+    emp_lookup = None
+    if target_emp_id:
+        emp_lookup = Employee.query.filter(
+            db.func.upper(Employee.employee_id) == target_emp_id.upper()
+        ).first()
+
+    cred_lookup = None
+    if target_emp_id:
+        cred_lookup = EmployeeOnboardingCredential.query.filter(
+            db.func.upper(EmployeeOnboardingCredential.employee_id) == target_emp_id.upper()
+        ).first()
+
+    # 1. Verify current temporary password against User, OnboardingCredential, or Employee record
+    pw_valid = user.check_password(current_pw)
+    if not pw_valid:
+        if cred_lookup and cred_lookup.verify_password(current_pw):
+            pw_valid = True
+        elif emp_lookup and emp_lookup.check_password(current_pw):
+            pw_valid = True
+
+    if not pw_valid:
+        return False, 'Current temporary password is incorrect. Please verify and try again.', 400
+
+    if len(new_pw) < 6:
+        return False, 'New password must be at least 6 characters long.', 400
+
+    if new_pw != confirm_pw:
+        return False, 'New password and confirmation do not match.', 400
+
+    if new_pw == current_pw:
+        return False, 'New password cannot be the same as your current temporary password.', 400
+
+    # 2. Update user password securely and clear first-login flag
+    user.set_password(new_pw)
+    user.must_change_password = False
+    user.password_changed_at = datetime.utcnow()
+
+    # 3. Synchronize authoritative Employee and EmployeeOnboardingCredential
+    if not emp_lookup and user.email:
+        job_app = JobApplication.query.filter(
+            db.func.lower(JobApplication.email) == user.email.strip().lower()
+        ).first()
+        if job_app:
+            emp_lookup = Employee.query.filter_by(application_id=job_app.id).first()
+            if emp_lookup and not target_emp_id:
+                target_emp_id = emp_lookup.employee_id
+                user.employee_id = target_emp_id
+
+    if emp_lookup:
+        emp_lookup.reset_password(new_pw)
+
+    if not cred_lookup and target_emp_id:
+        cred_lookup = EmployeeOnboardingCredential.query.filter(
+            db.func.upper(EmployeeOnboardingCredential.employee_id) == target_emp_id.upper()
+        ).first()
+
+    if cred_lookup:
+        cred_lookup.mark_reset()
+
+    # 4. Commit transaction atomically before redirect
+    db.session.commit()
+
+    # 5. Ensure student profile, application, and project allocation exist
+    _ensure_student_profile(user, emp_id=target_emp_id, employee=emp_lookup)
+
+    # 6. Preserve and refresh authenticated session with underlying real user instance
+    real_user = user._get_current_object() if hasattr(user, '_get_current_object') else user
+    login_user(real_user, remember=True)
+
+    return True, None, 200
+
+
 @auth_bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
 def change_password():
-    """
-    First login / temporary password change handler.
-    Verifies current temporary password, sets new secure password, clears first-login flag,
-    ensures project allocation, and redirects to dashboard.
-    """
     # Handle JSON request to /change-password
     if request.is_json:
         return _process_password_change(request.get_json() or {})
 
     form = ChangePasswordForm()
     if form.validate_on_submit():
-        current_pw = form.current_password.data
-        new_pw = form.new_password.data
-        confirm_pw = form.confirm_password.data
-
-        if not current_user.check_password(current_pw):
-            flash('Current temporary password is incorrect. Please verify and try again.', 'danger')
+        success, err_msg, _ = _perform_atomic_password_change(
+            current_user,
+            form.current_password.data,
+            form.new_password.data,
+            form.confirm_password.data
+        )
+        if not success:
+            flash(err_msg, 'danger')
             return render_template('auth/change_password.html', form=form)
-
-        if new_pw == current_pw:
-            flash('New password cannot be the same as your current temporary password.', 'danger')
-            return render_template('auth/change_password.html', form=form)
-
-        if new_pw != confirm_pw:
-            flash('New password and confirmation do not match.', 'danger')
-            return render_template('auth/change_password.html', form=form)
-
-        if len(new_pw) < 6:
-            flash('New password must be at least 6 characters long.', 'danger')
-            return render_template('auth/change_password.html', form=form)
-
-        # Update password securely
-        current_user.set_password(new_pw)
-        current_user.must_change_password = False
-        current_user.password_changed_at = datetime.utcnow()
-
-        # Update authoritative Employee and EmployeeOnboardingCredential in shared Supabase table if linked
-        if current_user.employee_id:
-            emp = Employee.query.filter(
-                db.func.upper(Employee.employee_id) == current_user.employee_id.strip().upper()
-            ).first()
-            if emp:
-                emp.reset_password(new_pw)
-
-            cred = EmployeeOnboardingCredential.query.filter(
-                db.func.upper(EmployeeOnboardingCredential.employee_id) == current_user.employee_id.strip().upper()
-            ).first()
-            if cred:
-                cred.mark_reset()
-
-        db.session.commit()
-
-        # Ensure project allocation
-        _ensure_student_project_allocation(current_user)
 
         flash('Your password has been successfully updated! Welcome to your dashboard.', 'success')
-        if current_user.is_admin_or_staff:
+        is_admin = bool(getattr(current_user, 'is_admin_or_staff', False))
+        if is_admin:
             return redirect(url_for('admin.dashboard'))
         return redirect(url_for('student.dashboard'))
 
@@ -443,50 +450,14 @@ def _process_password_change(data):
     new_pw = data.get('new_password')
     confirm_pw = data.get('confirm_password')
 
-    if not current_pw:
-        return jsonify({'success': False, 'error': 'Current temporary password is required.'}), 400
-
-    if not new_pw:
-        return jsonify({'success': False, 'error': 'New password is required.'}), 400
-
-    if not confirm_pw:
-        return jsonify({'success': False, 'error': 'Confirmation password is required.'}), 400
-
-    if not current_user.check_password(current_pw):
-        return jsonify({'success': False, 'error': 'Current temporary password is incorrect.'}), 400
-
-    if len(new_pw) < 6:
-        return jsonify({'success': False, 'error': 'New password must be at least 6 characters long.'}), 400
-
-    if new_pw != confirm_pw:
-        return jsonify({'success': False, 'error': 'New password and confirmation do not match.'}), 400
-
-    if new_pw == current_pw:
-        return jsonify({'success': False, 'error': 'New password cannot be the same as your current temporary password.'}), 400
-
-    # Update password securely
-    current_user.set_password(new_pw)
-    current_user.must_change_password = False
-    current_user.password_changed_at = datetime.utcnow()
-
-    # Update authoritative Employee and EmployeeOnboardingCredential in shared Supabase table if linked
-    if current_user.employee_id:
-        emp = Employee.query.filter(
-            db.func.upper(Employee.employee_id) == current_user.employee_id.strip().upper()
-        ).first()
-        if emp:
-            emp.reset_password(new_pw)
-
-        cred = EmployeeOnboardingCredential.query.filter(
-            db.func.upper(EmployeeOnboardingCredential.employee_id) == current_user.employee_id.strip().upper()
-        ).first()
-        if cred:
-            cred.mark_reset()
-
-    db.session.commit()
-
-    # Ensure project allocation
-    _ensure_student_project_allocation(current_user)
+    success, err_msg, status_code = _perform_atomic_password_change(
+        current_user,
+        current_pw,
+        new_pw,
+        confirm_pw
+    )
+    if not success:
+        return jsonify({'success': False, 'error': err_msg}), status_code
 
     redirect_url = url_for('admin.dashboard') if current_user.is_admin_or_staff else url_for('student.dashboard')
     return jsonify({
@@ -495,6 +466,93 @@ def _process_password_change(data):
         'redirect_url': redirect_url,
         'user': _safe_user_dict(current_user)
     }), 200
+
+
+def _ensure_student_profile(user, emp_id=None, employee=None, job_app=None):
+    """
+    Ensure student profile, application, and project allocation exist for the user.
+    Handles both newly created and pre-existing user records safely without modifying
+    production corporate data.
+    """
+    if not user:
+        return None
+
+    emp_id = (emp_id or user.employee_id or '').strip()
+
+    if not employee and emp_id:
+        employee = Employee.query.filter(
+            db.func.upper(Employee.employee_id) == emp_id.upper()
+        ).first()
+
+    if not job_app:
+        if employee and employee.application_id:
+            job_app = JobApplication.query.get(employee.application_id)
+        elif user.email:
+            job_app = JobApplication.query.filter(
+                db.func.lower(JobApplication.email) == user.email.lower().strip()
+            ).first()
+
+    student = user.student_profile
+    if not student and emp_id:
+        student = Student.query.filter(
+            (db.func.upper(Student.student_uid) == emp_id.upper()) |
+            (Student.user_id == user.id)
+        ).first()
+        if student and not student.user_id:
+            student.user_id = user.id
+            db.session.commit()
+
+    if not student:
+        college_name = job_app.college if job_app and job_app.college else None
+        college = College.query.filter(College.name.ilike(f"%{college_name.strip()}%")).first() if college_name else None
+        if not college:
+            college = College.query.filter_by(code='OTHER-COLLEGE').first() or College.query.first()
+
+        dept_name = job_app.department if job_app and job_app.department else None
+        department = Department.query.filter_by(college_id=college.id).first() if college else Department.query.first()
+
+        candidate_name = job_app.full_name if job_app and job_app.full_name else (user.full_name or user.name or emp_id)
+        candidate_email = job_app.email if job_app and job_app.email else user.email
+
+        student = Student(
+            user_id=user.id,
+            student_uid=emp_id or f"AM-STU-{user.id}",
+            roll_number=emp_id or f"AM-STU-{user.id}",
+            college_id=college.id if college else 1,
+            department_id=department.id if department else 1,
+            degree=job_app.degree if job_app and job_app.degree else 'B.Tech',
+            current_year='3rd Year',
+            graduation_year=job_app.graduation_year if job_app and job_app.graduation_year else '2026',
+            is_verified=True
+        )
+        db.session.add(student)
+        db.session.flush()
+
+        dur_str = (job_app.duration or '').lower() if job_app else ''
+        duration_months = 3 if ('3' in dur_str or 'professional' in dur_str) else 1
+        plan_code = '3_MONTH_PROFESSIONAL' if duration_months == 3 else '1_MONTH_PROJECT'
+        plan = InternshipPlan.query.filter_by(plan_code=plan_code).first() or InternshipPlan.query.first()
+
+        app_record = Application(
+            application_no=job_app.application_code if (job_app and job_app.application_code) else f"AM-APP-{student.student_uid}",
+            student_id=student.id,
+            plan_id=plan.id if plan else None,
+            status='APPROVED',
+            candidate_name=candidate_name,
+            candidate_email=candidate_email,
+            converted_employee_id=emp_id or student.student_uid,
+            is_converted_to_employee=True
+        )
+        db.session.add(app_record)
+        db.session.flush()
+        db.session.commit()
+    else:
+        if emp_id and not student.student_uid:
+            student.student_uid = emp_id
+            db.session.commit()
+
+    _ensure_student_project_allocation(user)
+    return student
 
 
 def _ensure_student_project_allocation(user):

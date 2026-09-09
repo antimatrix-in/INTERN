@@ -32,9 +32,17 @@ def is_valid_github_url(url):
     return bool(GITHUB_URL_PATTERN.match(url.strip()))
 
 
+ALLOWED_STUDENT_ROLES = {'student', 'employee', 'candidate', 'member', 'intern'}
+
+
 def get_current_student():
     """Retrieve and validate student profile for current authenticated user."""
     student = Student.query.filter_by(user_id=current_user.id).first()
+    if not student:
+        # Auto-provision or link student profile for authenticated employee
+        from app.auth.routes import _ensure_student_profile
+        student = _ensure_student_profile(current_user)
+
     if not student:
         flash('No active employee/student profile linked to your account. Please contact Anti Matrix support.', 'danger')
         abort(403)
@@ -44,7 +52,7 @@ def get_current_student():
 @student_bp.before_request
 @login_required
 def check_student_role():
-    if current_user.role != 'student' and not current_user.is_admin_or_staff:
+    if current_user.role not in ALLOWED_STUDENT_ROLES and not current_user.is_admin_or_staff:
         flash('Access restricted to enrolled internship employees.', 'danger')
         return redirect(url_for('auth.login'))
 

@@ -113,9 +113,17 @@ class Config:
     # Base URL
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5050')
 
-    # Security
+    # Security & Session Management
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_DOMAIN = os.environ.get('SESSION_COOKIE_DOMAIN', None)
+    # Enforce secure cookies in production/HTTPS on Render while allowing dev/testing
+    _cookie_secure_env = os.environ.get('SESSION_COOKIE_SECURE')
+    if _cookie_secure_env is not None:
+        SESSION_COOKIE_SECURE = _cookie_secure_env.strip().lower() in ('1', 'true', 'yes')
+    else:
+        SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production' or not os.environ.get('FLASK_DEBUG', '1') == '1'
     REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
     REMEMBER_COOKIE_DURATION = 60 * 60 * 24 * 7 # 7 days
 
