@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <rect width="100" height="100" rx="22" fill="#ffffff"/>
+  <rect width="98" height="98" x="1" y="1" rx="21" stroke="#e2e8f0" stroke-width="2"/>
+  <!-- Square Frame with top-right corner pointing to gem -->
+  <path d="M 58 24 H 22 V 78 H 78 V 42" stroke="#0f172a" stroke-width="10" stroke-linecap="square" stroke-linejoin="miter"/>
+  
+  <!-- 4-Faceted Matrix Diamond Gem -->
+  <!-- Top Facet (Deep Pine) -->
+  <polygon points="78,8 92,22 78,22" fill="#457a00"/>
+  <!-- Left Facet (Radiant Neon Lime) -->
+  <polygon points="78,8 64,22 78,22" fill="#9eff1f"/>
+  <!-- Bottom Facet (Fresh Emerald) -->
+  <polygon points="64,22 78,36 78,22" fill="#7ed957"/>
+  <!-- Right Facet (Pale Mint) -->
+  <polygon points="92,22 78,36 78,22" fill="#bfecac"/>
+</svg>

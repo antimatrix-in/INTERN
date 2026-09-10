@@ -3,133 +3,102 @@
 {% block title %}Admin Dashboard — ANTI MATRIX{% endblock %}
 
 {% block content %}
-<div style="padding: 2rem 2.5rem;">
+<div>
   <!-- Page Header -->
-  <div style="margin-bottom: 2rem;">
-    <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.25rem;">
-      Admin Dashboard
+  <div style="margin-bottom: 1.75rem;">
+    <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.2rem;">
+      Admin Operations Dashboard
     </h1>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
-      Live operational metrics for the ANTI MATRIX Internship Management Portal
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+      Real-time workforce, project allocation & milestone evaluation telemetry
     </p>
   </div>
 
   <!-- Metric Cards -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
 
-    <div style="background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04)); border: 1px solid rgba(59,130,246,0.25); border-radius: 14px; padding: 1.4rem;">
-      <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.8rem;">
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(59,130,246,0.2);display:flex;align-items:center;justify-content:center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <span style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Total Employees</span>
-      </div>
-      <div style="font-size:2.2rem;font-weight:800;color:#60A5FA;font-family:var(--font-mono);">{{ total_employees }}</div>
+    <div class="stat-card">
+      <div class="stat-label">Total Interns</div>
+      <div class="stat-value">{{ total_employees }}</div>
     </div>
 
-    <div style="background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04)); border: 1px solid rgba(16,185,129,0.25); border-radius: 14px; padding: 1.4rem;">
-      <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.8rem;">
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        </div>
-        <span style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Active Interns</span>
-      </div>
-      <div style="font-size:2.2rem;font-weight:800;color:#34D399;font-family:var(--font-mono);">{{ active_interns }}</div>
+    <div class="stat-card">
+      <div class="stat-label">Active Cohort</div>
+      <div class="stat-value" style="color: var(--brand-primary);">{{ active_interns }}</div>
     </div>
 
-    <div style="background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(139,92,246,0.04)); border: 1px solid rgba(139,92,246,0.25); border-radius: 14px; padding: 1.4rem;">
-      <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.8rem;">
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(139,92,246,0.2);display:flex;align-items:center;justify-content:center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        </div>
-        <span style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Total Projects</span>
-      </div>
-      <div style="font-size:2.2rem;font-weight:800;color:#A78BFA;font-family:var(--font-mono);">{{ total_projects }}</div>
+    <div class="stat-card">
+      <div class="stat-label">Master Projects</div>
+      <div class="stat-value">{{ total_projects }}</div>
     </div>
 
-    <div style="background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04)); border: 1px solid rgba(245,158,11,0.25); border-radius: 14px; padding: 1.4rem;">
-      <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.8rem;">
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,0.2);display:flex;align-items:center;justify-content:center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        </div>
-        <span style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Assigned Projects</span>
-      </div>
-      <div style="font-size:2.2rem;font-weight:800;color:#FBBF24;font-family:var(--font-mono);">{{ assigned_projects }}</div>
+    <div class="stat-card">
+      <div class="stat-label">Assigned Projects</div>
+      <div class="stat-value" style="color: var(--text-main);">{{ assigned_projects }}</div>
     </div>
 
-    <div style="background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04)); border: 1px solid rgba(239,68,68,0.25); border-radius: 14px; padding: 1.4rem;">
-      <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.8rem;">
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        </div>
-        <span style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Pending Reviews</span>
-      </div>
-      <div style="font-size:2.2rem;font-weight:800;color:#F87171;font-family:var(--font-mono);">{{ pending_submissions }}</div>
+    <div class="stat-card">
+      <div class="stat-label">Pending Reviews</div>
+      <div class="stat-value" style="color: var(--warning);">{{ pending_submissions }}</div>
     </div>
 
-    <div style="background: linear-gradient(135deg, rgba(6,182,212,0.12), rgba(6,182,212,0.04)); border: 1px solid rgba(6,182,212,0.25); border-radius: 14px; padding: 1.4rem;">
-      <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.8rem;">
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(6,182,212,0.2);display:flex;align-items:center;justify-content:center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <span style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Meetings Scheduled</span>
-      </div>
-      <div style="font-size:2.2rem;font-weight:800;color:#22D3EE;font-family:var(--font-mono);">{{ scheduled_meetings }}</div>
+    <div class="stat-card">
+      <div class="stat-label">Evaluations Scheduled</div>
+      <div class="stat-value" style="color: var(--info);">{{ scheduled_meetings }}</div>
     </div>
 
   </div>
 
   <!-- Quick Actions -->
-  <div style="display: flex; gap: 1rem; margin-bottom: 2.5rem; flex-wrap: wrap;">
-    <a href="{{ url_for('admin.create_employee') }}" class="btn btn-primary" style="display:flex;align-items:center;gap:0.5rem;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+  <div style="display: flex; gap: 0.75rem; margin-bottom: 1.75rem; flex-wrap: wrap;">
+    <a href="{{ url_for('admin.create_employee') }}" class="btn btn-primary btn-sm">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
       Create Employee
     </a>
-    <a href="{{ url_for('admin.upload_tasks') }}" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.5rem;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <a href="{{ url_for('admin.upload_tasks') }}" class="btn btn-secondary btn-sm">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Upload Tasks
     </a>
-    <a href="{{ url_for('admin.create_project') }}" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.5rem;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <a href="{{ url_for('admin.create_project') }}" class="btn btn-secondary btn-sm">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Create Project
     </a>
-    <a href="{{ url_for('admin.assign_tasks') }}" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.5rem;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <a href="{{ url_for('admin.assign_tasks') }}" class="btn btn-secondary btn-sm">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       Assign Tasks
     </a>
-    <a href="{{ url_for('admin.evaluations') }}" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.5rem;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <a href="{{ url_for('admin.evaluations') }}" class="btn btn-secondary btn-sm">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       Review Submissions
     </a>
   </div>
 
   <!-- Two Column: Recent Employees + Pending Submissions -->
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+  <div class="grid-2">
 
     <!-- Recent Employees -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 14px; overflow: hidden;">
-      <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
-        <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0;">Recent Employees</h3>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin: 0;">Recent Onboarded Interns</h3>
         <a href="{{ url_for('admin.employees_list') }}" class="btn btn-secondary btn-sm">View All</a>
       </div>
       <div>
         {% for student in recent_students %}
-        <a href="{{ url_for('admin.employee_detail', student_id=student.id) }}" style="display: flex; align-items: center; gap: 0.85rem; padding: 0.9rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04); text-decoration: none; transition: background 0.15s;" onmouseover="this.style.background='rgba(59,130,246,0.04)'" onmouseout="this.style.background='transparent'">
-          <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: #60A5FA; flex-shrink: 0;">
+        <a href="{{ url_for('admin.employee_detail', student_id=student.id) }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border-subtle); text-decoration: none; transition: background 0.15s;" onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-50); border: 1px solid var(--brand-primary-200); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: var(--brand-primary); flex-shrink: 0;">
             {{ student.user.full_name[:1] }}
           </div>
           <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: 600; color: var(--text-primary); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ student.user.full_name }}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">{{ student.student_uid }}</div>
+            <div style="font-weight: 600; color: var(--text-main); font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ student.user.full_name }}</div>
+            <div style="font-size: 0.725rem; color: var(--text-muted); font-family: var(--font-mono);">{{ student.student_uid }}</div>
           </div>
           {% set internship = student.active_internship %}
-          <span style="font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 999px; font-weight: 600;
-            {% if internship and internship.status == 'ACTIVE' %}background: rgba(16,185,129,0.12); color: #34D399;{% else %}background: rgba(100,116,139,0.12); color: #94A3B8;{% endif %}">
+          <span class="badge {% if internship and internship.status == 'ACTIVE' %}badge-success{% else %}badge-neutral{% endif %}">
             {{ internship.status if internship else 'NO INTERNSHIP' }}
           </span>
         </a>
         {% else %}
-        <div style="padding: 2rem 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.875rem;">
+        <div style="padding: 2rem 1.25rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
           No employees enrolled yet.
         </div>
         {% endfor %}
@@ -137,27 +106,27 @@
     </div>
 
     <!-- Pending Submissions -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 14px; overflow: hidden;">
-      <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
-        <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0;">Pending Submissions</h3>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin: 0;">Milestones Awaiting Review</h3>
         <a href="{{ url_for('admin.evaluations') }}" class="btn btn-secondary btn-sm">Review All</a>
       </div>
       <div>
         {% for sub in pending_sub_list %}
-        <div style="padding: 0.9rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04);">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem;">
-            <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">
+        <div style="padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border-subtle);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+            <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">
               {{ sub.student.user.full_name }}
             </span>
-            <span style="font-size: 0.7rem; padding: 0.2rem 0.6rem; background: rgba(245,158,11,0.12); color: #FBBF24; border-radius: 999px; font-weight: 600;">SUBMITTED</span>
+            <span class="badge badge-warning">SUBMITTED</span>
           </div>
           <div style="font-size: 0.775rem; color: var(--text-muted);">
             Week {{ sub.milestone.week_number }} — {{ sub.milestone.assignment.project.title[:40] }}{% if sub.milestone.assignment.project.title|length > 40 %}...{% endif %}
           </div>
         </div>
         {% else %}
-        <div style="padding: 2rem 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.875rem;">
-          No pending submissions. All caught up! 🎉
+        <div style="padding: 2rem 1.25rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+          No pending submissions. All caught up!
         </div>
         {% endfor %}
       </div>

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 70" width="100%" height="100%">
+  <!-- ANTI-MATRIX Horizontal Navbar Brand Vector -->
+  <g transform="translate(5, 5)">
+    <!-- Standalone Icon Mark -->
+    <g transform="scale(0.35)">
+      <!-- Black Square Frame with open corner -->
+      <path d="M 20,20 L 115,20 L 115,44 L 44,44 L 44,136 L 136,136 L 136,65 L 160,65 L 160,160 L 20,160 Z" fill="#09090B" />
+      
+      <!-- 4-Facet Crystal Diamond Gem -->
+      <g transform="translate(142, 38)">
+        <polygon points="0,-22 22,0 0,0" fill="#4D7C0F" />
+        <polygon points="0,-22 -22,0 0,0" fill="#84CC16" />
+        <polygon points="-22,0 0,22 0,0" fill="#15803D" />
+        <polygon points="22,0 0,22 0,0" fill="#A3E635" />
+      </g>
+    </g>
+
+    <!-- Typography: ANTI - MATRIX -->
+    <g transform="translate(75, 12) scale(0.65)">
+      <!-- ANTI (Jet Black) -->
+      <path d="M 0,55 L 26,0 L 52,55 L 40,55 L 26,24 L 12,55 Z" fill="#09090B" />
+      <path d="M 64,0 L 76,0 L 102,40 L 102,0 L 114,0 L 114,55 L 102,55 L 76,15 L 76,55 L 64,55 Z" fill="#09090B" />
+      <path d="M 126,0 L 168,0 L 168,11 L 153,11 L 153,55 L 141,55 L 141,11 L 126,11 Z" fill="#09090B" />
+      <path d="M 180,0 L 192,0 L 192,55 L 180,55 Z" fill="#09090B" />
+
+      <!-- Hyphen '-' -->
+      <rect x="210" y="24" width="18" height="7" fill="#09090B" rx="1" />
+
+      <!-- MATRIX (Rich Emerald Green #006837) -->
+      <path d="M 244,0 L 258,0 L 273,36 L 288,0 L 302,0 L 302,55 L 290,55 L 290,17 L 278,45 L 268,45 L 256,17 L 256,55 L 244,55 Z" fill="#006837" />
+      <path d="M 314,55 L 340,0 L 366,55 L 354,55 L 340,24 L 326,55 Z" fill="#006837" />
+      <path d="M 378,0 L 420,0 L 420,11 L 405,11 L 405,55 L 393,55 L 393,11 L 378,11 Z" fill="#006837" />
+      <path d="M 432,0 L 458,0 C 472,0 479,6 479,17 C 479,25 473,31 462,33 L 481,55 L 466,55 L 449,34 L 444,34 L 444,55 L 432,55 Z M 444,11 L 444,24 L 456,24 C 463,24 466,22 466,17 C 466,13 463,11 456,11 Z" fill="#006837" />
+      <path d="M 491,0 L 503,0 L 503,55 L 491,55 Z" fill="#006837" />
+      <path d="M 515,0 L 529,0 L 546,26 L 563,0 L 577,0 L 553,35 L 578,55 L 564,55 L 546,39 L 528,55 L 514,55 L 539,35 Z" fill="#006837" />
+    </g>
+  </g>
+</svg>

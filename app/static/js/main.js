@@ -63,7 +63,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 3. Auto Dismiss Alerts
+  // 3. Portal Sidebar Off-Canvas Drawer Toggle
+  const sidebar = document.getElementById('portalSidebar') || document.querySelector('.portal-sidebar');
+  const toggleBtns = document.querySelectorAll('#sidebarToggleBtn, .sidebar-toggle-btn');
+  const closeBtn = document.getElementById('sidebarCloseBtn') || document.querySelector('.sidebar-close-btn');
+  const backdrop = document.getElementById('sidebarBackdrop') || document.querySelector('.sidebar-backdrop');
+
+  function openPortalSidebar() {
+    if (sidebar) sidebar.classList.add('is-open');
+    if (backdrop) backdrop.classList.add('is-open');
+    document.body.classList.add('sidebar-active');
+  }
+
+  function closePortalSidebar() {
+    if (sidebar) sidebar.classList.remove('is-open');
+    if (backdrop) backdrop.classList.remove('is-open');
+    document.body.classList.remove('sidebar-active');
+  }
+
+  if (toggleBtns.length > 0) {
+    toggleBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (sidebar && sidebar.classList.contains('is-open')) {
+          closePortalSidebar();
+        } else {
+          openPortalSidebar();
+        }
+      });
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closePortalSidebar();
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', () => {
+      closePortalSidebar();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar && sidebar.classList.contains('is-open')) {
+      closePortalSidebar();
+    }
+  });
+
+  // 4. Auto Dismiss Alerts
   const alerts = document.querySelectorAll('.alert');
   alerts.forEach(alert => {
     setTimeout(() => {
@@ -73,3 +125,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 6000);
   });
 });
+

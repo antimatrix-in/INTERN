@@ -5,86 +5,100 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Login — ANTI MATRIX Internship Portal</title>
   
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+<body class="auth-body">
 
-  <div class="auth-card">
-    <div class="auth-header">
-      <div class="auth-brand" style="justify-content: center; display: inline-flex; align-items: center; gap: 0.75rem;">
-        <div class="brand-symbol" style="background: transparent; border: none; box-shadow: none; padding: 0; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
-          <svg viewBox="0 0 100 100" width="38" height="38">
-            <path d="M 18,12 L 64,12 L 64,25 L 30,25 L 30,82 L 85,82 L 85,45 L 98,45 L 98,95 L 18,95 Z" fill="var(--text-main)" />
-            <g transform="translate(62, 2) scale(0.75)">
-              <polygon points="20,0 36,0 28,16 12,16" fill="#86EFAC" />
-              <polygon points="36,0 48,20 28,16" fill="#10B981" />
-              <polygon points="20,0 28,16 4,20" fill="#34D399" />
-              <polygon points="12,16 28,16 28,40 4,20" fill="#059669" />
-              <polygon points="28,16 48,20 28,40" fill="#047857" />
-            </g>
-          </svg>
-        </div>
-        <div>
-          <div class="brand-title" style="font-weight: 800; letter-spacing: 0.05em; font-family: var(--font-main);">ANTI-MATRIX</div>
-          <span style="font-size: 0.725rem; font-weight: 700; text-transform: uppercase; color: var(--primary-light); letter-spacing: 0.06em;">Internship Portal</span>
-        </div>
-      </div>
-      <h1 class="auth-title">EMPLOYEE LOGIN</h1>
-      <p class="auth-subtitle">Access your assigned project, milestone roadmap & evaluation records</p>
+  <div class="auth-wrapper">
+    <!-- Clean Brand Header / Logo -->
+    <div class="auth-brand-center">
+      <a href="https://www.antimatrix.co.in/" target="_blank" rel="noopener noreferrer" title="Anti-Matrix | Enterprise Digital Transformation" style="display: inline-block;">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="ANTI-MATRIX" class="auth-master-logo">
+      </a>
     </div>
 
-    <!-- Flash Messages -->
-    {% include 'partials/alerts.html' %}
-
-    <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
-      {{ form.hidden_tag() }}
-
-      <div class="form-group">
-        <label for="employee_id" class="form-label">Employee ID</label>
-        <div style="position: relative;">
-          {{ form.employee_id(class="form-control mono", placeholder="e.g. AM4827 or AM-INT-2026-001", autofocus=true) }}
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-badge">
+          <span class="auth-badge-dot"></span>
+          <span>INTERN PORTAL</span>
         </div>
-        {% for error in form.employee_id.errors %}
-          <div class="form-error">{{ error }}</div>
-        {% endfor %}
+        <h1 class="auth-title">Sign In</h1>
+        <p class="auth-subtitle">Access your assigned project, weekly milestones & roadmap</p>
       </div>
 
-      <div class="form-group">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-          <label for="password" class="form-label" style="margin-bottom: 0;">Password</label>
-          <button type="button" onclick="togglePasswordVisibility()" style="background: none; border: none; color: var(--text-muted); font-size: 0.775rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;">
-            <span id="pwToggleText">Show</span>
-          </button>
+      <!-- Flash Messages -->
+      {% include 'partials/alerts.html' %}
+
+      <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+          <label for="employee_id" class="form-label">Employee ID / Student UID</label>
+          <div class="input-with-icon">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            {{ form.employee_id(class="form-control mono", placeholder="e.g. AM-INT-2026-001 or AM4827", autofocus=true) }}
+          </div>
+          {% for error in form.employee_id.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
         </div>
-        {{ form.password(id="passwordInput", class="form-control", placeholder="••••••••••••") }}
-        {% for error in form.password.errors %}
-          <div class="form-error">{{ error }}</div>
-        {% endfor %}
-      </div>
 
-      <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-        <div class="form-check">
-          {{ form.remember_me(class="form-check-input") }}
-          <label for="remember_me" style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer;">Remember this device</label>
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <label for="password" class="form-label" style="margin-bottom: 0;">Password</label>
+            <button type="button" onclick="togglePasswordVisibility()" class="pw-toggle-btn">
+              <span id="pwToggleText">Show</span>
+            </button>
+          </div>
+          <div class="input-with-icon">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            {{ form.password(id="passwordInput", class="form-control", placeholder="••••••••••••") }}
+          </div>
+          {% for error in form.password.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
         </div>
-      </div>
 
-      <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.5rem; font-weight: 700; letter-spacing: 0.04em;">
-        SIGN IN
-      </button>
+        <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem;">
+          <label class="custom-checkbox">
+            {{ form.remember_me() }}
+            <span class="checkbox-box"></span>
+            <span class="checkbox-label">Remember this device</span>
+          </label>
+        </div>
 
-      <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); text-align: center;">
-        <p style="font-size: 0.8rem; color: var(--text-subtle); margin-bottom: 0.75rem;">
-          🔒 This portal is restricted to onboarded interns. Login credentials are issued upon formal acceptance.
-        </p>
-        <a href="{{ url_for('auth.admin_login') }}" style="font-size: 0.825rem; color: var(--text-muted); text-decoration: underline;">
-          Company Staff & Mentor Sign In →
-        </a>
-      </div>
-    </form>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.25rem;">
+          Sign In to Portal
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+
+        <div class="auth-card-footer">
+          <div class="auth-notice">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <span>Restricted to accepted interns. Credentials are issued upon onboarding.</span>
+          </div>
+          <div style="margin-top: 1rem; text-align: center;">
+            <a href="{{ url_for('auth.admin_login') }}" class="auth-switch-link">
+              Admin & Staff Login →
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tagline below -->
+    <div class="auth-tagline">
+      <span>BREAK THE MATRIX</span>
+      <span class="auth-diamond">◆</span>
+      <span>THINK DIFFERENT</span>
+      <span class="auth-diamond">◆</span>
+      <span>CREATE THE FUTURE</span>
+    </div>
   </div>
 
   <script>

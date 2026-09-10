@@ -3,68 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Administrator Login — ANTI MATRIX Portal</title>
+  <title>Staff & Administrator Login — ANTI MATRIX Portal</title>
   
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+<body class="auth-body">
 
-  <div class="auth-card" style="border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 0 35px rgba(59, 130, 246, 0.08);">
-    <div class="auth-header">
-      <div class="auth-brand" style="justify-content: center;">
-        <div class="brand-symbol" style="background: linear-gradient(135deg, #3B82F6, #8B5CF6); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);">AM</div>
-        <div>
-          <div class="brand-title">ANTI MATRIX</div>
-          <span style="font-size: 0.725rem; font-weight: 700; text-transform: uppercase; color: #60A5FA; letter-spacing: 0.06em;">Administration</span>
-        </div>
-      </div>
-      <h1 class="auth-title">Admin Sign In</h1>
-      <p class="auth-subtitle">Evaluation panel, milestone unlocking & student roadmap control</p>
+  <div class="auth-wrapper">
+    <!-- Brand Header -->
+    <div class="auth-brand-center">
+      <a href="https://www.antimatrix.co.in/" target="_blank" rel="noopener noreferrer" title="Anti-Matrix | Enterprise Digital Transformation" style="display: inline-block;">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="ANTI-MATRIX" class="auth-master-logo">
+      </a>
     </div>
 
-    <!-- Flash Messages -->
-    {% include 'partials/alerts.html' %}
-
-    <form method="POST" action="{{ url_for('auth.admin_login') }}" novalidate>
-      {{ form.hidden_tag() }}
-
-      <div class="form-group">
-        <label for="email_or_id" class="form-label">Administrator Email or Employee ID</label>
-        {{ form.email_or_id(class="form-control mono", placeholder="e.g. admin@antimatrix.com or AM-ADM-001", autofocus=true) }}
-        {% for error in form.email_or_id.errors %}
-          <div class="form-error">{{ error }}</div>
-        {% endfor %}
-      </div>
-
-      <div class="form-group">
-        <label for="password" class="form-label">Security Password</label>
-        {{ form.password(class="form-control", placeholder="••••••••••••") }}
-        {% for error in form.password.errors %}
-          <div class="form-error">{{ error }}</div>
-        {% endfor %}
-      </div>
-
-      <div class="form-group">
-        <div class="form-check">
-          {{ form.remember_me(class="form-check-input") }}
-          <label for="remember_me" style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer;">Maintain active session</label>
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-badge admin-badge">
+          <span class="auth-badge-dot"></span>
+          <span>ADMINISTRATION</span>
         </div>
+        <h1 class="auth-title">Staff Sign In</h1>
+        <p class="auth-subtitle">Evaluation panel, milestone control & roadmap management</p>
       </div>
 
-      <button type="submit" class="btn btn-block btn-lg" style="margin-top: 1.5rem; background: #2563EB; color: #fff; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);">
-        Authenticate Administrator
-      </button>
+      <!-- Flash Messages -->
+      {% include 'partials/alerts.html' %}
 
-      <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); text-align: center;">
-        <a href="{{ url_for('auth.login') }}" style="font-size: 0.825rem; color: var(--text-muted);">
-          ← Return to Student Portal Login
-        </a>
-      </div>
-    </form>
+      <form method="POST" action="{{ url_for('auth.admin_login') }}" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+          <label for="email_or_id" class="form-label">Admin Email or Employee ID</label>
+          <div class="input-with-icon">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            {{ form.email_or_id(class="form-control mono", placeholder="e.g. admin@antimatrix.tech or admin", autofocus=true) }}
+          </div>
+          {% for error in form.email_or_id.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <label for="password" class="form-label" style="margin-bottom: 0;">Security Password</label>
+            <button type="button" onclick="togglePasswordVisibility()" class="pw-toggle-btn">
+              <span id="pwToggleText">Show</span>
+            </button>
+          </div>
+          <div class="input-with-icon">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            {{ form.password(id="passwordInput", class="form-control", placeholder="••••••••••••") }}
+          </div>
+          {% for error in form.password.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem;">
+          <label class="custom-checkbox">
+            {{ form.remember_me() }}
+            <span class="checkbox-box"></span>
+            <span class="checkbox-label">Maintain active session</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-dark btn-block btn-lg" style="margin-top: 1.25rem;">
+          Authenticate Staff Session
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+
+        <div class="auth-card-footer">
+          <div style="text-align: center;">
+            <a href="{{ url_for('auth.login') }}" class="auth-switch-link">
+              ← Return to Student Portal Login
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tagline below -->
+    <div class="auth-tagline">
+      <span>BREAK THE MATRIX</span>
+      <span class="auth-diamond">◆</span>
+      <span>THINK DIFFERENT</span>
+      <span class="auth-diamond">◆</span>
+      <span>CREATE THE FUTURE</span>
+    </div>
   </div>
 
+  <script>
+    function togglePasswordVisibility() {
+      const pw = document.getElementById('passwordInput');
+      const text = document.getElementById('pwToggleText');
+      if (pw.type === 'password') {
+        pw.type = 'text';
+        text.innerText = 'Hide';
+      } else {
+        pw.type = 'password';
+        text.innerText = 'Show';
+      }
+    }
+  </script>
 </body>
 </html>
