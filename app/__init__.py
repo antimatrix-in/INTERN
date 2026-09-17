@@ -69,3 +69,16 @@ def create_app(config_class=Config):
         }
 
     return app
+
+
+def __getattr__(name):
+    """
+    Lazy module attribute resolution (PEP 562).
+    Allows WSGI servers configured with `gunicorn app:app` to resolve
+    the canonical application instance from `run.py` without creating
+    duplicate Flask instances or side-effects during tests/imports.
+    """
+    if name == 'app':
+        from run import app as _app
+        return _app
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
