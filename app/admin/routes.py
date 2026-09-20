@@ -4,7 +4,7 @@ import random
 import string
 import logging
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, current_app, send_file
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, current_app, send_file, session
 from flask_login import login_required, current_user
 from sqlalchemy.orm import joinedload, contains_eager
 from app.extensions import db
@@ -45,7 +45,7 @@ def generate_temp_password():
 
 def require_admin_role():
     """Check that the current user is admin/staff. Returns 403 response if not."""
-    if not current_user.is_authenticated or not current_user.is_admin_or_staff:
+    if not current_user.is_authenticated or not current_user.is_admin_or_staff or session.get('auth_realm') == 'employee':
         flash('Access restricted to ANTI MATRIX Administrators and Staff.', 'danger')
         abort(403)
 
@@ -55,6 +55,22 @@ def require_admin_role():
 @admin_bp.before_request
 @login_required
 def require_admin():
+    # 1. Any session established through employee authentication is strictly denied
+    if session.get('auth_realm') == 'employee':
+        if (request.path.startswith('/admin/upload-tasks') or 
+            request.is_json or 
+            'application/json' in request.headers.get('Accept', '') or 
+            request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'errors': ['Access restricted to ANTI MATRIX Administrators and Staff. Employees cannot access administrative areas.'],
+                'error': 'Access restricted to ANTI MATRIX Administrators and Staff.'
+            }), 403
+        flash('Access restricted to ANTI MATRIX Administrators and Staff. Employees cannot access administrative areas.', 'danger')
+        abort(403)
+
+    # 2. Reject if user does not have administrator or staff privileges
     if not current_user.is_admin_or_staff:
         if (request.path.startswith('/admin/upload-tasks') or 
             request.is_json or 
@@ -68,6 +84,10 @@ def require_admin():
             }), 403
         flash('Access restricted to ANTI MATRIX Administrators and Staff.', 'danger')
         abort(403)
+
+    # 3. Ensure active admin session realm
+    if session.get('auth_realm') != 'admin':
+        session['auth_realm'] = 'admin'
 
 
 # ─── Dashboard ────────────────────────────────────────────────────────────────

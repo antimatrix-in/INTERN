@@ -83,6 +83,12 @@ class User(db.Model, UserMixin):
 
     @property
     def is_admin_or_staff(self):
+        try:
+            from flask import session, has_request_context
+            if has_request_context() and session.get('auth_realm') == 'employee':
+                return False
+        except Exception:
+            pass
         return self.role in ['super_admin', 'admin', 'hr', 'mentor', 'evaluator']
 
     def __repr__(self):

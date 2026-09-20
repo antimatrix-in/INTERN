@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import current_user
 from app.models import CertificateVerification
 
@@ -7,9 +7,9 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 def index():
     if current_user.is_authenticated:
-        if current_user.is_admin_or_staff:
-            return redirect(url_for('admin.dashboard'))
-        return redirect(url_for('student.dashboard'))
+        if session.get('auth_realm') == 'employee' or not current_user.is_admin_or_staff:
+            return redirect(url_for('student.dashboard'))
+        return redirect(url_for('admin.dashboard'))
     return redirect(url_for('auth.login'))
 
 @main_bp.route('/verify', methods=['GET', 'POST'])

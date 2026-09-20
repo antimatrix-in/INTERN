@@ -2,7 +2,7 @@ import os
 import re
 import time
 from datetime import datetime
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, current_app, send_file
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, current_app, send_file, session
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app.extensions import db
@@ -82,6 +82,8 @@ def get_current_student():
 @student_bp.before_request
 @login_required
 def check_student_role():
+    if session.get('auth_realm') == 'employee':
+        return
     if current_user.role not in ALLOWED_STUDENT_ROLES and not current_user.is_admin_or_staff:
         flash('Access restricted to enrolled internship employees.', 'danger')
         return redirect(url_for('auth.login'))

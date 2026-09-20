@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db, csrf
 from app.models import (
@@ -121,10 +121,16 @@ def authenticate_employee_or_user(identifier, password):
             if employee and employee.application_id:
                 job_app = JobApplication.query.get(employee.application_id)
 
+            # Prioritize matching by employee_id; do not match an admin by email
             user = User.query.filter(
-                (db.func.upper(User.employee_id) == emp_id.upper()) |
-                (db.func.lower(User.email) == (job_app.email.lower() if job_app and job_app.email else ''))
+                db.func.upper(User.employee_id) == emp_id.upper()
             ).first()
+
+            if not user and job_app and job_app.email:
+                user = User.query.filter(
+                    (db.func.lower(User.email) == job_app.email.lower().strip()) &
+                    User.role.notin_(['super_admin', 'admin', 'hr', 'mentor', 'evaluator'])
+                ).first()
 
             candidate_name = job_app.full_name if job_app and job_app.full_name else emp_id
             candidate_email = job_app.email if job_app and job_app.email else f"{emp_id.lower()}@antimatrix.tech"
@@ -164,9 +170,11 @@ def authenticate_employee_or_user(identifier, password):
         # If employee/onboarding_cred exists but password was wrong, do not return distinct error
         # Fall through to generic error or fallback accounts
 
-    # 2. Fallback to existing Internship Portal user accounts (e.g. Admin, Mentors, Evaluators)
+    # 2. Fallback to existing student/employee accounts
     user = find_user_by_identifier(clean_id)
     if user:
+        if user.is_admin_or_staff and not getattr(user, 'student_profile', None):
+            return None, "Administrator credentials detected. Please use the Staff Login portal at /admin/login.", 403
         if not user.check_password(password):
             return None, "Invalid Employee ID or password.", 401
         if not user.is_active:
@@ -216,9 +224,9 @@ def login():
     if current_user.is_authenticated:
         if getattr(current_user, 'must_change_password', False):
             return redirect(url_for('auth.change_password'))
-        if current_user.is_admin_or_staff:
-            return redirect(url_for('admin.dashboard'))
-        return redirect(url_for('student.dashboard'))
+        if session.get('auth_realm') == 'employee' or not current_user.is_admin_or_staff:
+            return redirect(url_for('student.dashboard'))
+        return redirect(url_for('admin.dashboard'))
 
     # Support JSON requests to /login as well
     if request.is_json:
@@ -231,6 +239,8 @@ def login():
         if not user:
             return jsonify({'success': False, 'error': err_msg}), status_code
 
+        session.clear()
+        session['auth_realm'] = 'employee'
         login_user(user, remember=remember)
         _log_login_audit(user, request.remote_addr)
 
@@ -243,12 +253,11 @@ def login():
                 'user': _safe_user_dict(user)
             }), 200
 
-        redirect_url = url_for('admin.dashboard') if user.is_admin_or_staff else url_for('student.dashboard')
         return jsonify({
             'success': True,
             'must_change_password': False,
             'message': f'Welcome back, {user.full_name}!',
-            'redirect_url': redirect_url,
+            'redirect_url': url_for('student.dashboard'),
             'user': _safe_user_dict(user)
         }), 200
 
@@ -259,6 +268,8 @@ def login():
             flash(err_msg, 'danger')
             return render_template('auth/login.html', form=form)
 
+        session.clear()
+        session['auth_realm'] = 'employee'
         login_user(user, remember=form.remember_me.data)
         _log_login_audit(user, request.remote_addr)
 
@@ -268,11 +279,9 @@ def login():
 
         flash(f'Welcome back, {user.full_name}!', 'success')
         next_page = request.args.get('next')
-        if next_page and next_page.startswith('/'):
+        if next_page and next_page.startswith('/') and not next_page.startswith('/admin'):
             return redirect(next_page)
 
-        if user.is_admin_or_staff:
-            return redirect(url_for('admin.dashboard'))
         return redirect(url_for('student.dashboard'))
 
     return render_template('auth/login.html', form=form)
@@ -295,6 +304,8 @@ def employee_login_api():
     if not user:
         return jsonify({'success': False, 'error': err_msg}), status_code
 
+    session.clear()
+    session['auth_realm'] = 'employee'
     login_user(user, remember=remember_me)
     _log_login_audit(user, request.remote_addr)
 
@@ -307,12 +318,11 @@ def employee_login_api():
             'user': _safe_user_dict(user)
         }), 200
 
-    redirect_url = url_for('admin.dashboard') if user.is_admin_or_staff else url_for('student.dashboard')
     return jsonify({
         'success': True,
         'must_change_password': False,
         'message': 'Employee authentication successful.',
-        'redirect_url': redirect_url,
+        'redirect_url': url_for('student.dashboard'),
         'user': _safe_user_dict(user)
     }), 200
 
@@ -428,10 +438,9 @@ def change_password():
             return render_template('auth/change_password.html', form=form)
 
         flash('Your password has been successfully updated! Welcome to your dashboard.', 'success')
-        is_admin = bool(getattr(current_user, 'is_admin_or_staff', False))
-        if is_admin:
-            return redirect(url_for('admin.dashboard'))
-        return redirect(url_for('student.dashboard'))
+        if session.get('auth_realm') == 'employee' or not current_user.is_admin_or_staff:
+            return redirect(url_for('student.dashboard'))
+        return redirect(url_for('admin.dashboard'))
 
     return render_template('auth/change_password.html', form=form)
 
@@ -459,7 +468,7 @@ def _process_password_change(data):
     if not success:
         return jsonify({'success': False, 'error': err_msg}), status_code
 
-    redirect_url = url_for('admin.dashboard') if current_user.is_admin_or_staff else url_for('student.dashboard')
+    redirect_url = url_for('student.dashboard') if session.get('auth_realm') == 'employee' or not current_user.is_admin_or_staff else url_for('admin.dashboard')
     return jsonify({
         'success': True,
         'message': 'Password changed successfully. Your account is now fully active.',
@@ -630,7 +639,7 @@ def get_current_auth_user():
 @auth_bp.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if current_user.is_authenticated:
-        if current_user.is_admin_or_staff:
+        if session.get('auth_realm') == 'admin' and current_user.is_admin_or_staff:
             return redirect(url_for('admin.dashboard'))
         return redirect(url_for('student.dashboard'))
 
@@ -638,7 +647,7 @@ def admin_login():
     if form.validate_on_submit():
         user = find_user_by_identifier(form.email_or_id.data)
         if user and user.check_password(form.password.data):
-            if not user.is_admin_or_staff:
+            if user.role not in ['super_admin', 'admin', 'hr', 'mentor', 'evaluator']:
                 flash('Access denied. Administrator credentials required.', 'danger')
                 return render_template('auth/admin_login.html', form=form)
 
@@ -646,12 +655,14 @@ def admin_login():
                 flash('Your administrator account is inactive.', 'danger')
                 return render_template('auth/admin_login.html', form=form)
 
+            session.clear()
+            session['auth_realm'] = 'admin'
             login_user(user, remember=form.remember_me.data)
             _log_login_audit(user, request.remote_addr)
             flash(f'Administrator session active. Welcome, {user.full_name}.', 'success')
 
             next_page = request.args.get('next')
-            if next_page and next_page.startswith('/'):
+            if next_page and next_page.startswith('/') and not next_page.startswith('/dashboard'):
                 return redirect(next_page)
             return redirect(url_for('admin.dashboard'))
         else:
@@ -678,6 +689,8 @@ def logout():
             db.session.rollback()
 
         logout_user()
+
+    session.clear()
 
     if request.is_json or request.headers.get('Accept') == 'application/json':
         return jsonify({'success': True, 'message': 'You have been securely signed out of the portal.'}), 200
