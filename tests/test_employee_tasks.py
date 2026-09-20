@@ -166,7 +166,7 @@ class EmployeeTasksTestCase(unittest.TestCase):
         self.login_student1()
         data = {
             'github_url': 'https://github.com/student/ai-performance',
-            'demo_video': (io.BytesIO(b'dummy video content'), 'demo.mp4')
+            'demo_video_url': 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view'
         }
         response = self.client.post(f'/submissions/submit/{w1_id}', data=data, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
@@ -195,16 +195,16 @@ class EmployeeTasksTestCase(unittest.TestCase):
         # Invalid URL test
         data = {
             'github_url': 'https://not-github.com/malicious/repo',
-            'demo_video': (io.BytesIO(b'dummy video content'), 'demo.mp4')
+            'demo_video_url': 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view'
         }
         response = self.client.post(f'/submissions/submit/{w1_id}', data=data, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Please provide a valid GitHub repository URL', response.data)
 
-    # ── Test 9: Video Upload Validation ───────────────────────────────────────
+    # ── Test 9: Google Drive Video URL Validation ─────────────────────────────
 
-    def test_09_video_upload_validation(self):
-        """Invalid video formats (e.g. .exe) are rejected."""
+    def test_09_google_drive_url_validation(self):
+        """Empty and invalid Google Drive links are rejected."""
         with self.app.app_context():
             student1 = Student.query.filter_by(student_uid='AM-INT-2026-001').first()
             w1 = student1.active_internship.active_assignment.weekly_milestones.filter_by(week_number=1).first()
@@ -215,18 +215,28 @@ class EmployeeTasksTestCase(unittest.TestCase):
 
         self.login_student1()
 
-        data = {
+        # Missing / empty Google Drive URL
+        data_empty = {
             'github_url': 'https://github.com/aarav-kumar/ai-performance',
-            'demo_video': (io.BytesIO(b'binary content'), 'malicious.exe')
+            'demo_video_url': ''
         }
-        response = self.client.post(f'/submissions/submit/{w1_id}', data=data, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Invalid video format', response.data)
+        res_empty = self.client.post(f'/submissions/submit/{w1_id}', data=data_empty, follow_redirects=True)
+        self.assertEqual(res_empty.status_code, 200)
+        self.assertIn(b'Demo video Google Drive link is required', res_empty.data)
+
+        # Invalid URL format (not Google Drive)
+        data_invalid = {
+            'github_url': 'https://github.com/aarav-kumar/ai-performance',
+            'demo_video_url': 'https://dropbox.com/s/12345/video.mp4'
+        }
+        res_invalid = self.client.post(f'/submissions/submit/{w1_id}', data=data_invalid, follow_redirects=True)
+        self.assertEqual(res_invalid.status_code, 200)
+        self.assertIn(b'Please provide a valid Google Drive demo video link', res_invalid.data)
 
     # ── Test 10: Successful Submission Workflow ───────────────────────────────
 
     def test_10_successful_submission(self):
-        """With tasks completed, valid video, and valid GitHub URL, submission succeeds."""
+        """With tasks completed, valid Google Drive link, and valid GitHub URL, submission succeeds."""
         with self.app.app_context():
             student1 = Student.query.filter_by(student_uid='AM-INT-2026-001').first()
             w1 = student1.active_internship.active_assignment.weekly_milestones.filter_by(week_number=1).first()
@@ -239,7 +249,7 @@ class EmployeeTasksTestCase(unittest.TestCase):
 
         data = {
             'github_url': 'https://github.com/aarav-kumar/ai-performance',
-            'demo_video': (io.BytesIO(b'valid mp4 video bytes'), 'walkthrough.mp4'),
+            'demo_video_url': 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view',
             'submission_notes': 'Implemented data pipelines and baseline model.'
         }
         response = self.client.post(f'/submissions/submit/{w1_id}', data=data, follow_redirects=True)
@@ -254,7 +264,7 @@ class EmployeeTasksTestCase(unittest.TestCase):
             sub = m.latest_submission
             self.assertEqual(sub.status, 'UNDER_REVIEW')
             self.assertEqual(sub.github_url, 'https://github.com/aarav-kumar/ai-performance')
-            self.assertIn('walkthrough', sub.demo_video_path)
+            self.assertEqual(sub.demo_video_url, 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view')
 
     # ── Test 11: Duplicate Submission Blocked While Under Review ──────────────
 
@@ -449,7 +459,7 @@ class EmployeeTasksTestCase(unittest.TestCase):
         self.login_student1()
         data = {
             'github_url': 'https://github.com/aarav/improved-version',
-            'demo_video': (io.BytesIO(b'new video bytes'), 'resubmission.mp4'),
+            'demo_video_url': 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view',
             'submission_notes': 'Added matplotlib charts and correlation matrices.'
         }
         response = self.client.post(f'/submissions/submit/{w1_id}', data=data, follow_redirects=True)

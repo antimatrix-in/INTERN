@@ -125,7 +125,7 @@
         {% for student in students %}
         {% set internship = student.active_internship %}
         {% set assignment = internship.active_assignment if internship else None %}
-        {% set app_record = student.applications.first() %}
+        {% set app_record = student.first_application %}
         <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s;" onmouseover="this.style.background='rgba(59,130,246,0.03)'" onmouseout="this.style.background='transparent'">
           
           <!-- Employee ID -->

@@ -93,7 +93,7 @@
         "{{ milestone.admin_notes or (latest_submission.review_feedback if latest_submission else 'Please address mentor recommendations and submit an updated demonstration and repository.') }}"
       </p>
       <p style="font-size: 0.85rem; color: #CBD5E1; margin: 0;">
-        Please review the feedback above, update your implementation, record a new demo video or verify your GitHub repository, and submit below.
+        Please review the feedback above, update your implementation, update your Google Drive demo video or GitHub repository, and submit below.
       </p>
     </div>
   </div>
@@ -189,7 +189,7 @@
             SUBMIT WEEK FOR VERIFICATION
           </h3>
           <p style="color: var(--text-muted); font-size: 0.825rem; margin-top: 0.2rem;">
-            Provide your Demo Video (.mp4, .mov, .webm) and GitHub Repository URL.
+            Provide your Demo Video Google Drive Link and GitHub Repository URL.
           </p>
         </div>
 
@@ -233,18 +233,17 @@
             </div>
           {% endif %}
 
-          <form method="POST" action="{{ url_for('student.submit_milestone', milestone_id=milestone.id) }}" enctype="multipart/form-data" id="milestone-submission-form">
+          <form method="POST" action="{{ url_for('student.submit_milestone', milestone_id=milestone.id) }}" id="milestone-submission-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <!-- Demo Video Upload -->
+            <!-- Demo Video Google Drive Link -->
             <div class="form-group" style="margin-bottom: 1.25rem;">
               <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; font-weight: 700;">
-                <span>UPLOAD DEMO VIDEO *</span>
-                <span style="font-size: 0.75rem; color: var(--text-subtle); font-weight: normal;">Supported: MP4, MOV, WEBM (Max 100MB)</span>
+                <span>DEMO VIDEO — GOOGLE DRIVE LINK *</span>
               </label>
-              <input type="file" name="demo_video" accept=".mp4,.mov,.webm,video/mp4,video/quicktime,video/webm" class="form-control" {% if not milestone.all_tasks_completed %}disabled{% endif %} required style="padding: 0.6rem; background: var(--bg-surface-elevated);">
+              <input type="url" name="demo_video_url" id="demo_video_url" class="form-control" placeholder="https://drive.google.com/file/d/.../view" {% if not milestone.all_tasks_completed %}disabled{% endif %} required value="{{ latest_submission.demo_video_url if latest_submission and latest_submission.demo_video_url and (latest_submission.demo_video_url.startswith('http') or 'drive.google.com' in latest_submission.demo_video_url) else '' }}">
               <span class="form-hint" style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
-                Record a brief walkthrough showing your working solution and key deliverables.
+                Upload your demo video to Google Drive, set access to &ldquo;Anyone with the link &rarr; Viewer&rdquo;, and paste the link here.
               </span>
             </div>
 
@@ -255,7 +254,7 @@
               </label>
               <input type="url" name="github_url" class="form-control" placeholder="https://github.com/your-username/project-repository" {% if not milestone.all_tasks_completed %}disabled{% endif %} required value="{{ latest_submission.github_url if latest_submission else '' }}">
               <span class="form-hint" style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
-                Ensure your repository is accessible and contains all weekly commits. (Do not upload source zip files).
+                Ensure your repository is accessible and contains all weekly commits.
               </span>
             </div>
 
@@ -351,11 +350,21 @@
                 </div>
               {% endif %}
 
-              {% if sub.demo_video_path or sub.file_path %}
+              {% if sub.demo_video_url or sub.demo_video_path or sub.file_path %}
                 <div style="margin-bottom: 0.3rem;">
-                  <a href="{{ url_for('student.stream_submission_video', sub_id=sub.id) }}" target="_blank" style="color: #34D399; text-decoration: none;">
-                    ▶ Watch Demo Video
-                  </a>
+                  {% if sub.demo_video_url and (sub.demo_video_url.startswith('http') or 'drive.google.com' in sub.demo_video_url) %}
+                    <a href="{{ sub.demo_video_url }}" target="_blank" rel="noopener noreferrer" style="color: #34D399; text-decoration: none;">
+                      ▶ Watch Demo
+                    </a>
+                  {% elif sub.demo_video_path and (sub.demo_video_path.startswith('http') or 'drive.google.com' in sub.demo_video_path) %}
+                    <a href="{{ sub.demo_video_path }}" target="_blank" rel="noopener noreferrer" style="color: #34D399; text-decoration: none;">
+                      ▶ Watch Demo
+                    </a>
+                  {% else %}
+                    <a href="{{ url_for('student.stream_submission_video', sub_id=sub.id) }}" target="_blank" rel="noopener noreferrer" style="color: #34D399; text-decoration: none;">
+                      ▶ Watch Demo
+                    </a>
+                  {% endif %}
                 </div>
               {% endif %}
 

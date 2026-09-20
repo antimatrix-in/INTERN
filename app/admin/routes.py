@@ -6,6 +6,7 @@ import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, current_app, send_file
 from flask_login import login_required, current_user
+from sqlalchemy.orm import joinedload, contains_eager
 from app.extensions import db
 from app.models import (
     User, Student, Internship, Project, ProjectAssignment, ProjectWeek, ProjectTask,
@@ -81,8 +82,27 @@ def dashboard():
     pending_submissions = WeeklySubmission.query.filter_by(status='SUBMITTED').count()
     scheduled_meetings = Meeting.query.filter_by(status='SCHEDULED').count()
 
-    recent_students = Student.query.order_by(Student.id.desc()).limit(8).all()
-    pending_sub_list = WeeklySubmission.query.filter_by(status='SUBMITTED').order_by(WeeklySubmission.id.desc()).limit(6).all()
+    recent_students = Student.query.options(
+        joinedload(Student.user)
+    ).order_by(Student.id.desc()).limit(8).all()
+    
+    if recent_students:
+        recent_student_ids = [s.id for s in recent_students]
+        internships = Internship.query.filter(
+            Internship.student_id.in_(recent_student_ids),
+            Internship.status == 'ACTIVE'
+        ).order_by(Internship.id.desc()).all()
+        intern_map = {}
+        for intern in internships:
+            if intern.student_id not in intern_map:
+                intern_map[intern.student_id] = intern
+        for s in recent_students:
+            s._preloaded_active_internship = intern_map.get(s.id)
+
+    pending_sub_list = WeeklySubmission.query.options(
+        joinedload(WeeklySubmission.student).joinedload(Student.user),
+        joinedload(WeeklySubmission.milestone).joinedload(WeeklyMilestone.assignment).joinedload(ProjectAssignment.project)
+    ).filter_by(status='SUBMITTED').order_by(WeeklySubmission.id.desc()).limit(6).all()
 
     return render_template(
         'admin/dashboard.html',
@@ -231,8 +251,12 @@ def employees_list():
     query = request.args.get('q', '').strip()
     duration = request.args.get('duration', '').strip()
 
-    # Query active employees with an active internship
-    students_query = Student.query.join(User, Student.user_id == User.id)\
+    # Query active employees with an active internship with eager-loaded user, college, and department
+    students_query = Student.query.options(
+        joinedload(Student.user),
+        joinedload(Student.college),
+        joinedload(Student.department)
+    ).join(User, Student.user_id == User.id)\
         .join(Internship, Internship.student_id == Student.id)\
         .join(InternshipPlan, Internship.plan_id == InternshipPlan.id)\
         .filter(User.is_active == True, Internship.status == 'ACTIVE')
@@ -257,17 +281,68 @@ def employees_list():
 
     students = students_query.order_by(Student.id.desc()).all()
 
-    # Badge count metrics for active employees
-    count_1m = Student.query.join(User, Student.user_id == User.id)\
-        .join(Internship, Internship.student_id == Student.id)\
-        .join(InternshipPlan, Internship.plan_id == InternshipPlan.id)\
-        .filter(User.is_active == True, Internship.status == 'ACTIVE', InternshipPlan.duration_months == 1).count()
+    # Preload active internships, active assignments, and applications in batch to eliminate N+1 queries
+    if students:
+        student_ids = [s.id for s in students]
+        
+        # 1. Batch load active internships with plan
+        internships = Internship.query.options(
+            joinedload(Internship.plan)
+        ).filter(
+            Internship.student_id.in_(student_ids),
+            Internship.status == 'ACTIVE'
+        ).order_by(Internship.id.desc()).all()
+        
+        internship_map = {}
+        for intern in internships:
+            if intern.student_id not in internship_map:
+                internship_map[intern.student_id] = intern
+        
+        # 2. Batch load active assignments with project for these internships
+        internship_ids = [intern.id for intern in internship_map.values()]
+        if internship_ids:
+            assignments = ProjectAssignment.query.options(
+                joinedload(ProjectAssignment.project)
+            ).filter(
+                ProjectAssignment.internship_id.in_(internship_ids)
+            ).order_by(ProjectAssignment.id.desc()).all()
+            
+            assignment_map = {}
+            for assign in assignments:
+                if assign.internship_id not in assignment_map:
+                    assignment_map[assign.internship_id] = assign
+            
+            for intern in internship_map.values():
+                intern._preloaded_active_assignment = assignment_map.get(intern.id)
+        
+        # 3. Batch load applications for these students
+        applications = Application.query.filter(
+            Application.student_id.in_(student_ids)
+        ).order_by(Application.id.desc()).all()
+        
+        app_map = {}
+        for app in applications:
+            if app.student_id not in app_map:
+                app_map[app.student_id] = app
+        
+        for s in students:
+            s._preloaded_active_internship = internship_map.get(s.id)
+            s._preloaded_application = app_map.get(s.id)
 
-    count_3m = Student.query.join(User, Student.user_id == User.id)\
-        .join(Internship, Internship.student_id == Student.id)\
-        .join(InternshipPlan, Internship.plan_id == InternshipPlan.id)\
-        .filter(User.is_active == True, Internship.status == 'ACTIVE', InternshipPlan.duration_months == 3).count()
+    # Consolidated badge count metrics for active employees (1 query instead of 2)
+    counts_by_duration = dict(
+        db.session.query(
+            InternshipPlan.duration_months,
+            db.func.count(Student.id)
+        ).join(User, Student.user_id == User.id)\
+         .join(Internship, Internship.student_id == Student.id)\
+         .join(InternshipPlan, Internship.plan_id == InternshipPlan.id)\
+         .filter(User.is_active == True, Internship.status == 'ACTIVE')\
+         .group_by(InternshipPlan.duration_months).all()
+    )
 
+    count_1m = counts_by_duration.get(1, 0)
+    count_3m = counts_by_duration.get(3, 0)
     count_all = count_1m + count_3m
 
     return render_template(
@@ -400,8 +475,35 @@ def projects_list():
 
     projects = projects_query.order_by(Project.id.desc()).all()
 
-    count_1m = Project.query.filter_by(duration_months=1).count()
-    count_3m = Project.query.filter_by(duration_months=3).count()
+    # Preload active colleges count in a single batch query
+    if projects:
+        project_ids = [p.id for p in projects]
+        college_counts_query = db.session.query(
+            ProjectAssignment.project_id,
+            db.func.count(db.func.distinct(Student.college_id))
+        ).join(
+            Internship, Internship.id == ProjectAssignment.internship_id
+        ).join(
+            Student, Student.id == Internship.student_id
+        ).filter(
+            ProjectAssignment.project_id.in_(project_ids),
+            ProjectAssignment.status.in_(['ASSIGNED', 'IN_PROGRESS', 'SUBMITTED', 'REVISION_REQUIRED', 'UNDER_EVALUATION', 'ACTIVE']),
+            Internship.status == 'ACTIVE'
+        ).group_by(ProjectAssignment.project_id).all()
+        
+        counts_map = dict(college_counts_query)
+        for p in projects:
+            p._preloaded_active_colleges_count = counts_map.get(p.id, 0)
+
+    # Consolidated count queries
+    counts_by_duration = dict(
+        db.session.query(
+            Project.duration_months,
+            db.func.count(Project.id)
+        ).group_by(Project.duration_months).all()
+    )
+    count_1m = counts_by_duration.get(1, 0)
+    count_3m = counts_by_duration.get(3, 0)
     count_all = count_1m + count_3m
 
     return render_template(
@@ -1253,8 +1355,12 @@ def employee_tasks():
     ).count()
     completed_weeks_count = WeeklyMilestone.query.filter(WeeklyMilestone.status.in_(['COMPLETED', 'APPROVED'])).count()
 
-    # Query for submissions
-    query = WeeklySubmission.query.join(
+    # Query for submissions with eager loaded joins
+    query = WeeklySubmission.query.options(
+        contains_eager(WeeklySubmission.student).contains_eager(Student.user),
+        contains_eager(WeeklySubmission.student).contains_eager(Student.college),
+        contains_eager(WeeklySubmission.milestone).contains_eager(WeeklyMilestone.assignment).contains_eager(ProjectAssignment.project)
+    ).join(
         WeeklyMilestone, WeeklySubmission.milestone_id == WeeklyMilestone.id
     ).join(
         ProjectAssignment, WeeklyMilestone.assignment_id == ProjectAssignment.id
@@ -1615,9 +1721,13 @@ def stream_admin_submission_video(sub_id):
     """Securely stream demo video for authenticated administrators."""
     sub = WeeklySubmission.query.get_or_404(sub_id)
 
-    filename = sub.demo_video_path or sub.demo_video_url or sub.file_path
+    filename = sub.demo_video_url or sub.demo_video_path or sub.file_path
     if not filename:
         abort(404)
+
+    # Redirect directly if Google Drive URL or HTTP URL
+    if filename.startswith(('http://', 'https://')) or 'drive.google.com' in filename:
+        return redirect(filename)
 
     upload_folder = current_app.config.get('VIDEO_UPLOAD_FOLDER')
     full_path = os.path.join(upload_folder, filename)

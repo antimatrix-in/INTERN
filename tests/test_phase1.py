@@ -115,12 +115,11 @@ class Phase1PortalTestCase(unittest.TestCase):
             'password': 'Student@2026Password!'
         })
 
-        video_file = (io.BytesIO(b'mp4 dummy binary content'), 'demo.mp4')
         sub_resp = self.client.post(f'/submissions/submit/{w1_id}', data={
             'github_url': 'https://github.com/aarav-antimatrix/ai-student-analysis',
-            'demo_video': video_file,
+            'demo_video_url': 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view',
             'submission_notes': 'Completed Exploratory Data Analysis, ER architecture diagrams, and requirements document.'
-        }, content_type='multipart/form-data', follow_redirects=True)
+        }, follow_redirects=True)
         self.assertEqual(sub_resp.status_code, 200)
 
         with self.app.app_context():

@@ -90,28 +90,35 @@ def create_app(config_class=Config):
     app.register_blueprint(student_bp)
     app.register_blueprint(admin_bp)
 
-    # Safe database schema initialization & idempotent seeding
+    # Register models & provide CLI commands for pre-deploy operations
     with app.app_context():
         from app import models  # noqa: F401 (Ensure models are registered on db.metadata)
-        if not app.config.get('TESTING', False):
+        if os.environ.get('RUN_MIGRATIONS_ON_STARTUP', 'false').strip().lower() in ('1', 'true', 'yes'):
             from app.db_migration import run_safe_schema_migrations
             run_safe_schema_migrations(app)
-            should_seed = os.environ.get('SEED_INITIAL_DATA', 'true').strip().lower() not in ('0', 'false', 'no', 'off')
-            if should_seed:
-                from app.seed import seed_initial_data
-                seed_initial_data()
+        if os.environ.get('RUN_SEED_ON_STARTUP', 'false').strip().lower() in ('1', 'true', 'yes'):
+            from app.seed import seed_initial_data
+            seed_initial_data()
 
+    @app.cli.command('db-migrate')
+    def cli_db_migrate():
+        """Run safe schema migrations on demand."""
+        from app.db_migration import run_safe_schema_migrations
+        run_safe_schema_migrations(app)
+
+    @app.cli.command('db-seed')
+    def cli_db_seed():
+        """Seed initial database roles and permissions on demand."""
+        from app.seed import seed_initial_data
+        seed_initial_data()
 
     # Custom context processors & template filters
     @app.context_processor
     def inject_global_vars():
-        from app.models import InternshipPlan
-        plans = InternshipPlan.query.filter_by(is_active=True).order_by(InternshipPlan.duration_months.asc()).all()
         return {
             'company_name': 'ANTI MATRIX',
             'company_tagline': 'Enterprise Internship Management Portal',
-            'support_email': 'internships@antimatrix.tech',
-            'global_plans': plans
+            'support_email': 'internships@antimatrix.tech'
         }
 
     return app

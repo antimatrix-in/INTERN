@@ -32,12 +32,42 @@ def is_valid_github_url(url):
     return bool(GITHUB_URL_PATTERN.match(url.strip()))
 
 
+def is_valid_google_drive_url(url):
+    """Validate that the provided string is a valid Google Drive URL."""
+    if not url or not isinstance(url, str):
+        return False
+    url = url.strip()
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            return False
+        netloc = parsed.netloc.lower()
+        if not (netloc == 'drive.google.com' or netloc.endswith('.drive.google.com') or
+                netloc == 'docs.google.com' or netloc.endswith('.docs.google.com')):
+            return False
+        path = parsed.path
+        query = parsed.query
+        if re.search(r'\/file\/d\/[a-zA-Z0-9_-]+', path):
+            return True
+        if path.startswith('/open') or path.startswith('/uc'):
+            if re.search(r'[?&]?id=[a-zA-Z0-9_-]+', query) or 'id=' in query:
+                return True
+        if re.search(r'\/drive\/folders\/[a-zA-Z0-9_-]+', path):
+            return True
+        if re.search(r'\/d\/[a-zA-Z0-9_-]+', path):
+            return True
+        return False
+    except Exception:
+        return False
+
+
 ALLOWED_STUDENT_ROLES = {'student', 'employee', 'candidate', 'member', 'intern'}
 
 
 def get_current_student():
     """Retrieve and validate student profile for current authenticated user."""
-    student = Student.query.filter_by(user_id=current_user.id).first()
+    student = getattr(current_user, 'student_profile', None) or Student.query.filter_by(user_id=current_user.id).first()
     if not student:
         # Auto-provision or link student profile for authenticated employee
         from app.auth.routes import _ensure_student_profile
@@ -125,6 +155,19 @@ def dashboard():
         milestones = assignment.weekly_milestones.all()
         current_milestone = assignment.current_milestone
 
+        if milestones:
+            m_ids = [m.id for m in milestones]
+            all_tasks = WeeklyTask.query.filter(WeeklyTask.milestone_id.in_(m_ids)).all()
+            totals = {}
+            completed = {}
+            for t in all_tasks:
+                totals[t.milestone_id] = totals.get(t.milestone_id, 0) + 1
+                if t.is_completed:
+                    completed[t.milestone_id] = completed.get(t.milestone_id, 0) + 1
+            for m in milestones:
+                m._preloaded_total_tasks_count = totals.get(m.id, 0)
+                m._preloaded_completed_tasks_count = completed.get(m.id, 0)
+
     upcoming_meeting = Meeting.query.filter_by(
         student_id=student.id,
         status='SCHEDULED'
@@ -194,7 +237,20 @@ def weekly_progress():
         return redirect(url_for('student.dashboard'))
 
     assignment = internship.active_assignment
-    milestones = assignment.weekly_milestones.all()
+    milestones = assignment.weekly_milestones.all() if assignment else []
+
+    if milestones:
+        m_ids = [m.id for m in milestones]
+        all_tasks = WeeklyTask.query.filter(WeeklyTask.milestone_id.in_(m_ids)).all()
+        totals = {}
+        completed = {}
+        for t in all_tasks:
+            totals[t.milestone_id] = totals.get(t.milestone_id, 0) + 1
+            if t.is_completed:
+                completed[t.milestone_id] = completed.get(t.milestone_id, 0) + 1
+        for m in milestones:
+            m._preloaded_total_tasks_count = totals.get(m.id, 0)
+            m._preloaded_completed_tasks_count = completed.get(m.id, 0)
 
     return render_template(
         'student/weekly_progress.html',
@@ -294,42 +350,28 @@ def submit_milestone(milestone_id):
         flash('Please provide a valid GitHub repository URL (e.g. https://github.com/username/project).', 'danger')
         return redirect(url_for('student.week_detail', milestone_id=milestone.id))
 
-    # 3. Validate Demo Video Upload
-    video_file = request.files.get('demo_video') or request.files.get('video')
-    if not video_file or not video_file.filename:
-        flash('Please upload your Demo Video (.mp4, .mov, or .webm).', 'danger')
+    # 3. Validate Demo Video Google Drive URL
+    demo_video_url = request.form.get('demo_video_url', '').strip() or request.form.get('demo_video', '').strip()
+    if not demo_video_url:
+        flash('Demo video Google Drive link is required.', 'danger')
         return redirect(url_for('student.week_detail', milestone_id=milestone.id))
 
-    if not allowed_video_file(video_file.filename):
-        flash('Invalid video format. Supported formats: MP4, MOV, WEBM.', 'danger')
-        return redirect(url_for('student.week_detail', milestone_id=milestone.id))
-
-    # Secure file save
-    orig_filename = secure_filename(video_file.filename)
-    timestamp = int(time.time())
-    unique_filename = f"demo_m{milestone.id}_s{student.id}_{timestamp}_{orig_filename}"
-    upload_folder = current_app.config.get('VIDEO_UPLOAD_FOLDER')
-    os.makedirs(upload_folder, exist_ok=True)
-    full_save_path = os.path.join(upload_folder, unique_filename)
-
-    try:
-        video_file.save(full_save_path)
-    except Exception as e:
-        flash(f'Failed to save video upload: {str(e)}', 'danger')
+    if not is_valid_google_drive_url(demo_video_url):
+        flash('Please provide a valid Google Drive demo video link.', 'danger')
         return redirect(url_for('student.week_detail', milestone_id=milestone.id))
 
     submission_notes = request.form.get('submission_notes', '').strip()
 
     try:
-        # Create submission record (preserving full history)
+        # Create submission record (preserving full history and reusing existing database fields)
         sub = WeeklySubmission(
             milestone_id=milestone.id,
             student_id=student.id,
             github_url=github_url,
             repo_url=github_url,
-            demo_video_path=unique_filename,
-            demo_video_url=unique_filename,
-            file_path=unique_filename,
+            demo_video_url=demo_video_url,
+            demo_video_path=demo_video_url,
+            file_path=demo_video_url,
             submission_notes=submission_notes,
             status='UNDER_REVIEW',
             submitted_at=datetime.utcnow()
@@ -354,9 +396,6 @@ def submit_milestone(milestone_id):
         flash(f'Week {milestone.week_number} submitted for verification successfully! Your submission is now UNDER REVIEW.', 'success')
     except Exception as e:
         db.session.rollback()
-        # Clean up uploaded video file if database commit fails
-        if os.path.exists(full_save_path):
-            os.remove(full_save_path)
         flash(f'An error occurred while processing your submission: {str(e)}', 'danger')
 
     return redirect(url_for('student.week_detail', milestone_id=milestone.id))
@@ -375,9 +414,13 @@ def stream_submission_video(sub_id):
     if sub.student_id != student.id:
         abort(403)
 
-    filename = sub.demo_video_path or sub.demo_video_url or sub.file_path
+    filename = sub.demo_video_url or sub.demo_video_path or sub.file_path
     if not filename:
         abort(404)
+
+    # Redirect directly if Google Drive URL or HTTP URL
+    if filename.startswith(('http://', 'https://')) or 'drive.google.com' in filename:
+        return redirect(filename)
 
     upload_folder = current_app.config.get('VIDEO_UPLOAD_FOLDER')
     full_path = os.path.join(upload_folder, filename)

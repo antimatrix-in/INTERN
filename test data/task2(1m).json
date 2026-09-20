@@ -1,0 +1,242 @@
+{
+  "version": "1.0",
+  "category": "ai_ml_internship_project",
+  "title": "AI Expense Categorizer & Spending Insights",
+  "description": "Build a lightweight AI-powered expense management web application that categorizes expenses using machine learning and provides spending insights through an interactive dashboard.",
+  "problem_code": "P1M-AIML-001",
+  "domain": "AI & Machine Learning",
+  "duration": "1 Month",
+  "duration_weeks": 4,
+  "difficulty": "Intermediate",
+  "environment": "Localhost Flask Web Application",
+  "github_required": true,
+  "demo_video_required": true,
+  "live_demo_required": false,
+  "paid_api_required": false,
+  "technology_stack": [
+    "Python",
+    "Flask",
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "SQLite",
+    "Pandas",
+    "NumPy",
+    "Scikit-learn",
+    "Matplotlib",
+    "Plotly"
+  ],
+  "final_objective": "Develop a web application that accepts expense information, automatically categorizes expenses using a machine learning model, detects potentially unusual expenses, and presents spending insights through an interactive dashboard.",
+  "project": {
+    "problem_id": "P1M-AIML-001",
+    "title": "AI Expense Categorizer & Spending Insights",
+    "description": "Create a Flask-based expense management application that uses machine learning to automatically categorize expense descriptions and provides visual spending insights.",
+    "difficulty": "Intermediate",
+    "environment": "Localhost Flask Web Application",
+    "github_required": true,
+    "demo_video_required": true,
+    "cloud_or_paid_api": false
+  },
+  "internship": {
+    "milestones": [
+      {
+        "week": 1,
+        "title": "Expense Management Flask Application",
+        "objective": "Build the initial working Flask application where users can add expenses and view them through a browser-based dashboard.",
+        "tasks": [
+          {
+            "task_id": "W01-T01",
+            "task": "Create a Flask project with separate folders for routes, templates, static files, database handling, and machine learning components.",
+            "expected_output": "The Flask application starts successfully and has a clean project structure."
+          },
+          {
+            "task_id": "W01-T02",
+            "task": "Create a responsive expense entry page containing fields for expense description, amount, date, and payment method.",
+            "expected_output": "Users can enter expense information through a browser form."
+          },
+          {
+            "task_id": "W01-T03",
+            "task": "Create a database table for storing expenses and implement functionality to save submitted expense records.",
+            "expected_output": "Submitted expenses are stored and can be retrieved."
+          },
+          {
+            "task_id": "W01-T04",
+            "task": "Create an expense history page displaying all entered expenses in a structured table.",
+            "expected_output": "Users can view previously entered expenses."
+          },
+          {
+            "task_id": "W01-T05",
+            "task": "Create a basic dashboard displaying total expenses, number of transactions, and total spending for the selected period.",
+            "expected_output": "The application displays basic spending statistics."
+          },
+          {
+            "task_id": "W01-T06",
+            "task": "Add input validation for missing descriptions, invalid amounts, and invalid dates.",
+            "expected_output": "Invalid expense entries are rejected with clear messages."
+          }
+        ],
+        "expected_features": [
+          "Flask application",
+          "Expense entry form",
+          "Expense database",
+          "Expense history",
+          "Basic dashboard",
+          "Input validation"
+        ],
+        "demo_output": "Start the Flask application, open localhost, add multiple expenses, open the expense history, and demonstrate the dashboard updating the total spending and transaction count.",
+        "github_requirement": "Push the complete Week 1 implementation to GitHub with setup instructions.",
+        "completion_condition": "The employee can enter expenses through the browser, store them in the database, view expense history, and see basic spending statistics."
+      },
+      {
+        "week": 2,
+        "title": "Machine Learning Expense Categorization",
+        "objective": "Train and integrate a machine learning model that automatically predicts the category of an expense from its description.",
+        "tasks": [
+          {
+            "task_id": "W02-T01",
+            "task": "Create a small labeled expense dataset containing descriptions and categories such as Food, Transport, Shopping, Bills, Entertainment, Health, Education, and Other.",
+            "expected_output": "A labeled dataset is available for model training."
+          },
+          {
+            "task_id": "W02-T02",
+            "task": "Clean and preprocess the expense descriptions for machine learning.",
+            "expected_output": "Expense descriptions are converted into suitable training text."
+          },
+          {
+            "task_id": "W02-T03",
+            "task": "Convert expense descriptions into numerical features using TF-IDF.",
+            "expected_output": "Expense descriptions are represented as machine learning features."
+          },
+          {
+            "task_id": "W02-T04",
+            "task": "Train a lightweight classification model such as Logistic Regression or Linear SVM to predict expense categories.",
+            "expected_output": "A trained expense-category classification model is available."
+          },
+          {
+            "task_id": "W02-T05",
+            "task": "Evaluate the model using accuracy and a classification report.",
+            "expected_output": "The employee can demonstrate basic model performance."
+          },
+          {
+            "task_id": "W02-T06",
+            "task": "Integrate the trained model into the Flask application so that a newly entered expense automatically receives a predicted category.",
+            "expected_output": "New expenses receive an ML-generated category."
+          }
+        ],
+        "expected_features": [
+          "Expense dataset",
+          "Text preprocessing",
+          "TF-IDF",
+          "Classification model",
+          "Model evaluation",
+          "Automatic expense categorization"
+        ],
+        "demo_output": "Enter expenses such as 'pizza dinner', 'Uber ride to college', 'Amazon headphones', and 'electricity bill' and demonstrate the application automatically assigning appropriate categories.",
+        "github_requirement": "Push the dataset, model-training code, trained model, evaluation results, and Flask integration.",
+        "completion_condition": "The Flask application automatically predicts a category for newly entered expenses using the trained machine learning model."
+      },
+      {
+        "week": 3,
+        "title": "Spending Analytics and Unusual Expense Detection",
+        "objective": "Transform categorized expenses into useful visual analytics and implement a basic machine learning-based mechanism for identifying unusually high expenses.",
+        "tasks": [
+          {
+            "task_id": "W03-T01",
+            "task": "Create a spending analytics page showing total spending by expense category.",
+            "expected_output": "Users can view category-wise spending."
+          },
+          {
+            "task_id": "W03-T02",
+            "task": "Create charts showing spending distribution across categories using a suitable visualization library.",
+            "expected_output": "Expense categories are represented visually."
+          },
+          {
+            "task_id": "W03-T03",
+            "task": "Create a monthly or date-based spending chart showing how expenses change over time.",
+            "expected_output": "Users can visually inspect spending trends."
+          },
+          {
+            "task_id": "W03-T04",
+            "task": "Implement a basic unusual-expense detection mechanism using a statistical or unsupervised machine learning technique such as z-score or Isolation Forest.",
+            "expected_output": "Potentially unusual expense records can be identified."
+          },
+          {
+            "task_id": "W03-T05",
+            "task": "Display detected unusual expenses separately with the expense description, amount, category, and reason for being flagged.",
+            "expected_output": "Users can understand which expenses were flagged."
+          },
+          {
+            "task_id": "W03-T06",
+            "task": "Add filters for category and date range to the analytics dashboard.",
+            "expected_output": "Users can interactively filter the spending analysis."
+          }
+        ],
+        "expected_features": [
+          "Category spending chart",
+          "Spending trend chart",
+          "Unusual expense detection",
+          "Analytics dashboard",
+          "Category filter",
+          "Date filter"
+        ],
+        "demo_output": "Add several expenses, open the analytics dashboard, filter expenses by category/date, display spending charts, and demonstrate an unusually high expense being flagged.",
+        "github_requirement": "Push the analytics dashboard, visualization code, and unusual-expense detection implementation.",
+        "completion_condition": "The application displays interactive spending analytics and identifies potentially unusual expenses."
+      },
+      {
+        "week": 4,
+        "title": "Complete AI Expense Intelligence Dashboard",
+        "objective": "Integrate all previous features into one polished application and complete testing, error handling, and documentation.",
+        "tasks": [
+          {
+            "task_id": "W04-T01",
+            "task": "Integrate expense entry, ML categorization, expense history, analytics, and unusual-expense detection into one consistent application workflow.",
+            "expected_output": "All major features work together."
+          },
+          {
+            "task_id": "W04-T02",
+            "task": "Update the main dashboard to display total spending, transaction count, top spending category, recent expenses, and unusual expenses.",
+            "expected_output": "The main dashboard provides a complete spending overview."
+          },
+          {
+            "task_id": "W04-T03",
+            "task": "Allow users to open an individual expense and view its description, amount, predicted category, date, and unusual-expense status.",
+            "expected_output": "Individual expense details are accessible."
+          },
+          {
+            "task_id": "W04-T04",
+            "task": "Add appropriate error handling for database failures, invalid input, missing data, and machine learning prediction failures.",
+            "expected_output": "The application handles common errors without crashing."
+          },
+          {
+            "task_id": "W04-T05",
+            "task": "Improve the user interface, navigation, empty states, loading states, charts, and result presentation.",
+            "expected_output": "The application has a consistent and professional interface."
+          },
+          {
+            "task_id": "W04-T06",
+            "task": "Create a complete README containing installation instructions, database setup, model-training instructions, project architecture, technologies used, and demonstration instructions.",
+            "expected_output": "Another developer can install and understand the project."
+          },
+          {
+            "task_id": "W04-T07",
+            "task": "Perform an end-to-end demonstration starting from entering an expense and ending with ML categorization, analytics, and unusual-expense detection.",
+            "expected_output": "A complete final project demonstration video."
+          }
+        ],
+        "expected_features": [
+          "Complete expense management",
+          "ML categorization",
+          "Spending analytics",
+          "Unusual expense detection",
+          "Interactive dashboard",
+          "Error handling",
+          "Documentation"
+        ],
+        "demo_output": "Run the complete Flask application and demonstrate adding expenses, automatic ML categorization, expense history, spending analytics, unusual-expense detection, and the final dashboard.",
+        "github_requirement": "Push the final stable project to GitHub with complete README documentation.",
+        "completion_condition": "The complete AI Expense Categorizer & Spending Insights application works end-to-end and can be demonstrated successfully from localhost."
+      }
+    ]
+  }
+}

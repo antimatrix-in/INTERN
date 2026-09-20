@@ -151,7 +151,7 @@ class CareerIntegrationTestCase(unittest.TestCase):
         """Employee can sign in at /login using Employee ID."""
         resp = self.login_employee('AM-INT-2026-001', 'Student@2026Password!')
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(b'Hi,', resp.data)
+        self.assertIn(b'Welcome', resp.data)
         self.assertIn(b'Aarav Kumar', resp.data)
 
     # ── 8. Invalid password is rejected ───────────────────────────────────────
@@ -171,7 +171,7 @@ class CareerIntegrationTestCase(unittest.TestCase):
         """Employee dashboard renders Employee ID, College, Project, Week, and Progress."""
         resp = self.login_employee('AM-INT-2026-001', 'Student@2026Password!')
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(b'Hi,', resp.data)
+        self.assertIn(b'Welcome', resp.data)
         self.assertIn(b'Aarav Kumar', resp.data)
         self.assertIn(b'AM-INT-2026-001', resp.data)
         self.assertIn(b'AI-Based Student Performance Analysis', resp.data)
@@ -333,12 +333,11 @@ class CareerIntegrationTestCase(unittest.TestCase):
 
         # Submit as Employee
         self.login_employee('AM-INT-2026-001', 'Student@2026Password!')
-        video = (io.BytesIO(b'demo video binary'), 'demo.mp4')
         resp = self.client.post(f'/submissions/submit/{w1_id}', data={
             'github_url': 'https://github.com/aarav/ai-project',
-            'demo_video': video,
+            'demo_video_url': 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view',
             'submission_notes': 'Completed all Week 1 deliverables.'
-        }, content_type='multipart/form-data', follow_redirects=True)
+        }, follow_redirects=True)
         self.assertEqual(resp.status_code, 200)
 
         with self.app.app_context():

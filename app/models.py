@@ -3,12 +3,15 @@ from datetime import datetime, timezone
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import event
-from sqlalchemy.orm import foreign
+from sqlalchemy.orm import foreign, joinedload
 from app.extensions import db, login_manager
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    try:
+        return User.query.options(joinedload(User.student_profile)).filter_by(id=int(user_id)).first()
+    except (ValueError, TypeError):
+        return None
 
 
 class User(db.Model, UserMixin):
@@ -159,7 +162,15 @@ class Student(db.Model):
 
     @property
     def active_internship(self):
+        if hasattr(self, '_preloaded_active_internship'):
+            return self._preloaded_active_internship
         return self.internships.order_by(Internship.id.desc()).first()
+
+    @property
+    def first_application(self):
+        if hasattr(self, '_preloaded_application'):
+            return self._preloaded_application
+        return self.applications.first()
 
     def __repr__(self):
         return f'<Student {self.student_uid} - {self.user.full_name if self.user else ""}>'
@@ -366,6 +377,8 @@ class Internship(db.Model):
 
     @property
     def active_assignment(self):
+        if hasattr(self, '_preloaded_active_assignment'):
+            return self._preloaded_active_assignment
         return self.assignments.order_by(ProjectAssignment.id.desc()).first()
 
     def update_progress(self):
@@ -499,6 +512,8 @@ class Project(db.Model):
     @property
     def active_colleges_count(self):
         """Count of distinct colleges with active assignments for this project."""
+        if hasattr(self, '_preloaded_active_colleges_count'):
+            return self._preloaded_active_colleges_count
         try:
             from app.models import Student, Internship, ProjectAssignment
             count = db.session.query(Student.college_id).join(
@@ -783,6 +798,10 @@ class WeeklyMilestone(db.Model):
 
     @property
     def all_tasks_completed(self):
+        if hasattr(self, '_preloaded_total_tasks_count') and hasattr(self, '_preloaded_completed_tasks_count'):
+            if self._preloaded_total_tasks_count == 0:
+                return True
+            return self._preloaded_completed_tasks_count == self._preloaded_total_tasks_count
         task_list = self.tasks.all()
         if not task_list:
             return True
@@ -790,10 +809,14 @@ class WeeklyMilestone(db.Model):
 
     @property
     def completed_tasks_count(self):
+        if hasattr(self, '_preloaded_completed_tasks_count'):
+            return self._preloaded_completed_tasks_count
         return sum(1 for t in self.tasks.all() if t.is_completed)
 
     @property
     def total_tasks_count(self):
+        if hasattr(self, '_preloaded_total_tasks_count'):
+            return self._preloaded_total_tasks_count
         return self.tasks.count()
 
     @property
