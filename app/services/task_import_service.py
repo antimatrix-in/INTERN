@@ -64,22 +64,41 @@ class TaskImportService:
         if not isinstance(data, dict):
             return False, "Invalid JSON root structure. Expected a JSON object.", None, None
 
-        # 2. Check root 'internship' object
+        # 2. Check root 'internship' object or use root object
         internship = data.get("internship")
         if not internship or not isinstance(internship, dict):
-            return False, "Invalid task plan structure: missing root 'internship' object.", None, None
+            if any(k in data for k in ["milestones", "phases", "project_title", "title", "problem_id", "problem_code"]):
+                internship = data
+            else:
+                return False, "Invalid task plan structure: missing 'internship' or task plan definition.", None, None
 
-        # 3. Project Title & Domain
-        project_title = (internship.get("project_title") or internship.get("title") or "").strip()
+        # 3. Project Title & Domain (check internship, then fall back to root data)
+        project_title = (
+            internship.get("project_title") or 
+            internship.get("title") or 
+            data.get("project_title") or 
+            data.get("title") or 
+            ""
+        ).strip()
         if not project_title:
             return False, "Project title is required in the task plan.", None, None
 
-        domain = (internship.get("domain") or internship.get("category") or "General").strip()
+        domain = (
+            internship.get("domain") or 
+            internship.get("category") or 
+            data.get("domain") or 
+            data.get("category") or 
+            "General"
+        ).strip()
         if not domain:
             domain = "General"
 
         # 4. Duration validation
-        json_duration_raw = internship.get("duration", "")
+        json_duration_raw = (
+            internship.get("duration") or 
+            data.get("duration") or 
+            ""
+        )
         if not json_duration_raw:
             return False, "Internship duration is required in the task plan.", None, None
 
@@ -94,7 +113,13 @@ class TaskImportService:
             internship.get("problem_id") or
             internship.get("project_id") or
             internship.get("project_code") or
-            internship.get("code") or ""
+            internship.get("problem_code") or
+            internship.get("code") or
+            data.get("problem_id") or
+            data.get("project_id") or
+            data.get("project_code") or
+            data.get("problem_code") or
+            data.get("code") or ""
         ).strip()
 
         if raw_problem_id:
@@ -103,7 +128,12 @@ class TaskImportService:
             problem_id = TaskImportService.generate_next_problem_id(json_dur_months)
 
         # 6. Milestone validation
-        milestones = internship.get("milestones")
+        milestones = (
+            internship.get("milestones") or 
+            data.get("milestones") or 
+            internship.get("phases") or 
+            data.get("phases")
+        )
         if not milestones or not isinstance(milestones, list):
             return False, "Milestone data is required and must be an array.", None, None
 
@@ -122,7 +152,7 @@ class TaskImportService:
                     m_data = {}
 
                 w_title = (m_data.get("title") or f"Week {i} Milestone").strip()
-                w_goal = (m_data.get("goal") or "").strip()
+                w_goal = (m_data.get("goal") or m_data.get("objective") or "").strip()
                 w_completion = str(m_data.get("completion") or f"{i * 25}%").strip()
                 w_github = (m_data.get("github_requirement") or "").strip()
                 w_condition = (m_data.get("completion_condition") or "").strip()
@@ -137,7 +167,7 @@ class TaskImportService:
                 for t_idx, t_item in enumerate(raw_tasks, 1):
                     if isinstance(t_item, dict):
                         t_title = t_item.get("title") or t_item.get("task") or str(t_item)
-                        t_desc = t_item.get("description") or ""
+                        t_desc = t_item.get("description") or t_item.get("expected_output") or ""
                     else:
                         t_title = str(t_item).strip()
                         t_desc = ""
@@ -171,9 +201,9 @@ class TaskImportService:
                 })
 
         else:
-            # 3 Month track: expect 4 phases converted to 12 weekly records
+            # 3 Month track: expect 4 phases or 12 weeks converted to 12 weekly records
             if len(milestones) < 4:
-                return False, f"3 Month task plan must contain 4 phases (covering weeks 1-12). Found {len(milestones)}.", None, None
+                return False, f"3 Month task plan must contain 4 phases (covering weeks 1-12) or 12 weekly milestones. Found {len(milestones)}.", None, None
 
             phase_ranges = [
                 (1, "1-3", [1, 2, 3], "25%"),
@@ -182,84 +212,160 @@ class TaskImportService:
                 (4, "10-12", [10, 11, 12], "100%")
             ]
 
-            for p_idx, (phase_num, default_label, week_nums, default_completion) in enumerate(phase_ranges):
-                p_data = milestones[p_idx] if p_idx < len(milestones) else {}
-                if not isinstance(p_data, dict):
-                    p_data = {}
+            # Case A: Plan provides 12 individual weekly milestones
+            if len(milestones) >= 12:
+                for w_num in range(1, 13):
+                    w_data = milestones[w_num - 1] if w_num - 1 < len(milestones) else {}
+                    if not isinstance(w_data, dict):
+                        w_data = {}
 
-                p_title = (p_data.get("title") or f"Phase {phase_num}: Industrial Implementation").strip()
-                p_weeks_label = (p_data.get("weeks") or default_label).strip()
-                p_goal = (p_data.get("goal") or "").strip()
-                p_completion = str(p_data.get("completion") or default_completion).strip()
-                p_github = (p_data.get("github_requirement") or "").strip()
-                p_condition = (p_data.get("completion_condition") or "").strip()
-                p_demo = p_data.get("demo_output") or {}
-                p_expected = p_data.get("expected_features") or []
-
-                raw_tasks = p_data.get("tasks", [])
-                if not isinstance(raw_tasks, list):
-                    raw_tasks = [str(raw_tasks)] if raw_tasks else []
-
-                # Convert raw tasks
-                all_phase_tasks = []
-                for t_idx, t_item in enumerate(raw_tasks, 1):
-                    if isinstance(t_item, dict):
-                        t_title = t_item.get("title") or t_item.get("task") or str(t_item)
-                        t_desc = t_item.get("description") or ""
+                    if w_num in [1, 2, 3]:
+                        phase_num, default_label, default_completion = 1, "1-3", "25%"
+                    elif w_num in [4, 5, 6]:
+                        phase_num, default_label, default_completion = 2, "4-6", "50%"
+                    elif w_num in [7, 8, 9]:
+                        phase_num, default_label, default_completion = 3, "7-9", "75%"
                     else:
-                        t_title = str(t_item).strip()
-                        t_desc = ""
-                    if t_title:
-                        all_phase_tasks.append({
-                            "order_num": t_idx,
-                            "title": t_title,
-                            "description": t_desc,
-                            "priority": "Medium",
-                            "estimated_hours": 8.0
-                        })
+                        phase_num, default_label, default_completion = 4, "10-12", "100%"
 
-                # Distribute tasks across the 3 weeks of this phase
-                tasks_per_week = {w: [] for w in week_nums}
-                if all_phase_tasks:
-                    for idx, t in enumerate(all_phase_tasks):
-                        assigned_w = week_nums[idx % len(week_nums)]
-                        tasks_per_week[assigned_w].append({
-                            "order_num": len(tasks_per_week[assigned_w]) + 1,
-                            "title": t["title"],
-                            "description": t["description"],
-                            "priority": t["priority"],
-                            "estimated_hours": t["estimated_hours"]
-                        })
-                    total_tasks_count += len(all_phase_tasks)
-                else:
-                    for w in week_nums:
-                        tasks_per_week[w].append({
+                    w_title = (w_data.get("title") or f"Week {w_num}: Phase {phase_num} Milestone").strip()
+                    w_goal = (w_data.get("goal") or w_data.get("objective") or "").strip()
+                    w_completion = str(w_data.get("completion") or default_completion).strip()
+                    w_github = (w_data.get("github_requirement") or "").strip()
+                    w_condition = (w_data.get("completion_condition") or "").strip()
+                    w_demo = w_data.get("demo_output") or {}
+                    w_expected = w_data.get("expected_features") or []
+
+                    raw_tasks = w_data.get("tasks", [])
+                    if not isinstance(raw_tasks, list):
+                        raw_tasks = [str(raw_tasks)] if raw_tasks else []
+
+                    tasks_list = []
+                    for t_idx, t_item in enumerate(raw_tasks, 1):
+                        if isinstance(t_item, dict):
+                            t_title = t_item.get("title") or t_item.get("task") or str(t_item)
+                            t_desc = t_item.get("description") or t_item.get("expected_output") or ""
+                        else:
+                            t_title = str(t_item).strip()
+                            t_desc = ""
+
+                        if t_title:
+                            tasks_list.append({
+                                "order_num": t_idx,
+                                "title": t_title,
+                                "description": t_desc,
+                                "priority": "Medium",
+                                "estimated_hours": 8.0
+                            })
+
+                    if not tasks_list:
+                        tasks_list.append({
                             "order_num": 1,
-                            "title": f"Execute Week {w} objectives for {p_title}",
-                            "description": p_goal,
+                            "title": f"Execute Week {w_num} objectives",
+                            "description": w_goal,
                             "priority": "Medium",
                             "estimated_hours": 8.0
                         })
-                        total_tasks_count += 1
 
-                for w in week_nums:
+                    total_tasks_count += len(tasks_list)
                     normalized_weeks.append({
-                        "week_number": w,
-                        "title": f"Week {w}: {p_title}",
+                        "week_number": w_num,
+                        "title": w_title,
                         "phase_number": phase_num,
-                        "phase_title": p_title,
-                        "weeks_label": p_weeks_label,
-                        "completion_percentage": p_completion,
-                        "goal": p_goal,
-                        "objective": f"Phase {phase_num} (Weeks {p_weeks_label}): {p_goal}",
-                        "instructions": f"Follow the Phase {phase_num} roadmap. Satisfy github and completion requirements.",
-                        "github_requirement": p_github,
-                        "completion_condition": p_condition,
-                        "demo_output_json": json.dumps(p_demo) if isinstance(p_demo, (dict, list)) else json.dumps({"output": str(p_demo)}),
-                        "expected_features_json": json.dumps(p_expected) if isinstance(p_expected, list) else json.dumps([str(p_expected)]),
-                        "deliverables_json": json.dumps(p_expected if isinstance(p_expected, list) else []),
-                        "tasks": tasks_per_week[w]
+                        "phase_title": f"Phase {phase_num} (Weeks {default_label})",
+                        "weeks_label": default_label,
+                        "completion_percentage": w_completion,
+                        "goal": w_goal,
+                        "objective": f"Phase {phase_num} (Weeks {default_label}): {w_goal}",
+                        "instructions": f"Follow the Phase {phase_num} roadmap for Week {w_num}.",
+                        "github_requirement": w_github,
+                        "completion_condition": w_condition,
+                        "demo_output_json": json.dumps(w_demo) if isinstance(w_demo, (dict, list)) else json.dumps({"output": str(w_demo)}),
+                        "expected_features_json": json.dumps(w_expected) if isinstance(w_expected, list) else json.dumps([str(w_expected)]),
+                        "deliverables_json": json.dumps(w_expected if isinstance(w_expected, list) else []),
+                        "tasks": tasks_list
                     })
+
+            # Case B: 4 Phases provided ("1-3", "4-6", "7-9", "10-12") -> expand each phase into 3 weeks
+            else:
+                for p_idx, (phase_num, default_label, week_nums, default_completion) in enumerate(phase_ranges):
+                    p_data = milestones[p_idx] if p_idx < len(milestones) else {}
+                    if not isinstance(p_data, dict):
+                        p_data = {}
+
+                    p_title = (p_data.get("title") or f"Phase {phase_num}: Industrial Implementation").strip()
+                    p_weeks_label = (p_data.get("weeks") or default_label).strip()
+                    p_goal = (p_data.get("goal") or p_data.get("objective") or "").strip()
+                    p_completion = str(p_data.get("completion") or default_completion).strip()
+                    p_github = (p_data.get("github_requirement") or "").strip()
+                    p_condition = (p_data.get("completion_condition") or "").strip()
+                    p_demo = p_data.get("demo_output") or {}
+                    p_expected = p_data.get("expected_features") or []
+
+                    raw_tasks = p_data.get("tasks", [])
+                    if not isinstance(raw_tasks, list):
+                        raw_tasks = [str(raw_tasks)] if raw_tasks else []
+
+                    # Convert raw tasks
+                    all_phase_tasks = []
+                    for t_idx, t_item in enumerate(raw_tasks, 1):
+                        if isinstance(t_item, dict):
+                            t_title = t_item.get("title") or t_item.get("task") or str(t_item)
+                            t_desc = t_item.get("description") or t_item.get("expected_output") or ""
+                        else:
+                            t_title = str(t_item).strip()
+                            t_desc = ""
+                        if t_title:
+                            all_phase_tasks.append({
+                                "order_num": t_idx,
+                                "title": t_title,
+                                "description": t_desc,
+                                "priority": "Medium",
+                                "estimated_hours": 8.0
+                            })
+
+                    # Distribute tasks across the 3 weeks of this phase
+                    tasks_per_week = {w: [] for w in week_nums}
+                    if all_phase_tasks:
+                        for idx, t in enumerate(all_phase_tasks):
+                            assigned_w = week_nums[idx % len(week_nums)]
+                            tasks_per_week[assigned_w].append({
+                                "order_num": len(tasks_per_week[assigned_w]) + 1,
+                                "title": t["title"],
+                                "description": t["description"],
+                                "priority": t["priority"],
+                                "estimated_hours": t["estimated_hours"]
+                            })
+                        total_tasks_count += len(all_phase_tasks)
+                    else:
+                        for w in week_nums:
+                            tasks_per_week[w].append({
+                                "order_num": 1,
+                                "title": f"Execute Week {w} objectives for {p_title}",
+                                "description": p_goal,
+                                "priority": "Medium",
+                                "estimated_hours": 8.0
+                            })
+                            total_tasks_count += 1
+
+                    for w in week_nums:
+                        normalized_weeks.append({
+                            "week_number": w,
+                            "title": f"Week {w}: {p_title}",
+                            "phase_number": phase_num,
+                            "phase_title": p_title,
+                            "weeks_label": p_weeks_label,
+                            "completion_percentage": p_completion,
+                            "goal": p_goal,
+                            "objective": f"Phase {phase_num} (Weeks {p_weeks_label}): {p_goal}",
+                            "instructions": f"Follow the Phase {phase_num} roadmap. Satisfy github and completion requirements.",
+                            "github_requirement": p_github,
+                            "completion_condition": p_condition,
+                            "demo_output_json": json.dumps(p_demo) if isinstance(p_demo, (dict, list)) else json.dumps({"output": str(p_demo)}),
+                            "expected_features_json": json.dumps(p_expected) if isinstance(p_expected, list) else json.dumps([str(p_expected)]),
+                            "deliverables_json": json.dumps(p_expected if isinstance(p_expected, list) else []),
+                            "tasks": tasks_per_week[w]
+                        })
 
         # 7. Check Duplicate Project / Problem ID
         existing_by_code = Project.query.filter_by(project_code=problem_id).first()
@@ -273,24 +379,58 @@ class TaskImportService:
         is_duplicate = existing_project is not None
 
         # 8. Extract all additional rich metadata
-        level = (internship.get("level") or internship.get("difficulty") or "Easy to Medium").strip()
-        project_type = (internship.get("project_type") or "Real-Time Application").strip()
-        deployment = (internship.get("deployment") or "Localhost").strip()
-        cloud_req = bool(internship.get("cloud_required", False))
-        paid_api_req = bool(internship.get("paid_api_required", False))
-        github_req = bool(internship.get("github_required", True))
-        prob_statement = (internship.get("problem_statement") or "").strip()
-        objective = (internship.get("objective") or "").strip()
+        level = (
+            internship.get("level") or 
+            internship.get("difficulty") or 
+            data.get("level") or 
+            data.get("difficulty") or 
+            "Easy to Medium"
+        ).strip()
+        project_type = (
+            internship.get("project_type") or 
+            data.get("project_type") or 
+            "Real-Time Application"
+        ).strip()
+        deployment = (
+            internship.get("deployment") or 
+            data.get("deployment") or 
+            internship.get("environment") or 
+            data.get("environment") or 
+            "Localhost"
+        ).strip()
+        cloud_req = bool(internship.get("cloud_required", data.get("cloud_required", False)))
+        paid_api_req = bool(internship.get("paid_api_required", data.get("paid_api_required", False)))
+        github_req = bool(internship.get("github_required", data.get("github_required", True)))
+        prob_statement = (
+            internship.get("problem_statement") or 
+            data.get("problem_statement") or 
+            internship.get("description") or 
+            data.get("description") or 
+            ""
+        ).strip()
+        objective = (
+            internship.get("objective") or 
+            data.get("objective") or 
+            internship.get("final_objective") or 
+            data.get("final_objective") or 
+            ""
+        ).strip()
 
-        tech_list = internship.get("technologies") or []
+        tech_list = (
+            internship.get("technologies") or 
+            data.get("technologies") or 
+            internship.get("technology_stack") or 
+            data.get("technology_stack") or 
+            []
+        )
         if not isinstance(tech_list, list):
             tech_list = [str(tech_list)]
 
-        reqs = internship.get("requirements") or {}
-        modules = internship.get("project_modules") or []
-        restrictions = internship.get("restrictions") or []
-        final_deliv = internship.get("final_deliverable") or {}
-        eval_data = internship.get("evaluation") or {}
+        reqs = internship.get("requirements") or data.get("requirements") or {}
+        modules = internship.get("project_modules") or data.get("project_modules") or []
+        restrictions = internship.get("restrictions") or data.get("restrictions") or []
+        final_deliv = internship.get("final_deliverable") or data.get("final_deliverable") or {}
+        eval_data = internship.get("evaluation") or data.get("evaluation") or {}
 
         parsed_payload = {
             "problem_id": problem_id,

@@ -271,6 +271,7 @@
 
 <!-- Client-side Interactive JavaScript -->
 <script>
+const CSRF_TOKEN = "{{ csrf_token() }}";
 let currentSelectedFile = null;
 let currentPreviewData = null;
 
@@ -369,6 +370,7 @@ async function validateTaskPlan() {
   const formData = new FormData();
   formData.append('file', currentSelectedFile);
   formData.append('duration', duration);
+  formData.append('csrf_token', CSRF_TOKEN);
 
   const btn = document.getElementById('btnValidate');
   const originalText = btn.innerHTML;
@@ -381,12 +383,56 @@ async function validateTaskPlan() {
   try {
     const res = await fetch("{{ url_for('admin.validate_task_upload') }}", {
       method: 'POST',
+      headers: {
+        'X-CSRFToken': CSRF_TOKEN,
+        'Accept': 'application/json'
+      },
       body: formData
     });
-    const data = await res.json();
 
-    if (!data.success) {
-      showAlert(data.error || 'Failed to validate JSON task plan.', 'danger');
+    const contentType = res.headers.get('content-type') || '';
+    let data = null;
+    if (contentType.includes('application/json')) {
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        data = null;
+      }
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      const authMsg = (data && (data.errors && data.errors.length > 0 ? data.errors[0] : data.error)) || 'Your admin session has expired. Please sign in again.';
+      showAlert(authMsg, 'danger');
+      document.getElementById('previewCard').style.display = 'none';
+      return;
+    }
+
+    if (res.status === 404) {
+      showAlert('Validation endpoint was not found (404).', 'danger');
+      document.getElementById('previewCard').style.display = 'none';
+      return;
+    }
+
+    if (!res.ok) {
+      if (data) {
+        const errorList = (data.errors && data.errors.length > 0) ? data.errors.join('<br>') : (data.error || 'Task plan validation failed.');
+        showAlert(errorList, 'danger');
+      } else {
+        showAlert(res.status >= 500 ? 'Server error while validating the task plan.' : `Validation request failed with HTTP ${res.status}.`, 'danger');
+      }
+      document.getElementById('previewCard').style.display = 'none';
+      return;
+    }
+
+    if (!data) {
+      showAlert('Server returned an unexpected non-JSON response.', 'danger');
+      document.getElementById('previewCard').style.display = 'none';
+      return;
+    }
+
+    if (!data.success || !data.valid) {
+      const errorList = (data.errors && data.errors.length > 0) ? data.errors.join('<br>') : (data.error || 'Failed to validate JSON task plan.');
+      showAlert(errorList, 'danger');
       document.getElementById('previewCard').style.display = 'none';
       return;
     }
@@ -397,7 +443,7 @@ async function validateTaskPlan() {
     showAlert('Task plan validated successfully. Review details below and click Confirm Import.', 'success');
 
   } catch (err) {
-    showAlert('Network error occurred during validation: ' + err.message, 'danger');
+    showAlert('A network connection error occurred while contacting the server: ' + err.message, 'danger');
   } finally {
     btn.disabled = false;
     btn.innerHTML = originalText;
@@ -491,6 +537,7 @@ async function confirmImport(overwrite = false) {
   const formData = new FormData();
   formData.append('file', currentSelectedFile);
   formData.append('duration', duration);
+  formData.append('csrf_token', CSRF_TOKEN);
   if (overwrite) {
     formData.append('overwrite', 'true');
   }
@@ -509,12 +556,57 @@ async function confirmImport(overwrite = false) {
   try {
     const res = await fetch("{{ url_for('admin.import_task_upload') }}", {
       method: 'POST',
+      headers: {
+        'X-CSRFToken': CSRF_TOKEN,
+        'Accept': 'application/json'
+      },
       body: formData
     });
-    const data = await res.json();
+
+    const contentType = res.headers.get('content-type') || '';
+    let data = null;
+    if (contentType.includes('application/json')) {
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        data = null;
+      }
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      const authMsg = (data && (data.errors && data.errors.length > 0 ? data.errors[0] : data.error)) || 'Your admin session has expired. Please sign in again.';
+      showAlert(authMsg, 'danger');
+      return;
+    }
+
+    if (res.status === 404) {
+      showAlert('Import endpoint was not found (404).', 'danger');
+      return;
+    }
+
+    if (!res.ok) {
+      if (data) {
+        const errorList = (data.errors && data.errors.length > 0) ? data.errors.join('<br>') : (data.error || 'Failed to import task plan.');
+        showAlert(errorList, 'danger');
+        if (data.is_duplicate) {
+          document.getElementById('duplicateWarningBox').style.display = 'block';
+          btnConfirm.style.display = 'none';
+          btnUpdate.style.display = 'inline-flex';
+        }
+      } else {
+        showAlert(res.status >= 500 ? 'Server error while importing the task plan.' : `Import request failed with HTTP ${res.status}.`, 'danger');
+      }
+      return;
+    }
+
+    if (!data) {
+      showAlert('Server returned an unexpected non-JSON response.', 'danger');
+      return;
+    }
 
     if (!data.success) {
-      showAlert(data.error || 'Failed to import task plan.', 'danger');
+      const errorList = (data.errors && data.errors.length > 0) ? data.errors.join('<br>') : (data.error || 'Failed to import task plan.');
+      showAlert(errorList, 'danger');
       if (data.is_duplicate) {
         document.getElementById('duplicateWarningBox').style.display = 'block';
         btnConfirm.style.display = 'none';
@@ -527,7 +619,7 @@ async function confirmImport(overwrite = false) {
     window.location.href = data.redirect_url || "{{ url_for('admin.projects_list') }}";
 
   } catch (err) {
-    showAlert('Network error occurred during import: ' + err.message, 'danger');
+    showAlert('A network connection error occurred while contacting the server: ' + err.message, 'danger');
   } finally {
     targetBtn.disabled = false;
     targetBtn.innerHTML = originalText;

@@ -1,0 +1,622 @@
+{
+  "version": "1.0",
+  "category": "ai_ml_internship_project",
+  "title": "AI Career Intelligence & Job Matching Platform",
+  "description": "Build a complete AI and Machine Learning powered career intelligence platform that analyzes resumes, extracts skills, predicts job categories, compares candidates with job descriptions, identifies skill gaps, recommends suitable jobs, provides analytics, and generates personalized interview questions.",
+  "problem_code": "P3M-AIML-001",
+  "domain": "AI & Machine Learning",
+  "duration": "3 Months",
+  "duration_weeks": 12,
+  "difficulty": "Advanced",
+  "environment": "Localhost Flask Web Application",
+  "github_required": true,
+  "demo_video_required": true,
+  "live_demo_required": false,
+  "paid_api_required": false,
+  "technology_stack": [
+    "Python",
+    "Flask",
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "SQLite or PostgreSQL",
+    "Pandas",
+    "NumPy",
+    "Scikit-learn",
+    "NLTK or spaCy",
+    "Sentence Transformers",
+    "Matplotlib or Plotly"
+  ],
+  "final_objective": "Develop a complete web-based AI career intelligence system that accepts a candidate resume, extracts and analyzes information, predicts suitable job categories, compares the candidate against available jobs, identifies skill gaps, recommends jobs, provides analytics, and generates personalized interview questions.",
+  "internship": {
+    "weekly_submission_requirements": {
+      "github_repository": true,
+      "demo_video": true,
+      "submission_notes": true,
+      "working_application_required": true,
+      "video_must_show_working_feature": true
+    },
+    "milestones": [
+      {
+        "week": 1,
+        "title": "Flask Application Foundation and Resume Upload",
+        "objective": "Build the initial working Flask application with a browser interface that allows a user to upload a resume PDF and view the extracted resume text.",
+        "tasks": [
+          {
+            "task_id": "W01-T01",
+            "task": "Create the project structure using Flask with separate folders for application logic, templates, static files, uploaded files, machine learning components, and utility functions.",
+            "expected_output": "A clean Flask project structure that starts successfully on localhost."
+          },
+          {
+            "task_id": "W01-T02",
+            "task": "Create a responsive homepage containing the project title, project description, resume upload form, supported file format information, and an Analyze Resume button.",
+            "expected_output": "A functional browser homepage accessible through localhost."
+          },
+          {
+            "task_id": "W01-T03",
+            "task": "Implement PDF resume upload functionality with file validation. Only valid PDF files should be accepted and invalid file types should display an appropriate error message.",
+            "expected_output": "Users can upload a PDF resume through the browser."
+          },
+          {
+            "task_id": "W01-T04",
+            "task": "Implement resume text extraction using a suitable Python PDF extraction library.",
+            "expected_output": "The application extracts readable text from an uploaded PDF."
+          },
+          {
+            "task_id": "W01-T05",
+            "task": "Create a resume preview page that displays the extracted text in a readable format after successful upload.",
+            "expected_output": "Uploaded resume text is displayed in the browser."
+          },
+          {
+            "task_id": "W01-T06",
+            "task": "Add error handling for missing files, invalid PDFs, empty documents, extraction failures, and oversized uploads.",
+            "expected_output": "The application handles common upload and extraction errors without crashing."
+          }
+        ],
+        "expected_features": [
+          "Flask application",
+          "Homepage",
+          "Resume PDF upload",
+          "PDF validation",
+          "Text extraction",
+          "Extracted text preview",
+          "Error handling"
+        ],
+        "demo_output": "Start the Flask application, open localhost, upload a sample resume PDF, and demonstrate the extracted resume text appearing on the result page.",
+        "github_requirement": "Push the complete Week 1 implementation to GitHub with a README containing setup instructions.",
+        "completion_condition": "The resume PDF can be uploaded successfully and its extracted text can be displayed through the Flask web interface."
+      },
+      {
+        "week": 2,
+        "title": "Resume Preprocessing and Skill Extraction",
+        "objective": "Transform raw extracted resume text into structured information and automatically identify technical and professional skills.",
+        "tasks": [
+          {
+            "task_id": "W02-T01",
+            "task": "Implement text cleaning including lowercasing, whitespace normalization, removal of unnecessary symbols, and basic text normalization.",
+            "expected_output": "Raw resume text is converted into cleaned text."
+          },
+          {
+            "task_id": "W02-T02",
+            "task": "Implement sentence and word processing using NLTK, spaCy, or an equivalent NLP library.",
+            "expected_output": "Resume text can be tokenized and processed programmatically."
+          },
+          {
+            "task_id": "W02-T03",
+            "task": "Create a structured skill dictionary containing categories such as programming languages, frameworks, databases, cloud technologies, data science tools, AI/ML technologies, and soft skills.",
+            "expected_output": "A reusable skill knowledge base is available to the application."
+          },
+          {
+            "task_id": "W02-T04",
+            "task": "Build an automatic skill extraction module that compares processed resume content against the skill knowledge base.",
+            "expected_output": "The system detects skills mentioned in the resume."
+          },
+          {
+            "task_id": "W02-T05",
+            "task": "Create a candidate profile page displaying extracted skills grouped by category.",
+            "expected_output": "Detected skills are shown in a structured dashboard."
+          },
+          {
+            "task_id": "W02-T06",
+            "task": "Add skill count statistics and display the total number of detected skills.",
+            "expected_output": "The application displays measurable resume skill statistics."
+          }
+        ],
+        "expected_features": [
+          "Text preprocessing",
+          "NLP processing",
+          "Skill dictionary",
+          "Automatic skill extraction",
+          "Categorized skills",
+          "Skill statistics"
+        ],
+        "demo_output": "Upload a resume and demonstrate the application automatically detecting and categorizing skills such as Python, Flask, SQL, Machine Learning, React, and other technologies present in the resume.",
+        "github_requirement": "Push the preprocessing and skill extraction implementation to GitHub.",
+        "completion_condition": "The application automatically extracts and displays categorized skills from an uploaded resume."
+      },
+      {
+        "week": 3,
+        "title": "Job Dataset and Job Management System",
+        "objective": "Create the job database and a working browser interface for storing, viewing, searching, and filtering job descriptions.",
+        "tasks": [
+          {
+            "task_id": "W03-T01",
+            "task": "Design a job data model containing job ID, title, company, domain, description, required skills, experience level, location, employment type, and other relevant fields.",
+            "expected_output": "A structured job database model exists."
+          },
+          {
+            "task_id": "W03-T02",
+            "task": "Create a dataset containing a meaningful number of sample job records across AI/ML, Data Science, Data Analytics, Python Development, Full Stack Development, Cloud, and related domains.",
+            "expected_output": "The application has a usable job dataset."
+          },
+          {
+            "task_id": "W03-T03",
+            "task": "Implement a Flask route and interface for viewing all available jobs.",
+            "expected_output": "Users can browse jobs through the browser."
+          },
+          {
+            "task_id": "W03-T04",
+            "task": "Implement job search using title, domain, company, and skill keywords.",
+            "expected_output": "Users can search the job database."
+          },
+          {
+            "task_id": "W03-T05",
+            "task": "Implement filtering by domain and experience level.",
+            "expected_output": "Users can filter available jobs."
+          },
+          {
+            "task_id": "W03-T06",
+            "task": "Create a detailed job page displaying job requirements and required skills.",
+            "expected_output": "Each job can be opened and viewed independently."
+          }
+        ],
+        "expected_features": [
+          "Job database",
+          "Job dataset",
+          "Job listing",
+          "Job search",
+          "Job filtering",
+          "Job details"
+        ],
+        "demo_output": "Open the Jobs page, search for AI/ML jobs, filter the results, open a job, and demonstrate its complete requirements and skills.",
+        "github_requirement": "Push the database, dataset, job management routes, templates, and README updates.",
+        "completion_condition": "The application contains a searchable and filterable job database accessible through the browser."
+      },
+      {
+        "week": 4,
+        "title": "Machine Learning Job Category Classifier",
+        "objective": "Train and integrate a machine learning model capable of predicting the most suitable job category from resume text.",
+        "tasks": [
+          {
+            "task_id": "W04-T01",
+            "task": "Prepare a labeled training dataset containing resume or profile text mapped to job categories.",
+            "expected_output": "A labeled dataset suitable for supervised learning."
+          },
+          {
+            "task_id": "W04-T02",
+            "task": "Perform dataset preprocessing and train-test splitting.",
+            "expected_output": "Training and testing datasets are prepared."
+          },
+          {
+            "task_id": "W04-T03",
+            "task": "Convert resume text into numerical features using TF-IDF or a comparable text vectorization technique.",
+            "expected_output": "Text is converted into machine learning features."
+          },
+          {
+            "task_id": "W04-T04",
+            "task": "Train at least one classification model such as Logistic Regression, Linear SVM, or another appropriate model.",
+            "expected_output": "A trained job-category classification model exists."
+          },
+          {
+            "task_id": "W04-T05",
+            "task": "Evaluate the model using accuracy and appropriate classification metrics.",
+            "expected_output": "The intern can demonstrate measurable model performance."
+          },
+          {
+            "task_id": "W04-T06",
+            "task": "Integrate the trained model into the Flask application so that an uploaded resume receives a predicted job category.",
+            "expected_output": "The browser displays the predicted job category."
+          }
+        ],
+        "expected_features": [
+          "Training dataset",
+          "TF-IDF",
+          "Classification model",
+          "Model evaluation",
+          "Flask model integration",
+          "Job category prediction"
+        ],
+        "demo_output": "Upload different sample resumes and demonstrate the application predicting categories such as AI/ML, Data Science, Data Analytics, Python Development, or Full Stack Development.",
+        "github_requirement": "Commit the dataset preparation, training code, saved model, evaluation results, and Flask integration.",
+        "completion_condition": "The Flask application predicts a job category from uploaded resume content using a trained ML model."
+      },
+      {
+        "week": 5,
+        "title": "Resume to Job Matching Engine",
+        "objective": "Build the first complete resume-to-job matching engine that calculates compatibility between a candidate resume and job descriptions.",
+        "tasks": [
+          {
+            "task_id": "W05-T01",
+            "task": "Create a job description preprocessing pipeline compatible with the existing resume preprocessing pipeline.",
+            "expected_output": "Resume and job descriptions use consistent preprocessing."
+          },
+          {
+            "task_id": "W05-T02",
+            "task": "Create TF-IDF representations for resume content and job descriptions.",
+            "expected_output": "Both candidate and job documents have comparable vector representations."
+          },
+          {
+            "task_id": "W05-T03",
+            "task": "Implement cosine similarity between resume and job vectors.",
+            "expected_output": "The system calculates a similarity score."
+          },
+          {
+            "task_id": "W05-T04",
+            "task": "Combine text similarity with skill overlap to produce an overall matching score.",
+            "expected_output": "A more meaningful resume-job compatibility score is generated."
+          },
+          {
+            "task_id": "W05-T05",
+            "task": "Create a Match Job button that compares the uploaded resume with a selected job.",
+            "expected_output": "Users can manually compare a resume with a job."
+          },
+          {
+            "task_id": "W05-T06",
+            "task": "Create a visual match result page showing overall score, text similarity, skill overlap, matched skills, and missing skills.",
+            "expected_output": "Users can understand the result through the browser."
+          }
+        ],
+        "expected_features": [
+          "Resume-job comparison",
+          "TF-IDF similarity",
+          "Cosine similarity",
+          "Skill overlap",
+          "Match score",
+          "Match result page"
+        ],
+        "demo_output": "Upload a resume, select a job, click Match Job, and demonstrate the generated compatibility score and matching details.",
+        "github_requirement": "Push the matching engine and browser integration to GitHub.",
+        "completion_condition": "The system generates a reproducible compatibility score between a resume and selected job description."
+      },
+      {
+        "week": 6,
+        "title": "Skill Gap Analysis",
+        "objective": "Build a skill gap analysis module that identifies the skills a candidate has, the skills required by a job, and the missing skills.",
+        "tasks": [
+          {
+            "task_id": "W06-T01",
+            "task": "Extract required skills from every job record using the same structured skill taxonomy used for resumes.",
+            "expected_output": "Jobs have structured required-skill lists."
+          },
+          {
+            "task_id": "W06-T02",
+            "task": "Compare candidate skills against job-required skills.",
+            "expected_output": "Matched and missing skills can be calculated."
+          },
+          {
+            "task_id": "W06-T03",
+            "task": "Implement skill coverage percentage for the selected job.",
+            "expected_output": "The application calculates how much of the required skill set the candidate currently covers."
+          },
+          {
+            "task_id": "W06-T04",
+            "task": "Classify missing skills into categories such as programming, framework, database, cloud, AI/ML, and other categories.",
+            "expected_output": "Skill gaps are organized by category."
+          },
+          {
+            "task_id": "W06-T05",
+            "task": "Create a Skill Gap page displaying matched skills, missing skills, coverage percentage, and priority areas.",
+            "expected_output": "The candidate receives a clear visual skill-gap report."
+          },
+          {
+            "task_id": "W06-T06",
+            "task": "Integrate skill gap information into the existing job matching result.",
+            "expected_output": "The matching page contains both match score and skill-gap information."
+          }
+        ],
+        "expected_features": [
+          "Required skill extraction",
+          "Skill comparison",
+          "Skill coverage percentage",
+          "Missing skill detection",
+          "Categorized skill gaps",
+          "Skill gap report"
+        ],
+        "demo_output": "Select a job where the candidate is missing several skills and demonstrate the application identifying those skills and calculating the candidate's coverage percentage.",
+        "github_requirement": "Push the skill-gap engine and updated UI.",
+        "completion_condition": "The application automatically identifies and displays missing skills for a selected job."
+      },
+      {
+        "week": 7,
+        "title": "Semantic Resume and Job Matching",
+        "objective": "Improve the matching system using semantic text embeddings so that the application can identify conceptually similar resume and job content even when exact keywords differ.",
+        "tasks": [
+          {
+            "task_id": "W07-T01",
+            "task": "Integrate a sentence-transformer or equivalent open-source embedding model.",
+            "expected_output": "The application can generate vector embeddings for resume and job text."
+          },
+          {
+            "task_id": "W07-T02",
+            "task": "Generate semantic embeddings for resume content and stored job descriptions.",
+            "expected_output": "Resume and jobs have semantic representations."
+          },
+          {
+            "task_id": "W07-T03",
+            "task": "Calculate semantic similarity between the candidate resume and job descriptions.",
+            "expected_output": "A semantic similarity score is generated."
+          },
+          {
+            "task_id": "W07-T04",
+            "task": "Compare keyword-based matching against semantic matching.",
+            "expected_output": "The application can show the difference between the two approaches."
+          },
+          {
+            "task_id": "W07-T05",
+            "task": "Create a combined matching score using semantic similarity, skill coverage, and keyword similarity.",
+            "expected_output": "The system produces an improved composite match score."
+          },
+          {
+            "task_id": "W07-T06",
+            "task": "Display the components of the final score on the result page.",
+            "expected_output": "Users can see how the final score was calculated."
+          }
+        ],
+        "expected_features": [
+          "Text embeddings",
+          "Semantic similarity",
+          "Keyword similarity",
+          "Composite scoring",
+          "Explainable score components"
+        ],
+        "demo_output": "Use a resume and job description containing related concepts with different wording and demonstrate semantic matching producing a meaningful similarity result.",
+        "github_requirement": "Push the embedding integration, model configuration, matching logic, and documentation.",
+        "completion_condition": "The platform supports semantic matching in addition to traditional keyword-based matching."
+      },
+      {
+        "week": 8,
+        "title": "AI Job Recommendation Engine",
+        "objective": "Build a recommendation engine that automatically identifies and ranks suitable jobs for the uploaded candidate profile.",
+        "tasks": [
+          {
+            "task_id": "W08-T01",
+            "task": "Run the candidate resume through the existing preprocessing, skill extraction, category prediction, and semantic matching pipeline.",
+            "expected_output": "A complete candidate feature profile is generated."
+          },
+          {
+            "task_id": "W08-T02",
+            "task": "Calculate the candidate's compatibility score against all jobs in the database.",
+            "expected_output": "Every available job receives a compatibility score."
+          },
+          {
+            "task_id": "W08-T03",
+            "task": "Implement ranking logic to order jobs according to compatibility.",
+            "expected_output": "Jobs are automatically ranked."
+          },
+          {
+            "task_id": "W08-T04",
+            "task": "Create a Top Recommended Jobs page displaying the highest-ranked jobs.",
+            "expected_output": "Candidates can see recommended jobs immediately after analysis."
+          },
+          {
+            "task_id": "W08-T05",
+            "task": "For every recommendation, display match score, matched skills, missing skills, predicted category, and a short explanation of the recommendation.",
+            "expected_output": "Recommendations are explainable rather than being only a numerical ranking."
+          },
+          {
+            "task_id": "W08-T06",
+            "task": "Add filters that allow candidates to narrow recommendations by domain, location, experience level, and minimum match score.",
+            "expected_output": "Recommended jobs can be filtered."
+          }
+        ],
+        "expected_features": [
+          "Recommendation engine",
+          "Job ranking",
+          "Top recommendations",
+          "Explainable recommendations",
+          "Recommendation filters"
+        ],
+        "demo_output": "Upload a resume and demonstrate the system automatically producing a ranked list of suitable jobs with match explanations.",
+        "github_requirement": "Push recommendation logic, UI, and documentation.",
+        "completion_condition": "The system automatically produces a ranked and explainable list of recommended jobs for a candidate."
+      },
+      {
+        "week": 9,
+        "title": "AI Career Analytics Dashboard",
+        "objective": "Create a professional analytics dashboard that visualizes the candidate's skills, job compatibility, skill gaps, and predicted career direction.",
+        "tasks": [
+          {
+            "task_id": "W09-T01",
+            "task": "Create a candidate analytics dashboard using charts and summary cards.",
+            "expected_output": "A dedicated analytics dashboard is available."
+          },
+          {
+            "task_id": "W09-T02",
+            "task": "Display total detected skills, strongest skill categories, average job match score, and number of recommended jobs.",
+            "expected_output": "Key candidate metrics are visible."
+          },
+          {
+            "task_id": "W09-T03",
+            "task": "Create a skill distribution chart by category.",
+            "expected_output": "Candidate skills are visualized."
+          },
+          {
+            "task_id": "W09-T04",
+            "task": "Create a job compatibility chart showing scores across recommended jobs.",
+            "expected_output": "Job compatibility is visually represented."
+          },
+          {
+            "task_id": "W09-T05",
+            "task": "Create a skill-gap visualization showing the most frequently missing skills across recommended jobs.",
+            "expected_output": "The candidate can visually identify important skill gaps."
+          },
+          {
+            "task_id": "W09-T06",
+            "task": "Display the predicted job category and supporting evidence such as detected skills and relevant job matches.",
+            "expected_output": "The prediction is presented with supporting information."
+          }
+        ],
+        "expected_features": [
+          "Analytics dashboard",
+          "Skill charts",
+          "Job compatibility charts",
+          "Skill gap visualization",
+          "Candidate metrics",
+          "Predicted career category"
+        ],
+        "demo_output": "Upload a resume, run the analysis, and demonstrate the complete analytics dashboard with charts and candidate metrics.",
+        "github_requirement": "Push dashboard implementation and visualization code.",
+        "completion_condition": "The candidate can view a complete visual analytics dashboard generated from their resume analysis."
+      },
+      {
+        "week": 10,
+        "title": "Personalized AI Interview Question Generator",
+        "objective": "Build an interview preparation module that generates personalized technical interview questions based on the candidate's detected skills, selected job, and skill gaps.",
+        "tasks": [
+          {
+            "task_id": "W10-T01",
+            "task": "Create an interview-question knowledge base categorized by programming language, framework, database, AI/ML, data science, and other skills.",
+            "expected_output": "The system has structured interview question data."
+          },
+          {
+            "task_id": "W10-T02",
+            "task": "Implement logic to select questions based on detected candidate skills.",
+            "expected_output": "Questions are personalized to the candidate."
+          },
+          {
+            "task_id": "W10-T03",
+            "task": "Implement logic to generate additional questions based on the missing skills for a selected job.",
+            "expected_output": "The interview module focuses on skill gaps."
+          },
+          {
+            "task_id": "W10-T04",
+            "task": "Create difficulty levels such as Easy, Medium, and Hard.",
+            "expected_output": "Questions are organized by difficulty."
+          },
+          {
+            "task_id": "W10-T05",
+            "task": "Create an interview preparation page where the candidate selects a target job and receives a personalized question set.",
+            "expected_output": "The candidate can start an interview preparation session."
+          },
+          {
+            "task_id": "W10-T06",
+            "task": "If an external or local generative AI model is used, implement it through a configurable service layer so the application can operate without a paid API dependency.",
+            "expected_output": "The architecture supports AI generation without hard-coding a paid provider."
+          }
+        ],
+        "expected_features": [
+          "Interview question database",
+          "Personalized questions",
+          "Skill-based questions",
+          "Skill-gap questions",
+          "Difficulty levels",
+          "Interview preparation UI"
+        ],
+        "demo_output": "Select a target AI/ML job and demonstrate the application generating a personalized interview preparation set based on the candidate's skills and missing skills.",
+        "github_requirement": "Push interview-generation logic, question dataset, UI, and provider abstraction if applicable.",
+        "completion_condition": "The platform generates a personalized interview preparation experience based on the candidate profile."
+      },
+      {
+        "week": 11,
+        "title": "User Analysis History and Complete Candidate Workspace",
+        "objective": "Convert the individual analysis features into a persistent candidate workspace where previous resume analyses and job comparisons can be stored and revisited.",
+        "tasks": [
+          {
+            "task_id": "W11-T01",
+            "task": "Create a database model for candidate analysis history.",
+            "expected_output": "Previous analyses can be persisted."
+          },
+          {
+            "task_id": "W11-T02",
+            "task": "Store resume metadata, detected skills, predicted category, match results, skill gaps, and recommendation results.",
+            "expected_output": "Important analysis information is stored."
+          },
+          {
+            "task_id": "W11-T03",
+            "task": "Create an analysis history page displaying previous resume analyses.",
+            "expected_output": "Candidates can view their previous analyses."
+          },
+          {
+            "task_id": "W11-T04",
+            "task": "Allow users to open a previous analysis and view its results without uploading the resume again.",
+            "expected_output": "Historical analysis results are retrievable."
+          },
+          {
+            "task_id": "W11-T05",
+            "task": "Implement basic authentication or user identification for protecting private analysis history.",
+            "expected_output": "Candidate analysis data is not publicly accessible."
+          },
+          {
+            "task_id": "W11-T06",
+            "task": "Integrate resume analysis, job recommendations, skill gaps, analytics, and interview preparation into one consistent navigation system.",
+            "expected_output": "The application behaves like one complete product."
+          }
+        ],
+        "expected_features": [
+          "Persistent analysis history",
+          "Candidate workspace",
+          "Private data access",
+          "Previous analysis retrieval",
+          "Integrated navigation"
+        ],
+        "demo_output": "Perform an analysis, log out or return to the dashboard, open the history page, select the previous analysis, and demonstrate that the complete results are retained.",
+        "github_requirement": "Push database migrations, authentication, history functionality, and integrated UI.",
+        "completion_condition": "A candidate can securely access and revisit previous resume analyses."
+      },
+      {
+        "week": 12,
+        "title": "Final Integration, Testing, Documentation and Production-Ready Build",
+        "objective": "Integrate all modules into a stable final application and demonstrate the complete end-to-end AI career intelligence workflow.",
+        "tasks": [
+          {
+            "task_id": "W12-T01",
+            "task": "Integrate the complete pipeline from resume upload through preprocessing, skill extraction, ML classification, matching, semantic analysis, recommendations, analytics, and interview preparation.",
+            "expected_output": "All major features work together in one workflow."
+          },
+          {
+            "task_id": "W12-T02",
+            "task": "Perform functional testing for valid resumes, invalid files, empty resumes, resumes with few skills, and resumes with many skills.",
+            "expected_output": "The system handles common input scenarios correctly."
+          },
+          {
+            "task_id": "W12-T03",
+            "task": "Test the application with multiple job records and verify that recommendations and matching scores change according to the candidate profile.",
+            "expected_output": "The recommendation engine behaves dynamically."
+          },
+          {
+            "task_id": "W12-T04",
+            "task": "Improve validation, exception handling, logging, database error handling, and user-facing error messages.",
+            "expected_output": "The application is stable and handles failures gracefully."
+          },
+          {
+            "task_id": "W12-T05",
+            "task": "Improve the UI consistency, responsive layout, navigation, loading states, empty states, and result presentation.",
+            "expected_output": "The final application has a professional user experience."
+          },
+          {
+            "task_id": "W12-T06",
+            "task": "Create complete README documentation containing architecture, installation instructions, environment variables, database setup, ML pipeline, model training instructions, API routes, screenshots, and demo instructions.",
+            "expected_output": "Another developer can install and understand the project using the README."
+          },
+          {
+            "task_id": "W12-T07",
+            "task": "Create a final end-to-end demonstration showing resume upload, skill extraction, predicted category, job matching, skill-gap analysis, recommendations, analytics, and interview preparation.",
+            "expected_output": "A complete final project demonstration video."
+          }
+        ],
+        "expected_features": [
+          "Complete AI/ML pipeline",
+          "Testing",
+          "Error handling",
+          "Professional UI",
+          "Documentation",
+          "Final integration",
+          "Complete demonstration"
+        ],
+        "demo_output": "Run the complete application from localhost and demonstrate the entire workflow from uploading a resume to receiving job recommendations, viewing skill gaps, analyzing career information, and generating interview preparation questions.",
+        "github_requirement": "Push the final stable version to GitHub with complete documentation and a clean project structure.",
+        "completion_condition": "The complete AI Career Intelligence platform works end-to-end and can be demonstrated successfully from a fresh local setup."
+      }
+    ]
+  }
+}

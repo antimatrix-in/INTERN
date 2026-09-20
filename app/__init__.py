@@ -1,5 +1,6 @@
 import os
-from flask import Flask
+from flask import Flask, request, jsonify, redirect, url_for, flash
+from flask_wtf.csrf import CSRFError
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from app.extensions import db, login_manager, csrf
@@ -32,6 +33,51 @@ def create_app(config_class=Config):
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+
+    # API & Session Authentication Handlers
+    @login_manager.unauthorized_handler
+    def handle_unauthorized():
+        if (request.path.startswith('/admin/upload-tasks') or 
+            request.is_json or 
+            'application/json' in request.headers.get('Accept', '') or 
+            request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'errors': ['Your admin session has expired. Please sign in again.'],
+                'error': 'Your admin session has expired. Please sign in again.'
+            }), 401
+        flash('Please log in to access your Anti Matrix portal.', 'warning')
+        return redirect(url_for('auth.login', next=request.url))
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        reason = getattr(e, 'description', 'The CSRF token is missing or invalid.')
+        if (request.path.startswith('/admin/upload-tasks') or 
+            request.is_json or 
+            'application/json' in request.headers.get('Accept', '') or 
+            request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'errors': [f'CSRF token validation failed: {reason}'],
+                'error': f'CSRF token validation failed: {reason}'
+            }), 400
+        return f"<!doctype html><title>400 Bad Request</title><h1>Bad Request</h1><p>{reason}</p>", 400
+
+    @app.errorhandler(500)
+    def handle_500_error(e):
+        if (request.path.startswith('/admin/upload-tasks') or 
+            request.is_json or 
+            'application/json' in request.headers.get('Accept', '') or 
+            request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'errors': ['Task plan validation failed due to a server error.'],
+                'error': 'Task plan validation failed due to a server error.'
+            }), 500
+        return "<!doctype html><title>500 Internal Server Error</title><h1>Internal Server Error</h1>", 500
 
     # Register Blueprints
     from app.main.routes import main_bp

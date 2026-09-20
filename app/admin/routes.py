@@ -55,6 +55,16 @@ def require_admin_role():
 @login_required
 def require_admin():
     if not current_user.is_admin_or_staff:
+        if (request.path.startswith('/admin/upload-tasks') or 
+            request.is_json or 
+            'application/json' in request.headers.get('Accept', '') or 
+            request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'errors': ['Access restricted to ANTI MATRIX Administrators and Staff.'],
+                'error': 'Access restricted to ANTI MATRIX Administrators and Staff.'
+            }), 403
         flash('Access restricted to ANTI MATRIX Administrators and Staff.', 'danger')
         abort(403)
 
@@ -548,34 +558,97 @@ def validate_task_upload():
     selected_duration = request.form.get('duration', '1 Month').strip()
 
     if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'No file uploaded. Please choose a JSON file.'}), 400
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'errors': ['No file uploaded. Please choose a JSON file.'],
+            'warnings': [],
+            'preview': None,
+            'error': 'No file uploaded. Please choose a JSON file.'
+        }), 400
 
     file = request.files['file']
     if not file or file.filename == '':
-        return jsonify({'success': False, 'error': 'No file selected. Please choose a JSON file.'}), 400
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'errors': ['No file selected. Please choose a JSON file.'],
+            'warnings': [],
+            'preview': None,
+            'error': 'No file selected. Please choose a JSON file.'
+        }), 400
 
     if not file.filename.lower().endswith('.json'):
-        return jsonify({'success': False, 'error': 'Invalid file type. Only .json files are permitted.'}), 400
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'errors': ['Invalid file type. Only .json files are permitted.'],
+            'warnings': [],
+            'preview': None,
+            'error': 'Invalid file type. Only .json files are permitted.'
+        }), 400
 
     try:
         content = file.read().decode('utf-8')
+        if not content.strip():
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'errors': ['Uploaded JSON file is empty.'],
+                'warnings': [],
+                'preview': None,
+                'error': 'Uploaded JSON file is empty.'
+            }), 400
+
         is_valid, err_msg, preview_data, parsed_payload = TaskImportService.validate_and_parse(
             json_content=content,
             selected_duration=selected_duration,
             filename=file.filename
         )
         if not is_valid:
-            return jsonify({'success': False, 'error': err_msg}), 400
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'errors': [err_msg] if err_msg else ['Invalid task plan JSON format.'],
+                'warnings': [],
+                'preview': None,
+                'error': err_msg
+            }), 400
+
+        is_dup = preview_data.get('is_duplicate', False)
+        dup_code = preview_data.get('existing_project_code')
+        warnings = []
+        if is_dup:
+            warnings.append(f"Problem ID '{dup_code or preview_data.get('problem_id')}' already exists in database. Final import will prompt to overwrite.")
 
         return jsonify({
             'success': True,
+            'valid': True,
+            'errors': [],
+            'warnings': warnings,
             'preview': preview_data,
-            'is_duplicate': preview_data['is_duplicate'],
-            'existing_project_code': preview_data['existing_project_code']
+            'is_duplicate': is_dup,
+            'existing_project_code': dup_code
         })
+    except UnicodeDecodeError:
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'errors': ['File encoding error: The file is not a valid UTF-8 encoded text file.'],
+            'warnings': [],
+            'preview': None,
+            'error': 'File encoding error: The file is not a valid UTF-8 encoded text file.'
+        }), 400
     except Exception as e:
         logger.exception("Error validating task plan JSON")
-        return jsonify({'success': False, 'error': f"Failed to validate JSON: {str(e)}"}), 500
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'errors': ['Task plan validation failed due to a server error.'],
+            'warnings': [],
+            'preview': None,
+            'error': 'Task plan validation failed due to a server error.'
+        }), 500
 
 
 @admin_bp.route('/upload-tasks/import', methods=['POST'])
@@ -586,21 +659,44 @@ def import_task_upload():
     overwrite = request.form.get('overwrite', 'false').lower() in ['true', '1', 'yes']
 
     if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'No file uploaded. Please choose a JSON file.'}), 400
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'errors': ['No file uploaded. Please choose a JSON file.'],
+            'error': 'No file uploaded. Please choose a JSON file.'
+        }), 400
 
     file = request.files['file']
     if not file or not file.filename.lower().endswith('.json'):
-        return jsonify({'success': False, 'error': 'Invalid file type. Only .json files are permitted.'}), 400
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'errors': ['Invalid file type. Only .json files are permitted.'],
+            'error': 'Invalid file type. Only .json files are permitted.'
+        }), 400
 
     try:
         content = file.read().decode('utf-8')
+        if not content.strip():
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'errors': ['Uploaded JSON file is empty.'],
+                'error': 'Uploaded JSON file is empty.'
+            }), 400
+
         is_valid, err_msg, preview_data, parsed_payload = TaskImportService.validate_and_parse(
             json_content=content,
             selected_duration=selected_duration,
             filename=file.filename
         )
         if not is_valid:
-            return jsonify({'success': False, 'error': err_msg}), 400
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'errors': [err_msg] if err_msg else ['Invalid task plan JSON format.'],
+                'error': err_msg
+            }), 400
 
         project, action_type = TaskImportService.commit_import(
             parsed_payload=parsed_payload,
@@ -611,16 +707,28 @@ def import_task_upload():
         flash(f'Task plan "{project.title}" ({project.project_code}) {action_type.lower()} successfully!', 'success')
         return jsonify({
             'success': True,
+            'valid': True,
             'project_id': project.id,
             'project_code': project.project_code,
             'action': action_type,
             'redirect_url': url_for('admin.projects_list')
         })
     except ValueError as ve:
-        return jsonify({'success': False, 'error': str(ve), 'is_duplicate': True}), 400
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'errors': [str(ve)],
+            'error': str(ve),
+            'is_duplicate': True
+        }), 400
     except Exception as e:
         logger.exception("Error importing task plan JSON")
-        return jsonify({'success': False, 'error': f"Task plan could not be imported. No changes were made. ({str(e)})"}), 500
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'errors': ['Task plan could not be imported due to an internal server error.'],
+            'error': 'Task plan could not be imported. No changes were made.'
+        }), 500
 
 
 @admin_bp.route('/task-imports')
