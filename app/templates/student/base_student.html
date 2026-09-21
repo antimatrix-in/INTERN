@@ -151,35 +151,6 @@
     </div>
   </div>
 
-  <!-- Document Placeholder Modal -->
-  <div id="sampleDocModal" class="modal-backdrop">
-    <div class="modal-content">
-      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-        <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); color: var(--info); display: flex; align-items: center; justify-content: center;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-        </div>
-        <h3 id="sampleDocTitle" style="font-size: 1.15rem; font-weight: 700;">Document Preview</h3>
-      </div>
-      <p id="sampleDocMessage" style="color: var(--text-muted); font-size: 0.925rem; line-height: 1.6; margin-bottom: 1.5rem;">
-        Document generation will be available after the required milestone evaluation and program approval.
-      </p>
-      <div style="display: flex; justify-content: flex-end;">
-        <button onclick="closeDocModal()" class="btn btn-primary btn-sm">Understood</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    function showDocModal(title, statusText) {
-      document.getElementById('sampleDocTitle').innerText = title;
-      document.getElementById('sampleDocMessage').innerText = statusText || "Document generation will be available after the required approval/completion.";
-      document.getElementById('sampleDocModal').classList.add('active');
-    }
-    function closeDocModal() {
-      document.getElementById('sampleDocModal').classList.remove('active');
-    }
-  </script>
-
   <!-- Core JavaScript -->
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% block extra_js %}{% endblock %}
