@@ -36,12 +36,6 @@
           </a>
         </li>
         <li>
-          <a href="{{ url_for('student.project_detail') }}" class="nav-item-link {% if request.endpoint == 'student.project_detail' %}active{% endif %}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-            My Project
-          </a>
-        </li>
-        <li>
           <a href="{{ url_for('student.weekly_progress') }}" class="nav-item-link {% if request.endpoint == 'student.weekly_progress' or request.endpoint == 'student.week_detail' %}active{% endif %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
             Weekly Progress
