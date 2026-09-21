@@ -3,211 +3,161 @@
 {% block title %}Employee Dashboard — ANTI MATRIX{% endblock %}
 
 {% block content %}
-<!-- Employee Welcome Header -->
-<div class="card" style="margin-bottom: 1.5rem; border-left: 4px solid var(--brand-primary);">
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem;">
-    <div style="flex: 1; min-width: 280px;">
-      <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: var(--primary-50); border: 1px solid var(--brand-primary-200); border-radius: var(--radius-full); padding: 0.2rem 0.65rem; font-size: 0.7rem; font-weight: 700; color: var(--brand-primary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem;">
-        <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--brand-primary);"></span>
-        Authenticated Intern Session
-      </div>
-      <h1 style="font-size: 1.65rem; font-weight: 800; margin-bottom: 0.2rem; color: var(--text-main);">
-        Welcome back, {{ student.user.full_name }}
-      </h1>
-      <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0 0 1rem;">
-        Official Anti Matrix Internship & Workforce Portal
-      </p>
-
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; background: var(--bg-main); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
-        <div>
-          <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Employee ID</div>
-          <div class="mono" style="color: var(--text-main); font-weight: 700; font-size: 0.9rem;">{{ student.user.employee_id or student.student_uid }}</div>
-        </div>
-        <div>
-          <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">College</div>
-          <div style="color: var(--text-main); font-weight: 600; font-size: 0.825rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ student.college.name if student.college else 'Autonomous Engineering College' }}</div>
-        </div>
-        <div>
-          <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Assigned Role</div>
-          <div style="color: var(--brand-primary); font-weight: 700; font-size: 0.825rem;">{{ (student.applications.first().applied_role if student.applications.first() and student.applications.first().applied_role else (internship.plan.title if internship and internship.plan else 'AI Engineer Intern')) }}</div>
-        </div>
-        <div>
-          <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Track Duration</div>
-          <div style="color: var(--text-main); font-weight: 600; font-size: 0.825rem;">{{ internship.plan.duration_months if internship and internship.plan else (1 if (assignment and assignment.project and assignment.project.duration_months == 1) else 3) }} Month{% if (internship and internship.plan and internship.plan.duration_months > 1) or (assignment and assignment.project and assignment.project.duration_months > 1) %}s{% endif %}</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem;">
-      <span class="badge badge-success" style="font-size: 0.8rem; padding: 0.3rem 0.75rem;">
-        {{ internship.status if internship else 'ACTIVE' }}
-      </span>
-      <span style="font-size: 0.725rem; color: var(--text-muted); font-family: var(--font-mono);">
-        UID: {{ student.student_uid }}
-      </span>
-    </div>
-  </div>
-</div>
-
-<!-- KPI Metrics Grid -->
-<div class="grid-4" style="margin-bottom: 1.75rem;">
-  <div class="stat-card">
-    <div class="stat-label">Overall Completion</div>
-    <div class="stat-value" style="color: var(--brand-primary);">{{ progress_percent }}%</div>
-  </div>
-
-  <div class="stat-card">
-    <div class="stat-label">Assignment Status</div>
-    <div class="stat-value" style="font-size: 1.15rem; color: var(--text-main);">
-      {{ assignment.status if assignment else 'In Progress' }}
+<div class="workspace-container">
+  <!-- 1. Simple Welcome Line -->
+  <div style="margin-bottom: 0.75rem;">
+    <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.25rem; letter-spacing: -0.01em;">
+      Welcome, {{ student.user.full_name }}
+    </h1>
+    <div class="mono" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
+      {{ student.user.employee_id or student.student_uid }} • {{ internship.plan.duration_months if (internship and internship.plan) else (assignment.project.duration_months if (assignment and assignment.project and assignment.project.duration_months) else 1) }} Month Internship
     </div>
   </div>
 
-  <div class="stat-card">
-    <div class="stat-label">Current Stage</div>
-    <div class="stat-value" style="font-size: 1.15rem; color: var(--warning);">
-      {% if current_milestone %}
-        Week {{ current_milestone.week_number }}
-      {% else %}
-        Week 1
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="stat-card">
-    <div class="stat-label">Internship Tenure</div>
-    <div class="stat-value" style="font-size: 0.85rem; color: var(--text-body); font-family: var(--font-main); font-weight: 600;">
-      {{ internship.start_date if internship else '01 Sep 2026' }} – {{ internship.end_date if internship else '30 Sep 2026' }}
-    </div>
-  </div>
-</div>
-
-<!-- Assigned Project Section -->
-{% if assignment and assignment.project %}
-<div class="card" style="margin-bottom: 1.25rem; padding: 1.25rem 1.5rem;">
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
-    <div style="flex: 1; min-width: 260px;">
-      <div class="mono" style="font-size: 0.725rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem;">
-        PROJECT ID: {{ assignment.project.project_code }}
-      </div>
-      <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.35rem; line-height: 1.3;">
-        {{ assignment.project.title }}
-      </h2>
-      <p style="color: var(--text-body); font-size: 0.875rem; line-height: 1.5; margin: 0 0 0.65rem;">
-        {{ assignment.project.description }}
-      </p>
-      <div style="font-size: 0.8rem; color: var(--text-muted);">
-        Mentor: <strong style="color: var(--text-main); font-weight: 600;">{{ internship.mentor.full_name if (internship and internship.mentor) else 'Technical Lead' }}</strong>
-      </div>
-    </div>
-
-    <a href="{{ url_for('student.project_detail') }}" class="btn btn-outline-primary btn-sm" style="flex-shrink: 0; padding: 0.4rem 0.9rem; font-size: 0.8rem;">
-      View Project →
-    </a>
-  </div>
-</div>
-
-<!-- Overall Progress Section -->
-<div class="card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
-    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">Overall Progress</span>
-    <span class="mono" style="font-size: 0.85rem; font-weight: 700; color: var(--brand-primary);">{{ progress_percent }}%</span>
-  </div>
-  <div class="progress-track" style="height: 6px; background: var(--border-medium); border-radius: 9999px; overflow: hidden;">
-    <div class="progress-fill" style="width: {{ progress_percent }}%; height: 100%; background: var(--brand-primary); border-radius: 9999px; transition: width 0.3s ease;"></div>
-  </div>
-</div>
-{% endif %}
-
-<!-- Simplified Weekly Roadmap Section -->
-<div class="card" style="margin-bottom: 1.75rem; padding: 1.25rem 1.5rem;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle);">
-    <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin: 0; letter-spacing: 0.04em; text-transform: uppercase;" aria-label="WEEKLY PROJECT ROADMAP">
-      WEEKLY ROADMAP
-    </h3>
-    <span class="mono" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">
-      {{ milestones|length }} Weeks
+  <!-- 2. Compact Status Line -->
+  <div style="display: flex; align-items: center; gap: 0.65rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; flex-wrap: wrap;">
+    <span style="font-weight: 600; color: var(--text-main);">Progress {{ progress_percent }}%</span>
+    <span style="color: var(--border-medium);">·</span>
+    <span style="font-weight: 600; color: var(--text-main);">
+      {% if current_milestone %}Week {{ current_milestone.week_number }}{% else %}Week 1{% endif %}
+    </span>
+    <span style="color: var(--border-medium);">·</span>
+    <span style="font-weight: 600; color: var(--brand-primary);">
+      {{ assignment.status.replace('_', ' ').title() if (assignment and assignment.status) else 'In Progress' }}
     </span>
   </div>
 
-  <div class="roadmap-list">
-    {% for m in milestones %}
-      {% set disp_status = m.display_status %}
-      {% set is_current = (current_milestone and m.id == current_milestone.id) %}
-      {% set is_completed = (disp_status == 'COMPLETED') %}
-      {% set is_locked = (disp_status == 'LOCKED' or m.status == 'LOCKED') %}
-
-      {% set display_title = m.title %}
-      {% set prefix_colon = 'Week ' ~ m.week_number ~ ':' %}
-      {% set prefix_dash = 'Week ' ~ m.week_number ~ ' -' %}
-      {% if display_title.lower().startswith(prefix_colon.lower()) %}
-        {% set display_title = display_title[prefix_colon|length:].strip() %}
-      {% elif display_title.lower().startswith(prefix_dash.lower()) %}
-        {% set display_title = display_title[prefix_dash|length:].strip() %}
-      {% endif %}
-
-      <div class="roadmap-row {% if is_current %}roadmap-row-current{% elif is_completed %}roadmap-row-completed{% elif is_locked %}roadmap-row-locked{% endif %}">
-        <!-- LEFT: Week Number -->
-        <div class="roadmap-col-left">
-          <span class="mono roadmap-week-num {% if is_current %}roadmap-week-current{% elif is_completed %}roadmap-week-completed{% endif %}">
-            {% if is_completed %}<span style="color: var(--success); margin-right: 2px;">✓</span> {% endif %}WEEK {{ m.week_number }}
-          </span>
-        </div>
-
-        <!-- CENTER: Week Title & Tasks Count (Due Date for Current Week only) -->
-        <div class="roadmap-col-center">
-          <div class="roadmap-week-title {% if is_locked %}roadmap-title-locked{% endif %}">
-            {{ display_title }}
-          </div>
-          <div class="roadmap-week-meta">
-            <span>{{ m.completed_tasks_count }} / {{ m.total_tasks_count }} tasks</span>
-            {% if is_current and m.due_at %}
-              <span class="roadmap-meta-dot">•</span>
-              <span class="mono" style="color: {% if m.is_overdue %}var(--danger){% else %}var(--text-muted){% endif %}; font-weight: 600;">
-                Due: {{ m.due_at.strftime('%d %b %Y') }}
-              </span>
-            {% endif %}
-            {% if disp_status == 'REDO_REQUIRED' %}
-              <span class="roadmap-meta-dot">•</span>
-              <span style="color: var(--danger); font-weight: 600;">Revision Required</span>
-            {% elif disp_status == 'UNDER_REVIEW' %}
-              <span class="roadmap-meta-dot">•</span>
-              <span style="color: var(--info); font-weight: 600;">Under Review</span>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- RIGHT: Status / Action -->
-        <div class="roadmap-col-right">
-          {% if is_locked %}
-            <span class="roadmap-locked-text">🔒 Locked</span>
-          {% elif is_completed %}
-            <a href="{{ url_for('student.week_detail', milestone_id=m.id) }}" class="roadmap-completed-link">
-              ✓ Completed
-            </a>
-          {% elif disp_status == 'REDO_REQUIRED' %}
-            <a href="{{ url_for('student.week_detail', milestone_id=m.id) }}" class="btn btn-outline-danger btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; font-weight: 600;">
-              Redo →
-            </a>
-          {% elif disp_status == 'UNDER_REVIEW' %}
-            <a href="{{ url_for('student.week_detail', milestone_id=m.id) }}" class="btn btn-outline-info btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; font-weight: 600;">
-              Under Review →
-            </a>
-          {% else %}
-            <div style="display: inline-flex; align-items: center; gap: 0.75rem;">
-              <span class="roadmap-available-text">AVAILABLE</span>
-              <a href="{{ url_for('student.week_detail', milestone_id=m.id) }}" class="btn btn-primary btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; font-weight: 600;">
-                Open →
-              </a>
-            </div>
-          {% endif %}
-        </div>
+  <!-- 3. Assigned Project Section -->
+  {% if assignment and assignment.project %}
+  <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem;">
+    <div style="font-size: 0.725rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem;">
+      PROJECT
+    </div>
+    <div class="mono" style="font-size: 0.85rem; font-weight: 700; color: var(--brand-primary); margin-bottom: 0.5rem;">
+      {{ assignment.project.project_code }}
+    </div>
+    <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.5rem; line-height: 1.35;">
+      {{ assignment.project.title }}
+    </h2>
+    <p style="color: var(--text-body); font-size: 0.875rem; line-height: 1.55; margin: 0 0 0.85rem;">
+      {{ assignment.project.description }}
+    </p>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle);">
+      <div style="font-size: 0.825rem; color: var(--text-muted);">
+        Mentor: <strong style="color: var(--text-main); font-weight: 600;">{{ internship.mentor.full_name if (internship and internship.mentor) else 'Technical Lead' }}</strong>
       </div>
-    {% endfor %}
+      <a href="{{ url_for('student.project_detail') }}" class="btn btn-outline-primary btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; font-weight: 600;">
+        View Project →
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 4. Simplified Overall Progress -->
+  <div style="margin-bottom: 1.75rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+      <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Overall Progress</span>
+      <span class="mono" style="font-size: 0.85rem; font-weight: 700; color: var(--brand-primary);">{{ progress_percent }}%</span>
+    </div>
+    <div style="height: 6px; background: var(--border-medium); border-radius: 9999px; overflow: hidden;">
+      <div style="width: {{ progress_percent }}%; height: 100%; background: var(--brand-primary); border-radius: 9999px; transition: width 0.3s ease;"></div>
+    </div>
+  </div>
+
+  <!-- 5. Weekly Roadmap Section -->
+  <div style="margin-bottom: 1.75rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-subtle);">
+      <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin: 0; letter-spacing: 0.05em; text-transform: uppercase;" aria-label="WEEKLY PROJECT ROADMAP">
+        WEEKLY ROADMAP
+      </h3>
+      <span class="mono" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">
+        {{ milestones|length }} Weeks
+      </span>
+    </div>
+
+    <div class="roadmap-list">
+      {% for m in milestones %}
+        {% set disp_status = m.display_status %}
+        {% set is_current = (current_milestone and m.id == current_milestone.id) %}
+        {% set is_completed = (disp_status == 'COMPLETED') %}
+        {% set is_locked = (disp_status == 'LOCKED' or m.status == 'LOCKED') %}
+
+        {% set display_title = m.title %}
+        {% set prefix_colon = 'Week ' ~ m.week_number ~ ':' %}
+        {% set prefix_dash = 'Week ' ~ m.week_number ~ ' -' %}
+        {% if display_title.lower().startswith(prefix_colon.lower()) %}
+          {% set display_title = display_title[prefix_colon|length:].strip() %}
+        {% elif display_title.lower().startswith(prefix_dash.lower()) %}
+          {% set display_title = display_title[prefix_dash|length:].strip() %}
+        {% endif %}
+
+        <div class="roadmap-row {% if is_current %}roadmap-row-current{% elif is_completed %}roadmap-row-completed{% elif is_locked %}roadmap-row-locked{% endif %}">
+          <!-- LEFT: Week Number -->
+          <div class="roadmap-col-left">
+            <span class="mono roadmap-week-num {% if is_current %}roadmap-week-current{% elif is_completed %}roadmap-week-completed{% endif %}">
+              {% if is_completed %}<span style="color: var(--success); margin-right: 2px;">✓</span> {% endif %}WEEK {{ m.week_number }}
+            </span>
+          </div>
+
+          <!-- CENTER: Week Title & Tasks Count -->
+          <div class="roadmap-col-center">
+            <div class="roadmap-week-title {% if is_locked %}roadmap-title-locked{% endif %}">
+              {{ display_title }}
+            </div>
+            <div class="roadmap-week-meta">
+              <span>{{ m.completed_tasks_count }} / {{ m.total_tasks_count }} tasks</span>
+              {% if is_current and m.due_at %}
+                <span class="roadmap-meta-dot">•</span>
+                <span class="mono" style="color: {% if m.is_overdue %}var(--danger){% else %}var(--text-muted){% endif %}; font-weight: 600;">
+                  Due: {{ m.due_at.strftime('%d %b %Y') }}
+                </span>
+              {% endif %}
+              {% if disp_status == 'REDO_REQUIRED' %}
+                <span class="roadmap-meta-dot">•</span>
+                <span style="color: var(--danger); font-weight: 600;">Revision Required</span>
+              {% elif disp_status == 'UNDER_REVIEW' %}
+                <span class="roadmap-meta-dot">•</span>
+                <span style="color: var(--info); font-weight: 600;">Under Review</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- RIGHT: Status / Action -->
+          <div class="roadmap-col-right">
+            {% if is_locked %}
+              <span class="roadmap-locked-text">🔒 Locked</span>
+            {% elif is_completed %}
+              <a href="{{ url_for('student.week_detail', milestone_id=m.id) }}" class="roadmap-completed-link">
+                ✓ Completed
+              </a>
+            {% elif disp_status == 'REDO_REQUIRED' %}
+              <a href="{{ url_for('student.week_detail', milestone_id=m.id) }}" class="btn btn-outline-danger btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; font-weight: 600;">
+                Redo →
+              </a>
+            {% elif disp_status == 'UNDER_REVIEW' %}
+              <a href="{{ url_for('student.week_detail', milestone_id=m.id) }}" class="btn btn-outline-info btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; font-weight: 600;">
+                Under Review →
+              </a>
+            {% else %}
+              <div style="display: inline-flex; align-items: center; gap: 0.75rem;">
+                <span class="roadmap-available-text">AVAILABLE</span>
+                <a href="{{ url_for('student.week_detail', milestone_id=m.id) }}" class="btn btn-primary btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; font-weight: 600;">
+                  Open →
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
   </div>
 </div>
 
 <style>
+  .workspace-container {
+    max-width: 880px;
+    margin: 0 auto;
+  }
   .roadmap-list {
     display: flex;
     flex-direction: column;
@@ -237,17 +187,17 @@
   }
   .roadmap-row-locked {
     background: var(--bg-main);
-    opacity: 0.75;
+    opacity: 0.7;
   }
   .roadmap-col-left {
-    min-width: 80px;
+    min-width: 75px;
     flex-shrink: 0;
   }
   .roadmap-week-num {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 800;
     color: var(--text-muted);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
   }
   .roadmap-week-current {
     color: var(--brand-primary);
@@ -329,4 +279,3 @@
   }
 </style>
 {% endblock %}
-

@@ -25,7 +25,6 @@
       <div class="sidebar-header">
         <a href="https://www.antimatrix.co.in/" target="_blank" rel="noopener noreferrer" class="sidebar-brand-wrapper" title="Anti-Matrix | Enterprise Digital Transformation">
           <img src="{{ url_for('static', filename='img/logo_dark_transparent.png') }}" alt="ANTI-MATRIX" class="sidebar-logo-img">
-          <span class="sidebar-role-tag student-tag">INTERN PORTAL</span>
         </a>
         <button id="sidebarCloseBtn" class="sidebar-close-btn" aria-label="Close menu" title="Close Menu">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -106,35 +105,26 @@
     <!-- Main Content Area -->
     <div class="portal-main">
       <header class="portal-topbar">
-        <div class="topbar-left">
-          <!-- 1. First: Brand Logo -->
-          <a href="https://www.antimatrix.co.in/" target="_blank" rel="noopener noreferrer" class="topbar-brand-link" title="Anti-Matrix | Enterprise Digital Transformation">
-            <img src="{{ url_for('static', filename='img/logo_transparent.png') }}" alt="ANTI-MATRIX" class="topbar-logo-img">
-            <span class="topbar-divider"></span>
-            <span class="topbar-badge student-tag">INTERN PORTAL</span>
-          </a>
-
-          <!-- 2. After that: Navigation Menu Button -->
-          <button id="sidebarToggleBtn" class="sidebar-toggle-btn" aria-label="Toggle Navigation Menu" title="Open Navigation Menu">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="topbar-left" style="display: flex; align-items: center; gap: 0.85rem;">
+          <!-- 1. Hamburger Icon -->
+          <button id="sidebarToggleBtn" class="sidebar-toggle-btn header-hamburger-btn" aria-label="Toggle Navigation Menu" title="Navigation" style="background: transparent; border: none; padding: 0.35rem; color: var(--text-main); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; box-shadow: none;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
-            <span class="sidebar-toggle-text">Menu</span>
           </button>
+
+          <!-- 2. Brand Logo -->
+          <a href="https://www.antimatrix.co.in/" target="_blank" rel="noopener noreferrer" class="topbar-brand-link" title="Anti-Matrix | Enterprise Digital Transformation">
+            <img src="{{ url_for('static', filename='img/logo_transparent.png') }}" alt="ANTI-MATRIX" class="topbar-logo-img" style="height: 38px; width: auto;">
+          </a>
         </div>
 
-        <div class="topbar-right">
-          <a href="{{ url_for('student.notifications') }}" class="btn btn-secondary btn-sm" style="position: relative;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            <span>Alerts</span>
-          </a>
-
-          <div style="display: flex; align-items: center; gap: 0.65rem; background: var(--bg-surface-elevated); padding: 0.4rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-medium);">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary);"></div>
-            <span style="font-size: 0.825rem; font-weight: 600; font-family: var(--font-mono);">ID: {{ student.student_uid if student else current_user.employee_id }}</span>
-          </div>
+        <div class="topbar-right" style="display: flex; align-items: center; gap: 1rem;">
+          <span class="mono" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+            ID: {{ (student.user.employee_id if (student and student.user and student.user.employee_id) else (student.student_uid if student else current_user.employee_id)) }}
+          </span>
 
           <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm" title="Sign Out">
             Sign Out
