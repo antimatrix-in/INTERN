@@ -14,6 +14,7 @@ from app.models import (
     User, Student, Application, Payment, Internship, InternshipPlan,
     College, Department, AuditLog, Employee, EmployeeOnboardingCredential
 )
+from app.services.mentor_service import get_approved_mentors
 
 logger = logging.getLogger(__name__)
 
@@ -344,7 +345,8 @@ class CareerIntegrationService:
 
         internship = Internship.query.filter_by(student_id=student.id, status='ACTIVE').first()
         if not internship:
-            mentor = User.query.filter_by(role='mentor').first() or User.query.filter_by(role='super_admin').first()
+            approved_mentors = get_approved_mentors()
+            mentor = approved_mentors[0] if approved_mentors else None
             internship = Internship(
                 internship_no=assigned_emp_id,
                 student_id=student.id,

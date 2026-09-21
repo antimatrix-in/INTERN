@@ -14,6 +14,7 @@ from app.models import (
     AuditLog, Application, Payment, College, Department, InternshipPlan, Evaluation,
     TaskImportHistory
 )
+from app.services.mentor_service import get_approved_mentors, is_approved_mentor, APPROVED_MENTOR_EMAILS
 
 logger = logging.getLogger(__name__)
 
@@ -385,7 +386,12 @@ def employee_detail(student_id):
     milestones = assignment.weekly_milestones.all() if assignment else []
     meetings = Meeting.query.filter_by(student_id=student.id).order_by(Meeting.id.desc()).all()
     submissions = WeeklySubmission.query.filter_by(student_id=student.id).order_by(WeeklySubmission.id.desc()).all()
-    staff_members = User.query.filter(User.role.in_(['super_admin', 'admin', 'mentor', 'evaluator'])).all()
+    
+    # Filter staff to ensure mentors are ONLY approved mentors
+    approved_mentors = get_approved_mentors()
+    approved_mentor_ids = {m.id for m in approved_mentors}
+    all_staff = User.query.filter(User.role.in_(['super_admin', 'admin', 'evaluator'])).all()
+    staff_members = all_staff + approved_mentors
 
     return render_template(
         'admin/student_detail.html',
@@ -395,8 +401,35 @@ def employee_detail(student_id):
         milestones=milestones,
         meetings=meetings,
         submissions=submissions,
-        staff_members=staff_members
+        staff_members=staff_members,
+        approved_mentors=approved_mentors
     )
+
+
+@admin_bp.route('/employees/<int:student_id>/assign-mentor', methods=['POST'])
+@login_required
+def assign_mentor(student_id):
+    student = Student.query.get_or_404(student_id)
+    internship = student.active_internship
+    if not internship:
+        flash(f'No active internship found for {student.user.full_name}.', 'danger')
+        return redirect(url_for('admin.employee_detail', student_id=student.id))
+
+    try:
+        mentor_id = int(request.form.get('mentor_id', 0))
+    except (ValueError, TypeError):
+        mentor_id = 0
+
+    mentor = User.query.get(mentor_id) if mentor_id else None
+    if not mentor or not is_approved_mentor(mentor):
+        flash('Invalid mentor selection. Only approved mentors (Praveen, Satish Kumar, Rohit, Bharat Babu) can be assigned.', 'danger')
+        return redirect(url_for('admin.employee_detail', student_id=student.id))
+
+    internship.mentor_id = mentor.id
+    db.session.commit()
+    flash(f'Assigned technical mentor successfully updated to {mentor.full_name}.', 'success')
+    return redirect(url_for('admin.employee_detail', student_id=student.id))
+
 
 
 # ─── Create Employee ──────────────────────────────────────────────────────────
@@ -1092,7 +1125,8 @@ def assign_project_to_student(student_id):
                 student=student,
                 internship=internship,
                 projects=projects,
-                existing_assignment=existing_assignment
+                existing_assignment=existing_assignment,
+                approved_mentors=get_approved_mentors()
             )
 
         project = Project.query.get_or_404(project_id)
@@ -1126,6 +1160,13 @@ def assign_project_to_student(student_id):
         try:
             if existing_assignment:
                 existing_assignment.status = 'COMPLETED'
+
+            # Optional mentor assignment
+            mentor_id = request.form.get('mentor_id', type=int)
+            if mentor_id:
+                mentor = User.query.get(mentor_id)
+                if mentor and is_approved_mentor(mentor):
+                    internship.mentor_id = mentor.id
 
             # Create new ProjectAssignment
             assignment = ProjectAssignment(
@@ -1214,7 +1255,8 @@ def assign_project_to_student(student_id):
         student=student,
         internship=internship,
         projects=projects,
-        existing_assignment=existing_assignment
+        existing_assignment=existing_assignment,
+        approved_mentors=get_approved_mentors()
     )
 
 

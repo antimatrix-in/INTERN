@@ -432,56 +432,57 @@ class UploadTasksValidationWorkflowTestCase(unittest.TestCase):
         with csrf_app.app_context():
             db.create_all()
             seed_initial_data()
-            client = csrf_app.test_client()
 
-            # 1. Fetch login page to establish session & get CSRF token
-            login_page = client.get('/admin/login')
-            html = login_page.data.decode('utf-8')
-            m = re.search(r'name="csrf_token"[^>]*value="([^"]+)"', html)
-            login_csrf = m.group(1) if m else None
-            self.assertIsNotNone(login_csrf, "Should extract CSRF token from login form")
+        client = csrf_app.test_client()
 
-            # 2. Login admin with CSRF token
-            login_resp = client.post('/admin/login', data={
-                'email_or_id': 'admin',
-                'password': 'Admin@12345',
-                'csrf_token': login_csrf
-            }, follow_redirects=True)
-            self.assertEqual(login_resp.status_code, 200)
+        # 1. Fetch login page to establish session & get CSRF token
+        login_page = client.get('/admin/login')
+        html = login_page.data.decode('utf-8')
+        m = re.search(r'name="csrf_token"[^>]*value="([^"]+)"', html)
+        login_csrf = m.group(1) if m else None
+        self.assertIsNotNone(login_csrf, "Should extract CSRF token from login form")
 
-            # 3. Fetch upload-tasks page to get page's meta csrf-token
-            upload_page = client.get('/admin/upload-tasks')
-            self.assertEqual(upload_page.status_code, 200)
-            html2 = upload_page.data.decode('utf-8')
-            m2 = re.search(r'name="csrf-token"\s+content="([^"]+)"', html2)
-            page_csrf = m2.group(1) if m2 else None
-            self.assertIsNotNone(page_csrf)
+        # 2. Login admin with CSRF token
+        login_resp = client.post('/admin/login', data={
+            'email_or_id': 'admin',
+            'password': 'Admin@12345',
+            'csrf_token': login_csrf
+        }, follow_redirects=True)
+        self.assertEqual(login_resp.status_code, 200)
 
-            # 4. Post validation with the valid CSRF token in header & body
-            json_data = {
-                "internship": {
-                    "problem_id": "P1M-CSRF-OK",
-                    "domain": "AI",
-                    "duration": "1 Month",
-                    "project_title": "CSRF Valid Test",
-                    "milestones": [
-                        {"week": i, "title": f"W{i}", "tasks": [f"T{i}"]} for i in range(1, 5)
-                    ]
-                }
+        # 3. Fetch upload-tasks page to get page's meta csrf-token
+        upload_page = client.get('/admin/upload-tasks')
+        self.assertEqual(upload_page.status_code, 200)
+        html2 = upload_page.data.decode('utf-8')
+        m2 = re.search(r'name="csrf-token"\s+content="([^"]+)"', html2)
+        page_csrf = m2.group(1) if m2 else None
+        self.assertIsNotNone(page_csrf)
+
+        # 4. Post validation with the valid CSRF token in header & body
+        json_data = {
+            "internship": {
+                "problem_id": "P1M-CSRF-OK",
+                "domain": "AI",
+                "duration": "1 Month",
+                "project_title": "CSRF Valid Test",
+                "milestones": [
+                    {"week": i, "title": f"W{i}", "tasks": [f"T{i}"]} for i in range(1, 5)
+                ]
             }
-            file_bytes = io.BytesIO(json.dumps(json_data).encode('utf-8'))
-            resp = client.post('/admin/upload-tasks/validate', data={
-                'file': (file_bytes, 'test.json'),
-                'duration': '1 Month',
-                'csrf_token': page_csrf
-            }, headers={'X-CSRFToken': page_csrf, 'Accept': 'application/json'}, content_type='multipart/form-data')
+        }
+        file_bytes = io.BytesIO(json.dumps(json_data).encode('utf-8'))
+        resp = client.post('/admin/upload-tasks/validate', data={
+            'file': (file_bytes, 'test.json'),
+            'duration': '1 Month',
+            'csrf_token': page_csrf
+        }, headers={'X-CSRFToken': page_csrf, 'Accept': 'application/json'}, content_type='multipart/form-data')
 
-            self.assertEqual(resp.status_code, 200)
-            self.assertTrue(resp.is_json)
-            data = resp.get_json()
-            self.assertTrue(data['success'])
-            self.assertTrue(data['valid'])
-            self.assertEqual(data['preview']['problem_id'], 'P1M-CSRF-OK')
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.is_json)
+        data = resp.get_json()
+        self.assertTrue(data['success'])
+        self.assertTrue(data['valid'])
+        self.assertEqual(data['preview']['problem_id'], 'P1M-CSRF-OK')
 
 
 

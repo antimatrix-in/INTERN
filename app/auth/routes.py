@@ -7,6 +7,7 @@ from app.models import (
     Employee, EmployeeOnboardingCredential, JobApplication, College, Department
 )
 from app.auth.forms import LoginForm, AdminLoginForm, ChangePasswordForm
+from app.services.mentor_service import get_approved_mentors
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -584,7 +585,8 @@ def _ensure_student_project_allocation(user):
         from dateutil.relativedelta import relativedelta
         from datetime import date
         end_dt = (date.today() + relativedelta(months=duration_months)).strftime('%d %b %Y')
-        mentor = User.query.filter_by(role='mentor').first() or User.query.filter_by(role='super_admin').first()
+        approved_mentors = get_approved_mentors()
+        mentor = approved_mentors[0] if approved_mentors else None
         internship = Internship(
             internship_no=student.student_uid or user.employee_id or f"AM-INT-{student.id}",
             student_id=student.id,

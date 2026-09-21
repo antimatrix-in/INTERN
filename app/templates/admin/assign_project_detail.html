@@ -199,6 +199,15 @@
           <label class="form-label" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Assignment Deadline</label>
           <input type="text" name="deadline" value="{{ internship.end_date if internship else '' }}" class="form-input" placeholder="e.g. 30 Sep 2026" style="padding: 0.65rem 0.9rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 0.85rem; width: 100%; box-sizing: border-box;">
         </div>
+        <div>
+          <label class="form-label" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Assigned Technical Mentor</label>
+          <select name="mentor_id" class="form-select" style="padding: 0.65rem 0.9rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 0.85rem; width: 100%; box-sizing: border-box;">
+            <option value="">-- Select Mentor --</option>
+            {% for m in approved_mentors %}
+              <option value="{{ m.id }}" {% if internship.mentor_id == m.id %}selected{% endif %}>{{ m.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
     </div>
 

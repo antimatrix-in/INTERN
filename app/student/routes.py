@@ -7,9 +7,10 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.models import (
-    User, Student, Application, Internship, InternshipPlan, ProjectAssignment, WeeklyMilestone,
+    User, Student, College, Department, Application, Internship, InternshipPlan, ProjectAssignment, WeeklyMilestone,
     WeeklyTask, WeeklySubmission, Meeting, Notification
 )
+from app.services.mentor_service import get_approved_mentors, APPROVED_MENTOR_EMAILS
 
 student_bp = Blueprint('student', __name__)
 
@@ -108,7 +109,8 @@ def dashboard():
         from dateutil.relativedelta import relativedelta
         from datetime import date
         end_dt = (date.today() + relativedelta(months=duration_months)).strftime('%d %b %Y')
-        mentor = User.query.filter_by(role='mentor').first() or User.query.filter_by(role='super_admin').first()
+        approved_mentors = get_approved_mentors()
+        mentor = approved_mentors[0] if approved_mentors else None
         internship = Internship(
             internship_no=student.student_uid or current_user.employee_id or f"AM-INT-{student.id}",
             student_id=student.id,
@@ -498,16 +500,105 @@ def documents():
     return render_template('student/documents.html', student=student, internship=internship)
 
 
-@student_bp.route('/profile')
+ALLOWED_PROFILE_YEARS = {'1st Year', '2nd Year', '3rd Year', '4th Year', 'Final Year', '4th Year / Final Year'}
+
+
+@student_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
     student = get_current_student()
     internship = student.active_internship
     assignment = internship.active_assignment if internship else None
+    colleges = College.query.filter_by(is_active=True).order_by(College.name).all()
+
+    if request.method == 'POST':
+        # 1. College
+        try:
+            college_id = int(request.form.get('college_id', 0))
+        except (ValueError, TypeError):
+            college_id = 0
+        college = College.query.get(college_id) if college_id else None
+        if not college or not college.is_active:
+            flash('Please select a valid College / Institution from the list.', 'danger')
+            return render_template(
+                'student/profile.html',
+                student=student,
+                internship=internship,
+                assignment=assignment,
+                colleges=colleges
+            )
+
+        # 2. Department
+        try:
+            department_id = int(request.form.get('department_id', 0))
+        except (ValueError, TypeError):
+            department_id = 0
+        dept = Department.query.get(department_id) if department_id else None
+        if not dept or not dept.is_active or dept.college_id != college.id:
+            flash('Please select a valid Academic Department for the selected college.', 'danger')
+            return render_template(
+                'student/profile.html',
+                student=student,
+                internship=internship,
+                assignment=assignment,
+                colleges=colleges
+            )
+
+        # 3. Current Year
+        current_year = request.form.get('current_year', '').strip()
+        if current_year not in ALLOWED_PROFILE_YEARS:
+            flash('Please select a valid Current Year from the options.', 'danger')
+            return render_template(
+                'student/profile.html',
+                student=student,
+                internship=internship,
+                assignment=assignment,
+                colleges=colleges
+            )
+
+        # 4. Mobile Number
+        raw_phone = request.form.get('mobile_number', '').strip()
+        clean_phone = re.sub(r'[\s\-\(\)]', '', raw_phone)
+        if not re.match(r'^\+?[0-9]{10,15}$', clean_phone):
+            flash('Please enter a valid mobile number (10–15 digits, optional + prefix).', 'danger')
+            return render_template(
+                'student/profile.html',
+                student=student,
+                internship=internship,
+                assignment=assignment,
+                colleges=colleges
+            )
+
+        # Update ONLY the candidate's editable profile fields
+        student.college_id = college.id
+        student.department_id = dept.id
+        student.current_year = current_year
+        if student.user:
+            student.user.phone = raw_phone
+        current_user.phone = raw_phone
+        student.profile_completed = True
+
+        db.session.commit()
+        flash('Profile updated successfully.', 'success')
+        return redirect(url_for('student.profile'))
 
     return render_template(
         'student/profile.html',
         student=student,
         internship=internship,
-        assignment=assignment
+        assignment=assignment,
+        colleges=colleges
     )
+
+
+@student_bp.route('/profile/skip-onboarding', methods=['POST'])
+@login_required
+def skip_profile_onboarding():
+    """Dismisses the first-time profile prompt without modifying any profile records."""
+    student = get_current_student()
+    student.profile_completed = True
+    db.session.commit()
+    if request.is_json:
+        return jsonify({'success': True})
+    return redirect(url_for('student.dashboard'))
+

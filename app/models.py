@@ -156,6 +156,7 @@ class Student(db.Model):
     graduation_year = db.Column(db.String(10), nullable=False)
     aadhaar_masked = db.Column(db.String(30), nullable=True) # XXXX XXXX 4821
     is_verified = db.Column(db.Boolean, default=False)
+    profile_completed = db.Column(db.Boolean, default=False, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -380,6 +381,35 @@ class Internship(db.Model):
     issued_documents = db.relationship('IssuedDocument', backref='internship', lazy='dynamic')
     verification = db.relationship('CertificateVerification', backref='internship', uselist=False)
     meetings = db.relationship('Meeting', back_populates='internship', lazy='dynamic')
+
+    @property
+    def assigned_mentor(self):
+        """
+        Returns the assigned mentor only if they are one of the four approved mentors.
+        Invalid or legacy mentors (e.g. Dr. Rajesh Sharma) will return None.
+        """
+        if self.mentor and self.mentor.email in (
+            'praveen@antimatrix.co.in',
+            'satishkumar@antimatrix.co.in',
+            'rohit@antimatrix.co.in',
+            'bharatbabu@antimatrix.co.in'
+        ):
+            return self.mentor
+        return None
+
+    @property
+    def assigned_mentor_name(self):
+        """Returns the exact canonical name of the assigned mentor, or None."""
+        m = self.assigned_mentor
+        if not m:
+            return None
+        names = {
+            'praveen@antimatrix.co.in': 'Praveen',
+            'satishkumar@antimatrix.co.in': 'Satish Kumar',
+            'rohit@antimatrix.co.in': 'Rohit',
+            'bharatbabu@antimatrix.co.in': 'Bharat Babu',
+        }
+        return names.get(m.email, m.full_name)
 
     @property
     def active_assignment(self):

@@ -268,8 +268,8 @@ class PasswordChangeRedirectLoopTestCase(unittest.TestCase):
 
     # ─── TEST H: Admin login → admin dashboard → existing admin authentication still works
     def test_h_admin_login_works(self):
-        login_resp = self.client.post('/login', data={
-            'employee_id': 'admin@antimatrix.tech',
+        login_resp = self.client.post('/admin/login', data={
+            'email_or_id': 'admin@antimatrix.tech',
             'password': 'AdminSecurePass@2026'
         }, follow_redirects=False)
         self.assertEqual(login_resp.status_code, 302)

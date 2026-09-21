@@ -21,7 +21,7 @@
       </h1>
       <p style="color: var(--text-muted); font-size: 0.925rem;">
         Assigned to: <strong style="color: var(--text-main);">{{ student.user.full_name }}</strong> ({{ student.student_uid }}) • 
-        Mentor: <strong style="color: var(--text-main);">{{ internship.mentor.full_name if internship.mentor else 'Technical Lead' }}</strong>
+        Mentor: <strong style="color: var(--text-main);">{{ internship.assigned_mentor_name or 'Pending Mentor Assignment' }}</strong>
       </p>
     </div>
 

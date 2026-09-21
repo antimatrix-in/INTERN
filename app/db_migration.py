@@ -86,6 +86,8 @@ def run_safe_schema_migrations(app=None):
                     conn.execute(text("ALTER TABLE IF EXISTS students ALTER COLUMN graduation_year TYPE VARCHAR(10);"))
                     conn.execute(text("ALTER TABLE IF EXISTS public.students ALTER COLUMN aadhaar_masked TYPE VARCHAR(30);"))
                     conn.execute(text("ALTER TABLE IF EXISTS students ALTER COLUMN aadhaar_masked TYPE VARCHAR(30);"))
+                    conn.execute(text("ALTER TABLE IF EXISTS public.students ADD COLUMN IF NOT EXISTS profile_completed BOOLEAN DEFAULT FALSE;"))
+                    conn.execute(text("ALTER TABLE IF EXISTS students ADD COLUMN IF NOT EXISTS profile_completed BOOLEAN DEFAULT FALSE;"))
 
                     # Safe non-destructive column expansion for applications table
                     conn.execute(text("ALTER TABLE IF EXISTS public.applications ALTER COLUMN candidate_gender TYPE VARCHAR(30);"))

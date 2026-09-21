@@ -170,18 +170,36 @@ def seed_projects_and_students():
         db.session.add(admin)
         db.session.flush()
 
-    mentor = User.query.filter_by(email='mentor@antimatrix.com').first()
-    if not mentor:
-        mentor = User(
-            email='mentor@antimatrix.com',
-            employee_id='AM-MTR-001',
-            role='mentor',
-            full_name='Dr. Rajesh Sharma (Lead Architect)',
-            phone='+91 98765 43212'
-        )
-        mentor.set_password('Mentor@2026Password!')
-        db.session.add(mentor)
-        db.session.flush()
+    # 1. Approved Mentors (Praveen, Satish Kumar, Rohit, Bharat Babu)
+    approved_mentors_data = [
+        {'email': 'praveen@antimatrix.co.in', 'full_name': 'Praveen', 'employee_id': 'AM-MTR-001', 'phone': '+91 98765 43212'},
+        {'email': 'satishkumar@antimatrix.co.in', 'full_name': 'Satish Kumar', 'employee_id': 'AM-MTR-002', 'phone': '+91 98765 43213'},
+        {'email': 'rohit@antimatrix.co.in', 'full_name': 'Rohit', 'employee_id': 'AM-MTR-003', 'phone': '+91 98765 43214'},
+        {'email': 'bharatbabu@antimatrix.co.in', 'full_name': 'Bharat Babu', 'employee_id': 'AM-MTR-004', 'phone': '+91 98765 43215'},
+    ]
+    mentor_records = []
+    for m_data in approved_mentors_data:
+        m = User.query.filter_by(email=m_data['email']).first()
+        if not m:
+            m = User(
+                email=m_data['email'],
+                employee_id=m_data['employee_id'],
+                role='mentor',
+                full_name=m_data['full_name'],
+                phone=m_data['phone']
+            )
+            m.set_password('Mentor@2026Password!')
+            db.session.add(m)
+            db.session.flush()
+        else:
+            if m.full_name != m_data['full_name']:
+                m.full_name = m_data['full_name']
+                m.name = m_data['full_name']
+            if m.role != 'mentor':
+                m.role = 'mentor'
+        mentor_records.append(m)
+
+    mentor = mentor_records[0] if mentor_records else None
 
     # 2. Master Projects
     proj_1 = Project.query.filter_by(project_code='AM-PRJ-001').first()
