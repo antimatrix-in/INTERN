@@ -5,7 +5,7 @@
 {% block content %}
 <div class="workspace-container">
   <!-- 1. Simple Welcome Line -->
-  <div style="margin-bottom: 0.75rem;">
+  <div style="margin-bottom: 1rem;">
     <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.25rem; letter-spacing: -0.01em;">
       Welcome, {{ student.user.full_name }}
     </h1>
@@ -14,39 +14,77 @@
     </div>
   </div>
 
-  <!-- 2. Compact Status Line -->
-  <div style="display: flex; align-items: center; gap: 0.65rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; flex-wrap: wrap;">
-    <span style="font-weight: 600; color: var(--text-main);">Progress {{ progress_percent }}%</span>
-    <span style="color: var(--border-medium);">·</span>
-    <span style="font-weight: 600; color: var(--text-main);">
-      {% if current_milestone %}Week {{ current_milestone.week_number }}{% else %}Week 1{% endif %}
-    </span>
-    <span style="color: var(--border-medium);">·</span>
-    <span style="font-weight: 600; color: var(--brand-primary);">
-      {{ assignment.status.replace('_', ' ').title() if (assignment and assignment.status) else 'In Progress' }}
-    </span>
+  <!-- 2. Four Analytics Cards -->
+  <div class="analytics-grid">
+    <!-- Card 1: CURRENT WEEK -->
+    <div class="analytics-card">
+      <div class="analytics-label">CURRENT WEEK</div>
+      <div class="analytics-value">
+        {% if current_milestone %}Week {{ current_milestone.week_number }}{% else %}Week 1{% endif %}
+      </div>
+    </div>
+
+    <!-- Card 2: DEADLINE -->
+    <div class="analytics-card">
+      <div class="analytics-label">DEADLINE</div>
+      <div class="analytics-value">
+        {% if current_milestone and current_milestone.due_at %}
+          {{ current_milestone.due_at.strftime('%d %b %Y') }}
+        {% elif assignment and assignment.deadline %}
+          {{ assignment.deadline }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Card 3: STARTED -->
+    <div class="analytics-card">
+      <div class="analytics-label">STARTED</div>
+      <div class="analytics-value">
+        {% if internship and internship.start_date %}
+          {{ internship.start_date }}
+        {% elif assignment and assignment.assigned_at %}
+          {{ assignment.assigned_at.strftime('%d %b %Y') }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Card 4: TASKS COMPLETED -->
+    <div class="analytics-card">
+      <div class="analytics-label">TASKS COMPLETED</div>
+      <div class="analytics-value">
+        {% if current_milestone %}
+          {{ current_milestone.completed_tasks_count }} / {{ current_milestone.total_tasks_count }}
+        {% else %}
+          0 / 0
+        {% endif %}
+      </div>
+    </div>
   </div>
 
   <!-- 3. Assigned Project Section -->
   {% if assignment and assignment.project %}
-  <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem;">
+  <div class="card" style="margin-bottom: 1.5rem; padding: 1.5rem 1.75rem;">
     <div style="font-size: 0.725rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem;">
       PROJECT
     </div>
     <div class="mono" style="font-size: 0.85rem; font-weight: 700; color: var(--brand-primary); margin-bottom: 0.5rem;">
       {{ assignment.project.project_code }}
     </div>
-    <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.5rem; line-height: 1.35;">
+    <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.5rem; line-height: 1.35;">
       {{ assignment.project.title }}
     </h2>
-    <p style="color: var(--text-body); font-size: 0.875rem; line-height: 1.55; margin: 0 0 0.85rem;">
+    <p style="color: var(--text-body); font-size: 0.875rem; line-height: 1.6; margin: 0 0 1rem; max-width: 1100px;">
       {{ assignment.project.description }}
     </p>
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle);">
-      <div style="font-size: 0.825rem; color: var(--text-muted);">
+      <div style="font-size: 0.85rem; color: var(--text-muted);">
         Mentor: <strong style="color: var(--text-main); font-weight: 600;">{{ internship.mentor.full_name if (internship and internship.mentor) else 'Technical Lead' }}</strong>
       </div>
-      <a href="{{ url_for('student.project_detail') }}" class="btn btn-outline-primary btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; font-weight: 600;">
+      <a href="{{ url_for('student.project_detail') }}" class="btn btn-outline-primary btn-sm" style="font-size: 0.8rem; padding: 0.4rem 1rem; font-weight: 600;">
         View Project →
       </a>
     </div>
@@ -55,8 +93,8 @@
 
   <!-- 4. Simplified Overall Progress -->
   <div style="margin-bottom: 1.75rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
-      <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Overall Progress</span>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+      <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.04em; text-transform: uppercase;">OVERALL PROGRESS</span>
       <span class="mono" style="font-size: 0.85rem; font-weight: 700; color: var(--brand-primary);">{{ progress_percent }}%</span>
     </div>
     <div style="height: 6px; background: var(--border-medium); border-radius: 9999px; overflow: hidden;">
@@ -99,7 +137,7 @@
             </span>
           </div>
 
-          <!-- CENTER: Week Title & Tasks Count -->
+          <!-- CENTER: Week Title, Tasks Count & Deadline -->
           <div class="roadmap-col-center">
             <div class="roadmap-week-title {% if is_locked %}roadmap-title-locked{% endif %}">
               {{ display_title }}
@@ -155,9 +193,42 @@
 
 <style>
   .workspace-container {
-    max-width: 880px;
+    width: 100%;
+    max-width: 1400px;
     margin: 0 auto;
   }
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .analytics-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm, 6px);
+    padding: 1rem 1.25rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .analytics-card:hover {
+    border-color: var(--border-medium);
+  }
+  .analytics-label {
+    font-size: 0.725rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+  }
+  .analytics-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.2;
+    font-family: var(--font-main);
+  }
+
   .roadmap-list {
     display: flex;
     flex-direction: column;
@@ -168,7 +239,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1.25rem;
-    padding: 0.85rem 1.15rem;
+    padding: 0.9rem 1.25rem;
     border-radius: var(--radius-xs, 4px);
     border: 1px solid var(--border-subtle);
     background: #FFFFFF;
@@ -190,7 +261,7 @@
     opacity: 0.7;
   }
   .roadmap-col-left {
-    min-width: 75px;
+    min-width: 80px;
     flex-shrink: 0;
   }
   .roadmap-week-num {
@@ -261,7 +332,23 @@
     text-decoration: underline;
   }
 
+  @media (max-width: 1024px) {
+    .analytics-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   @media (max-width: 640px) {
+    .analytics-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    .analytics-card {
+      padding: 0.75rem 0.9rem;
+    }
+    .analytics-value {
+      font-size: 1.1rem;
+    }
     .roadmap-row {
       flex-direction: column;
       align-items: flex-start;
@@ -275,6 +362,12 @@
       width: 100%;
       text-align: left;
       margin-top: 0.25rem;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .analytics-grid {
+      grid-template-columns: 1fr;
     }
   }
 </style>
