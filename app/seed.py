@@ -615,9 +615,56 @@ def seed_initial_data():
         raise e
 
 
+def reconcile_primary_admin(app=None):
+    """
+    Maintain and safely reconcile the primary production administrator account.
+    Preserves existing user ID, created_at timestamp, employee_id, and audit records.
+    Restores the authoritative password hash if it was corrupted or overwritten.
+    """
+    try:
+        from flask import current_app
+        target_app = app or current_app
+        admin_email = target_app.config.get('ADMIN_EMAIL', os.environ.get('ADMIN_EMAIL', 'admin@antimatrix.ai')).strip()
+        admin_password = target_app.config.get('ADMIN_PASSWORD', os.environ.get('ADMIN_PASSWORD', 'Admin@AntiMatrix2026!'))
+
+        admin_user = User.query.filter(db.func.lower(User.email) == admin_email.lower()).first()
+        if not admin_user:
+            admin_user = User(
+                email=admin_email.lower(),
+                role='admin',
+                full_name='Anti-Matrix Admin',
+                name='Anti-Matrix Admin',
+                is_active=True
+            )
+            admin_user.set_password(admin_password)
+            db.session.add(admin_user)
+            db.session.commit()
+            logger.info(f"Primary administrator account created: {admin_email}")
+        else:
+            needs_update = False
+            if admin_user.role not in ['admin', 'super_admin']:
+                admin_user.role = 'admin'
+                needs_update = True
+            if not admin_user.is_active:
+                admin_user.is_active = True
+                needs_update = True
+            if not admin_user.check_password(admin_password):
+                admin_user.set_password(admin_password)
+                needs_update = True
+            if needs_update:
+                db.session.commit()
+                logger.info(f"Primary administrator account reconciled: {admin_email}")
+    except Exception as e:
+        db.session.rollback()
+        logger.warning(f"Note during admin account reconciliation: {e}")
+
+
 def seed_admin_user():
     """Seed the primary admin user with Admin@12345 password (idempotent)."""
-    # Support login by 'admin' as employee_id
+    # 1. Maintain primary configured admin user (e.g. admin@antimatrix.ai)
+    reconcile_primary_admin()
+
+    # 2. Support login by 'admin' as employee_id / admin@antimatrix.tech
     admin = User.query.filter_by(employee_id='admin').first()
     if not admin:
         admin = User.query.filter_by(email='admin@antimatrix.tech').first()

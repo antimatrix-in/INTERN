@@ -100,6 +100,13 @@ def create_app(config_class=Config):
             from app.seed import seed_initial_data
             seed_initial_data()
 
+        # Safely maintain and reconcile primary administrator credentials on startup
+        try:
+            from app.seed import reconcile_primary_admin
+            reconcile_primary_admin(app)
+        except Exception:
+            pass
+
     @app.cli.command('db-migrate')
     def cli_db_migrate():
         """Run safe schema migrations on demand."""

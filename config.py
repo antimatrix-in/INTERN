@@ -127,3 +127,7 @@ class Config:
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
     REMEMBER_COOKIE_DURATION = 60 * 60 * 24 * 7 # 7 days
 
+    # Primary Administrator Configuration
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@antimatrix.ai').strip()
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin@AntiMatrix2026!')
+

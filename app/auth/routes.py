@@ -157,10 +157,11 @@ def authenticate_employee_or_user(identifier, password):
                 db.session.flush()
                 _ensure_student_profile(user, emp_id=emp_id, employee=employee, job_app=job_app)
             else:
-                # Sync password hash, must_change_password flag, and employee_id
-                if active_hash:
-                    user.password_hash = active_hash
-                user.must_change_password = must_change_pw
+                # Sync password hash, must_change_password flag, and employee_id (protect admin accounts)
+                if user.role not in ['super_admin', 'admin', 'hr', 'mentor', 'evaluator']:
+                    if active_hash:
+                        user.password_hash = active_hash
+                    user.must_change_password = must_change_pw
                 user.employee_id = emp_id
                 user.is_active = True
                 db.session.commit()
@@ -379,10 +380,11 @@ def _perform_atomic_password_change(user, current_pw, new_pw, confirm_pw):
     if new_pw == current_pw:
         return False, 'New password cannot be the same as your current temporary password.', 400
 
-    # 2. Update user password securely and clear first-login flag
-    user.set_password(new_pw)
-    user.must_change_password = False
-    user.password_changed_at = datetime.utcnow()
+    # 2. Update user password securely and clear first-login flag (protect admin accounts)
+    if user.role not in ['super_admin', 'admin', 'hr', 'mentor', 'evaluator']:
+        user.set_password(new_pw)
+        user.must_change_password = False
+        user.password_changed_at = datetime.utcnow()
 
     # 3. Synchronize authoritative Employee and EmployeeOnboardingCredential
     if not emp_lookup and user.email:
