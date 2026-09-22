@@ -235,9 +235,35 @@
   .roadmap-container {
     padding: 1.75rem 2rem;
     margin-bottom: 2rem;
-    background: #FFFFFF;
+    background: var(--bg-surface);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md, 8px);
+  }
+
+  [data-theme="dark"] .roadmap-container {
+    background: var(--bg-surface);
+    border-color: rgba(16, 185, 129, 0.2);
+  }
+  [data-theme="dark"] .roadmap-header-title {
+    color: #F1F5F9;
+  }
+  [data-theme="dark"] .milestone-week-label {
+    color: #F1F5F9;
+  }
+  [data-theme="dark"] .milestone-week-label.locked {
+    color: var(--text-muted);
+  }
+  [data-theme="dark"] .milestone-title {
+    color: #F1F5F9;
+  }
+  [data-theme="dark"] .milestone-title.locked {
+    color: var(--text-muted);
+  }
+  [data-theme="dark"] .milestone-objective {
+    color: #CBD5E1;
+  }
+  [data-theme="dark"] .milestone-objective.locked {
+    color: var(--text-muted);
   }
   .roadmap-header {
     display: flex;

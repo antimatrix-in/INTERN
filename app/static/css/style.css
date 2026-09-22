@@ -1344,12 +1344,12 @@ textarea.form-control {
 
 /* Week Roadmap Cards */
 .week-card {
-  background: #FFFFFF !important;
-  border: 1px solid rgba(16, 185, 129, 0.18) !important;
+  background: var(--bg-surface);
+  border: 1px solid rgba(16, 185, 129, 0.18);
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
   position: relative;
   overflow: hidden;
-  transition: all var(--transition) !important;
+  transition: all var(--transition);
 }
 
 .week-card::before {
@@ -1458,6 +1458,68 @@ textarea.form-control {
   background-color: #F8FAFC;
   color: #475569;
   border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-xs, 4px);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--bg-surface-elevated, #F1F5F9);
+  color: var(--text-body, #334155);
+  border: 1px solid var(--border-subtle, rgba(16, 185, 129, 0.16));
+}
+
+/* Badges in Dark Mode */
+[data-theme="dark"] .badge-success,
+[data-theme="dark"] .badge-active,
+[data-theme="dark"] .badge-completed,
+[data-theme="dark"] .badge-available {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #34D399;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+[data-theme="dark"] .badge-warning,
+[data-theme="dark"] .badge-pending,
+[data-theme="dark"] .badge-in_progress,
+[data-theme="dark"] .badge-in-progress {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #FBBF24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+[data-theme="dark"] .badge-danger,
+[data-theme="dark"] .badge-rejected,
+[data-theme="dark"] .badge-revoked,
+[data-theme="dark"] .badge-revision {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #F87171;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+[data-theme="dark"] .badge-info,
+[data-theme="dark"] .badge-scheduled,
+[data-theme="dark"] .badge-submitted {
+  background-color: rgba(14, 165, 233, 0.15);
+  color: #38BDF8;
+  border-color: rgba(14, 165, 233, 0.35);
+}
+
+[data-theme="dark"] .badge-neutral,
+[data-theme="dark"] .badge-locked {
+  background-color: rgba(148, 163, 184, 0.12);
+  color: #94A3B8;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+[data-theme="dark"] .meta-badge {
+  background-color: #0B2018;
+  color: #CBD5E1;
+  border-color: rgba(16, 185, 129, 0.25);
 }
 
 /* ==========================================================================
@@ -1993,6 +2055,59 @@ textarea.form-control {
 }
 
 /* ==========================================================================
+   Anti-Matrix Signature Facet Treatment for Top Navbars
+   ========================================================================== */
+
+.portal-topbar,
+.navbar {
+  position: sticky;
+  overflow: hidden;
+}
+
+.portal-topbar::after,
+.navbar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 480px;
+  height: 100%;
+  background-image: url('../img/antimatrix_facets.svg');
+  background-size: 140px 140px;
+  background-repeat: repeat;
+  opacity: 0.12;
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0) 88%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0) 88%);
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.3s ease;
+}
+
+[data-theme="dark"] .portal-topbar::after,
+[data-theme="dark"] .navbar::after {
+  opacity: 0.30;
+}
+
+.portal-topbar::before,
+.navbar::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(166, 253, 58, 0.45) 25%, rgba(16, 185, 129, 0.75) 50%, rgba(166, 253, 58, 0.45) 75%, transparent 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.portal-topbar > *,
+.navbar > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ==========================================================================
    Dark Mode Master Rules (Obsidian & Matrix Cyber Theme)
    ========================================================================== */
 
@@ -2087,19 +2202,70 @@ textarea.form-control {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
+[data-theme="dark"] .analytics-card {
+  background-color: var(--bg-surface) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .analytics-value {
+  color: #F1F5F9 !important;
+}
+
+[data-theme="dark"] .roadmap-row {
+  background-color: var(--bg-surface) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+[data-theme="dark"] .roadmap-row-current {
+  background-color: var(--bg-surface) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  border-left: 4px solid var(--brand-lime) !important;
+}
+
+[data-theme="dark"] .roadmap-row-completed {
+  background-color: var(--bg-surface) !important;
+}
+
+[data-theme="dark"] .roadmap-container {
+  background-color: var(--bg-surface) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
 [data-theme="dark"] .week-card {
+  background-color: var(--bg-surface) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+[data-theme="dark"] .plan-card {
   background-color: var(--bg-surface);
   border-color: rgba(16, 185, 129, 0.2);
 }
 
+[data-theme="dark"] .table-responsive {
+  background: var(--bg-surface);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
 /* Form Controls in Dark Mode */
-[data-theme="dark"] .form-control {
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
   background-color: #030A07;
   color: #F1F5F9;
   border-color: rgba(16, 185, 129, 0.32);
 }
 
-[data-theme="dark"] .form-control:focus {
+[data-theme="dark"] .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+[data-theme="dark"] .checkbox-box {
+  background-color: #030A07;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
   background-color: #06150F;
   border-color: #A6FD3A;
   box-shadow: 0 0 0 3px rgba(166, 253, 58, 0.25);
