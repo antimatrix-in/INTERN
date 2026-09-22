@@ -12,7 +12,7 @@ from app.models import (
     User, Student, Internship, Project, ProjectAssignment, ProjectWeek, ProjectTask,
     WeeklyMilestone, WeeklyTask, WeeklySubmission, Meeting, Notification,
     AuditLog, Application, Payment, College, Department, InternshipPlan, Evaluation,
-    TaskImportHistory
+    TaskImportHistory, Employee
 )
 from app.services.mentor_service import get_approved_mentors, is_approved_mentor, APPROVED_MENTOR_EMAILS
 
@@ -430,6 +430,117 @@ def assign_mentor(student_id):
     flash(f'Assigned technical mentor successfully updated to {mentor.full_name}.', 'success')
     return redirect(url_for('admin.employee_detail', student_id=student.id))
 
+
+# ─── Delete All Employees ─────────────────────────────────────────────────────
+
+@admin_bp.route('/employees/delete-all', methods=['POST'])
+@login_required
+def delete_all_employees():
+    """
+    Destructive action: Deletes all eligible employee records from the Internship Portal.
+    Requires admin authorization and exact case-sensitive confirmation phrase 'DELETE ALL EMPLOYEES'.
+    Safely inspects dependencies: if historical submissions or evaluations exist, halts and rolls back.
+    """
+    # 1. Server-side Administrator Authorization
+    if session.get('auth_realm') == 'employee':
+        flash('Access restricted to ANTI MATRIX Administrators and Staff. Employees cannot access administrative actions.', 'danger')
+        abort(403)
+
+    if not current_user.is_authenticated or not current_user.is_admin_or_staff or not current_user.is_active:
+        flash('Administrator authentication required to perform this action.', 'danger')
+        abort(403)
+
+    # 2. Strict case-sensitive phrase verification (no whitespace normalization)
+    confirmation_phrase = request.form.get('confirmation_phrase', '')
+    if confirmation_phrase != 'DELETE ALL EMPLOYEES':
+        flash('Confirmation phrase did not match. Deletion aborted.', 'danger')
+        return redirect(url_for('admin.employees_list'))
+
+    # 3. Transactional Deletion
+    try:
+        # A. Query active directory students (strictly excluding admin/staff accounts)
+        active_students = Student.query.join(User, Student.user_id == User.id)\
+            .join(Internship, Internship.student_id == Student.id)\
+            .filter(
+                User.is_active == True,
+                Internship.status == 'ACTIVE',
+                User.role.notin_(['super_admin', 'admin', 'mentor', 'hr', 'evaluator'])
+            ).all()
+
+        target_student_ids = [s.id for s in active_students]
+
+        # B. Dependency check: do any employees have protected historical records?
+        has_submissions = False
+        has_evaluations = False
+
+        if target_student_ids:
+            has_submissions = WeeklySubmission.query.filter(WeeklySubmission.student_id.in_(target_student_ids)).count() > 0
+            has_evaluations = Evaluation.query.filter(Evaluation.employee_id.in_(target_student_ids)).count() > 0
+
+        if has_submissions or has_evaluations:
+            db.session.rollback()
+            flash("Employees could not be deleted because related records require attention. No employee records were removed.", "danger")
+            return redirect(url_for('admin.employees_list'))
+
+        deleted_count = 0
+
+        # C. Retrieve employee records directly from database and delete from employees table
+        emp_records = Employee.query.all()
+        for emp in emp_records:
+            db.session.delete(emp)
+            deleted_count += 1
+
+        # D. Decommission active student internships and revoke student user access
+        for s in active_students:
+            for intern in s.internships:
+                if intern.status == 'ACTIVE':
+                    intern.status = 'TERMINATED'
+                    deleted_count += 1
+
+            if s.user and s.user.role == 'student':
+                s.user.is_active = False
+
+            if hasattr(s, 'applications') and s.applications:
+                for app_rec in s.applications:
+                    app_rec.is_converted_to_employee = False
+                    app_rec.converted_employee_id = None
+
+        # E. Clean up any active internship records for admin users in the directory without touching admin accounts
+        admin_internships = Internship.query.join(Student, Internship.student_id == Student.id)\
+            .join(User, Student.user_id == User.id)\
+            .filter(
+                Internship.status == 'ACTIVE',
+                User.role.in_(['super_admin', 'admin'])
+            ).all()
+        for ai in admin_internships:
+            ai.status = 'TERMINATED'
+            deleted_count += 1
+
+        # F. Record audit log
+        audit = AuditLog(
+            actor_id=current_user.id,
+            actor_role=current_user.role,
+            action='DELETE_ALL_EMPLOYEES',
+            target_entity='employees',
+            target_id='ALL',
+            details_json=json.dumps({
+                'action': 'DELETE_ALL_EMPLOYEES',
+                'affected_count': deleted_count,
+                'timestamp': datetime.utcnow().isoformat()
+            }),
+            ip_address=request.remote_addr
+        )
+        db.session.add(audit)
+
+        db.session.commit()
+        flash("All eligible employee records have been deleted successfully.", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting employees: {e}")
+        flash("Employees could not be deleted because related records require attention. No employee records were removed.", "danger")
+
+    return redirect(url_for('admin.employees_list'))
 
 
 # ─── Create Employee ──────────────────────────────────────────────────────────
