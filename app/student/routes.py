@@ -2,9 +2,10 @@ import os
 import re
 import time
 from datetime import datetime
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, current_app, send_file, session
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, current_app, send_file, session, g
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
+from sqlalchemy.orm import joinedload
 from app.extensions import db
 from app.models import (
     User, Student, College, Department, Application, Internship, InternshipPlan, ProjectAssignment, WeeklyMilestone,
@@ -68,8 +69,18 @@ ALLOWED_STUDENT_ROLES = {'student', 'employee', 'candidate', 'member', 'intern'}
 
 def get_current_student():
     """Retrieve and validate student profile for current authenticated user."""
-    student = getattr(current_user, 'student_profile', None) or Student.query.filter_by(user_id=current_user.id).first()
-    if not student:
+    if hasattr(g, 'current_student') and g.current_student:
+        return g.current_student
+
+    student = getattr(current_user, 'student_profile', None)
+    if not student and current_user.is_authenticated:
+        student = Student.query.options(
+            joinedload(Student.college),
+            joinedload(Student.department),
+            joinedload(Student.user)
+        ).filter_by(user_id=current_user.id).first()
+
+    if not student and current_user.is_authenticated:
         # Auto-provision or link student profile for authenticated employee
         from app.auth.routes import _ensure_student_profile
         student = _ensure_student_profile(current_user)
@@ -77,6 +88,8 @@ def get_current_student():
     if not student:
         flash('No active employee/student profile linked to your account. Please contact Anti Matrix support.', 'danger')
         abort(403)
+
+    g.current_student = student
     return student
 
 
@@ -225,6 +238,18 @@ def project_detail(assignment_id=None):
         assignment = requested
 
     milestones = assignment.weekly_milestones.all()
+    if milestones:
+        m_ids = [m.id for m in milestones]
+        all_tasks = WeeklyTask.query.filter(WeeklyTask.milestone_id.in_(m_ids)).all()
+        totals = {}
+        completed = {}
+        for t in all_tasks:
+            totals[t.milestone_id] = totals.get(t.milestone_id, 0) + 1
+            if t.is_completed:
+                completed[t.milestone_id] = completed.get(t.milestone_id, 0) + 1
+        for m in milestones:
+            m._preloaded_total_tasks_count = totals.get(m.id, 0)
+            m._preloaded_completed_tasks_count = completed.get(m.id, 0)
 
     return render_template(
         'student/project_detail.html',
@@ -517,7 +542,7 @@ def profile():
     student = get_current_student()
     internship = student.active_internship
     assignment = internship.active_assignment if internship else None
-    colleges = College.query.filter_by(is_active=True).order_by(College.name).all()
+    colleges = College.query.filter_by(is_active=True).options(joinedload(College.departments)).order_by(College.name).all()
 
     if request.method == 'POST':
         from sqlalchemy import func

@@ -55,20 +55,15 @@ def normalize_database_url(raw_url: str) -> str:
         else:
             host = host_and_port
 
-        # Supabase Direct IPv6 to Pooler IPv4 translation fallback:
+        # Supabase Direct IPv6 to Pooler IPv4 deterministic translation:
+        # Supabase direct hosts (db.*.supabase.co) only resolve to IPv6, which causes
+        # 30-40 second TCP connection timeouts on IPv4 serverless/Vercel functions.
+        # Deterministically rewrite to the Supabase IPv4 connection pooler without blocking DNS lookups.
         if host.startswith('db.') and host.endswith('.supabase.co'):
             project_ref = host[3:-len('.supabase.co')]
-            resolves = False
-            try:
-                socket.getaddrinfo(host, port)
-                resolves = True
-            except Exception:
-                resolves = False
-            
-            if not resolves:
-                host = 'aws-0-ap-south-1.pooler.supabase.com'
-                if not username.endswith(f'.{project_ref}'):
-                    username = f"{username}.{project_ref}" if username else f"postgres.{project_ref}"
+            host = 'aws-0-ap-south-1.pooler.supabase.com'
+            if not username.endswith(f'.{project_ref}'):
+                username = f"{username}.{project_ref}" if username else f"postgres.{project_ref}"
 
         # RFC 3986 percent-encode user and password
         encoded_username = urllib.parse.quote(username, safe='')
@@ -85,10 +80,24 @@ class Config:
     raw_db_url = os.environ.get('DATABASE_URL') or os.environ.get('SUPABASE_DATABASE_URL')
     if raw_db_url:
         SQLALCHEMY_DATABASE_URI = normalize_database_url(raw_db_url)
+        is_sqlite = SQLALCHEMY_DATABASE_URI.startswith('sqlite')
         SQLALCHEMY_ENGINE_OPTIONS = {
             'pool_pre_ping': True,
-            'pool_recycle': 300,
         }
+        if not is_sqlite:
+            SQLALCHEMY_ENGINE_OPTIONS.update({
+                'pool_recycle': 300,
+                'pool_size': 5,
+                'max_overflow': 10,
+                'pool_timeout': 10,
+                'connect_args': {
+                    'connect_timeout': 5,
+                    'keepalives': 1,
+                    'keepalives_idle': 30,
+                    'keepalives_interval': 5,
+                    'keepalives_count': 3,
+                }
+            })
     else:
         is_serverless = bool(
             os.environ.get('VERCEL') or

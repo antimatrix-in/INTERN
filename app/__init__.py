@@ -9,6 +9,13 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # Sanitize engine options for SQLite to prevent pool_size/overflow errors in tests or local SQLite
+    if app.config.get('SQLALCHEMY_DATABASE_URI', '').startswith('sqlite'):
+        engine_opts = dict(app.config.get('SQLALCHEMY_ENGINE_OPTIONS') or {})
+        for k in ('pool_size', 'max_overflow', 'pool_timeout', 'connect_args'):
+            engine_opts.pop(k, None)
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
+
     # Respect reverse proxy headers from Render (X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Host)
     app.wsgi_app = ProxyFix(
         app.wsgi_app,
@@ -109,12 +116,13 @@ def create_app(config_class=Config):
             from app.seed import seed_initial_data
             seed_initial_data()
 
-        # Safely maintain and reconcile primary administrator credentials on startup
-        try:
-            from app.seed import reconcile_primary_admin
-            reconcile_primary_admin(app)
-        except Exception:
-            pass
+        # Safely maintain and reconcile primary administrator credentials if requested
+        if os.environ.get('RECONCILE_ADMIN_ON_STARTUP', 'false').strip().lower() in ('1', 'true', 'yes'):
+            try:
+                from app.seed import reconcile_primary_admin
+                reconcile_primary_admin(app)
+            except Exception:
+                pass
 
     @app.cli.command('db-migrate')
     def cli_db_migrate():

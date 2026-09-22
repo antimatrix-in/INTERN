@@ -6,6 +6,7 @@ class TestConfig(Config):
     TESTING = True
     WTF_CSRF_ENABLED = False
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_ENGINE_OPTIONS = {}
     SECRET_KEY = 'test-secret-key-do-not-use-in-production'
     SESSION_COOKIE_SECURE = False
     REMEMBER_COOKIE_SECURE = False

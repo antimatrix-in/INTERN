@@ -56,7 +56,7 @@
             </p>
 
             <div style="display: flex; gap: 1.5rem; font-size: 0.8rem; color: var(--text-subtle);">
-              <span>📋 {{ m.tasks.count() }} Tasks</span>
+              <span>📋 {{ m.total_tasks_count }} Tasks</span>
               <span>📦 {{ m.deliverables|length }} Deliverables</span>
               {% if m.approved_at %}
                 <span style="color: var(--primary-light);">✓ Approved on {{ m.approved_at.strftime('%d %b %Y') if m.approved_at.strftime is defined else m.approved_at }}</span>
