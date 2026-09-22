@@ -90,7 +90,14 @@ class Config:
             'pool_recycle': 300,
         }
     else:
-        is_serverless = bool(os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))
+        is_serverless = bool(
+            os.environ.get('VERCEL') or
+            os.environ.get('VERCEL_ENV') or
+            os.environ.get('VERCEL_REGION') or
+            os.environ.get('AWS_LAMBDA_FUNCTION_NAME') or
+            os.environ.get('LAMBDA_TASK_ROOT') or
+            str(BASE_DIR).startswith('/var/task')
+        )
         if is_serverless:
             import tempfile
             instance_dir = Path(tempfile.gettempdir()) / 'antimatrix' / 'instance'
@@ -117,17 +124,33 @@ class Config:
     SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
     
     # Upload storage (environment-aware: writable temp storage on serverless/Vercel; local repo paths on dev/Render)
-    is_serverless = bool(os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))
+    is_serverless = bool(
+        os.environ.get('VERCEL') or
+        os.environ.get('VERCEL_ENV') or
+        os.environ.get('VERCEL_REGION') or
+        os.environ.get('AWS_LAMBDA_FUNCTION_NAME') or
+        os.environ.get('LAMBDA_TASK_ROOT') or
+        str(BASE_DIR).startswith('/var/task')
+    )
     if is_serverless:
         import tempfile
         _default_upload = str(Path(tempfile.gettempdir()) / 'antimatrix' / 'uploads')
         _default_video = str(Path(tempfile.gettempdir()) / 'antimatrix' / 'uploads' / 'videos')
+        _env_upload = os.environ.get('UPLOAD_FOLDER')
+        if not _env_upload or 'app/static/uploads' in _env_upload.replace('\\', '/') or _env_upload.startswith('/var/task'):
+            UPLOAD_FOLDER = _default_upload
+        else:
+            UPLOAD_FOLDER = _env_upload
+        _env_video = os.environ.get('VIDEO_UPLOAD_FOLDER')
+        if not _env_video or 'uploads/videos' in _env_video.replace('\\', '/') or _env_video.startswith('/var/task'):
+            VIDEO_UPLOAD_FOLDER = _default_video
+        else:
+            VIDEO_UPLOAD_FOLDER = _env_video
     else:
         _default_upload = str(BASE_DIR / 'app' / 'static' / 'uploads')
         _default_video = str(BASE_DIR / 'instance' / 'uploads' / 'videos')
-
-    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', _default_upload)
-    VIDEO_UPLOAD_FOLDER = os.environ.get('VIDEO_UPLOAD_FOLDER', _default_video)
+        UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', _default_upload)
+        VIDEO_UPLOAD_FOLDER = os.environ.get('VIDEO_UPLOAD_FOLDER', _default_video)
     MAX_VIDEO_SIZE_MB = int(os.environ.get('MAX_VIDEO_SIZE_MB', 100))
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'webm'}
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 120 * 1024 * 1024)) # 120 MB

@@ -20,7 +20,14 @@ def create_app(config_class=Config):
     )
 
     # Ensure upload directories exist safely without blocking read-only environments (e.g. Vercel /var/task)
-    is_serverless = bool(os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))
+    is_serverless = bool(
+        os.environ.get('VERCEL') or
+        os.environ.get('VERCEL_ENV') or
+        os.environ.get('VERCEL_REGION') or
+        os.environ.get('AWS_LAMBDA_FUNCTION_NAME') or
+        os.environ.get('LAMBDA_TASK_ROOT') or
+        str(app.root_path).startswith('/var/task')
+    )
     if not is_serverless:
         try:
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
