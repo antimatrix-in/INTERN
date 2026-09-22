@@ -1,8 +1,46 @@
 /**
- * ANTI MATRIX — Client-Side Interactions & Dynamic Loaders
+ * ANTI MATRIX — Client-Side Interactions, Theme Engine & Dynamic Loaders
  */
 
+// 0. Instant Theme Initialization
+(function() {
+  const saved = localStorage.getItem('anti_matrix_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+
+function getSavedTheme() {
+  return localStorage.getItem('anti_matrix_theme') || 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('anti_matrix_theme', theme);
+  const toggleBtns = document.querySelectorAll('.theme-toggle-btn');
+  toggleBtns.forEach(btn => {
+    btn.setAttribute('data-theme-state', theme);
+    btn.setAttribute('title', theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
+  });
+}
+
+function toggleAntiMatrixTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize theme button states
+  applyTheme(getSavedTheme());
+
+  // Attach theme toggle listeners
+  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleAntiMatrixTheme();
+    });
+  });
+
   // 1. Mobile Menu Drawer Toggle
   const mobileToggle = document.querySelector('.mobile-toggle');
   const navLinks = document.querySelector('.nav-links');
@@ -125,4 +163,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 6000);
   });
 });
-

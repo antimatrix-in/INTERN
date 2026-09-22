@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <defs>
+    <style>
+      polygon { stroke: #04140b; stroke-width: 0.85; stroke-linejoin: round; }
+    </style>
+  </defs>
+  
+  <!-- Row 0 (y: 0 to 40) -->
+  <!-- Cell (0,0) -->
+  <polygon points="0,0 40,0 0,40" fill="#1b7a50" />
+  <polygon points="40,0 40,40 0,40" fill="#259a66" />
+  <!-- Cell (1,0) -->
+  <polygon points="40,0 80,0 40,40" fill="#135a3a" />
+  <polygon points="80,0 80,40 40,40" fill="#2eb87a" />
+  <!-- Cell (2,0) -->
+  <polygon points="80,0 120,0 80,40" fill="#0c3823" />
+  <polygon points="120,0 120,40 80,40" fill="#1f8959" />
+  <!-- Cell (3,0) -->
+  <polygon points="120,0 160,0 120,40" fill="#36cc88" />
+  <polygon points="160,0 160,40 120,40" fill="#186c45" />
+  <!-- Cell (4,0) -->
+  <polygon points="160,0 200,0 160,40" fill="#104f32" />
+  <polygon points="200,0 200,40 160,40" fill="#29a66e" />
+  <!-- Cell (5,0) -->
+  <polygon points="200,0 240,0 200,40" fill="#082b1b" />
+  <polygon points="240,0 240,40 200,40" fill="#32c281" />
+
+  <!-- Row 1 (y: 40 to 80) -->
+  <!-- Cell (0,1) -->
+  <polygon points="0,40 40,40 0,80" fill="#0e442a" />
+  <polygon points="40,40 40,80 0,80" fill="#1a744c" />
+  <!-- Cell (1,1) -->
+  <polygon points="40,40 80,40 40,80" fill="#229362" />
+  <polygon points="80,40 80,80 40,80" fill="#072416" />
+  <!-- Cell (2,1) -->
+  <polygon points="80,40 120,40 80,80" fill="#2bb075" />
+  <polygon points="120,40 120,80 80,80" fill="#145d3b" />
+  <!-- Cell (3,1) -->
+  <polygon points="120,40 160,40 120,80" fill="#10492e" />
+  <polygon points="160,40 160,80 120,80" fill="#208757" />
+  <!-- Cell (4,1) -->
+  <polygon points="160,40 200,40 160,80" fill="#3cd691" />
+  <polygon points="200,40 200,80 160,80" fill="#176843" />
+  <!-- Cell (5,1) -->
+  <polygon points="200,40 240,40 200,80" fill="#0b3823" />
+  <polygon points="240,40 240,80 200,80" fill="#249d68" />
+
+  <!-- Row 2 (y: 80 to 120) -->
+  <!-- Cell (0,2) -->
+  <polygon points="0,80 40,80 0,120" fill="#2db377" />
+  <polygon points="40,80 40,120 0,120" fill="#115033" />
+  <!-- Cell (1,2) -->
+  <polygon points="40,80 80,80 40,120" fill="#176a44" />
+  <polygon points="80,80 80,120 40,120" fill="#33c483" />
+  <!-- Cell (2,2) -->
+  <polygon points="80,80 120,80 80,120" fill="#082b1b" />
+  <polygon points="120,80 120,120 80,120" fill="#1c7e52" />
+  <!-- Cell (3,2) -->
+  <polygon points="120,80 160,80 120,120" fill="#27a16b" />
+  <polygon points="160,80 160,120 120,120" fill="#0e4128" />
+  <!-- Cell (4,2) -->
+  <polygon points="160,80 200,80 160,120" fill="#186b45" />
+  <polygon points="200,80 200,120 160,120" fill="#30bd7d" />
+  <!-- Cell (5,2) -->
+  <polygon points="200,80 240,80 200,120" fill="#051f13" />
+  <polygon points="240,80 240,120 200,120" fill="#1e8958" />
+
+  <!-- Row 3 (y: 120 to 160) -->
+  <!-- Cell (0,3) -->
+  <polygon points="0,120 40,120 0,160" fill="#15603d" />
+  <polygon points="40,120 40,160 0,160" fill="#269e69" />
+  <!-- Cell (1,3) -->
+  <polygon points="40,120 80,120 40,160" fill="#37cd8a" />
+  <polygon points="80,120 80,160 40,160" fill="#0a321f" />
+  <!-- Cell (2,3) -->
+  <polygon points="80,120 120,120 80,160" fill="#19714a" />
+  <polygon points="120,120 120,160 80,160" fill="#2cb176" />
+  <!-- Cell (3,3) -->
+  <polygon points="120,120 160,120 120,160" fill="#062215" />
+  <polygon points="160,120 160,160 120,160" fill="#1c7c51" />
+  <!-- Cell (4,3) -->
+  <polygon points="160,120 200,120 160,160" fill="#229563" />
+  <polygon points="200,120 200,160 160,160" fill="#125234" />
+  <!-- Cell (5,3) -->
+  <polygon points="200,120 240,120 200,160" fill="#35cb87" />
+  <polygon points="240,120 240,160 200,160" fill="#0e432a" />
+
+  <!-- Row 4 (y: 160 to 200) -->
+  <!-- Cell (0,4) -->
+  <polygon points="0,160 40,160 0,200" fill="#0d3e26" />
+  <polygon points="40,160 40,200 0,200" fill="#239764" />
+  <!-- Cell (1,4) -->
+  <polygon points="40,160 80,160 40,200" fill="#176541" />
+  <polygon points="80,160 80,200 40,200" fill="#2fb97b" />
+  <!-- Cell (2,4) -->
+  <polygon points="80,160 120,160 80,200" fill="#38d18c" />
+  <polygon points="120,160 120,200 80,200" fill="#082819" />
+  <!-- Cell (3,4) -->
+  <polygon points="120,160 160,160 120,200" fill="#19734b" />
+  <polygon points="160,160 160,200 120,200" fill="#28a46c" />
+  <!-- Cell (4,4) -->
+  <polygon points="160,160 200,160 160,200" fill="#0b3722" />
+  <polygon points="200,160 200,200 160,200" fill="#1e8a59" />
+  <!-- Cell (5,4) -->
+  <polygon points="200,160 240,160 200,200" fill="#145838" />
+  <polygon points="240,160 240,200 200,200" fill="#2eb679" />
+
+  <!-- Row 5 (y: 200 to 240) -->
+  <!-- Cell (0,5) -->
+  <polygon points="0,200 40,200 0,240" fill="#2aa970" />
+  <polygon points="40,200 40,240 0,240" fill="#0a311f" />
+  <!-- Cell (1,5) -->
+  <polygon points="40,200 80,200 40,240" fill="#16623e" />
+  <polygon points="80,200 80,240 40,240" fill="#219160" />
+  <!-- Cell (2,5) -->
+  <polygon points="80,200 120,200 80,240" fill="#051e13" />
+  <polygon points="120,200 120,240 80,240" fill="#33c483" />
+  <!-- Cell (3,5) -->
+  <polygon points="120,200 160,200 120,240" fill="#125335" />
+  <polygon points="160,200 160,240 120,240" fill="#2ab074" />
+  <!-- Cell (4,5) -->
+  <polygon points="160,200 200,200 160,240" fill="#3de097" />
+  <polygon points="200,200 200,240 160,240" fill="#0d3f27" />
+  <!-- Cell (5,5) -->
+  <polygon points="200,200 240,200 200,240" fill="#1a764d" />
+  <polygon points="240,200 240,240 200,240" fill="#186944" />
+</svg>
