@@ -512,12 +512,29 @@ def profile():
     colleges = College.query.filter_by(is_active=True).order_by(College.name).all()
 
     if request.method == 'POST':
-        # 1. College
+        from sqlalchemy import func
+
+        # 1. College (accepts typed name or selected ID)
+        college = None
+        college_id_raw = str(request.form.get('college_id', '')).strip()
+        college_name = (request.form.get('college') or request.form.get('college_name') or '').strip()
+
         try:
-            college_id = int(request.form.get('college_id', 0))
+            college_id = int(college_id_raw) if college_id_raw else 0
         except (ValueError, TypeError):
             college_id = 0
-        college = College.query.get(college_id) if college_id else None
+
+        if college_id > 0:
+            college = db.session.get(College, college_id)
+
+        if not college and college_name:
+            college = College.query.filter(func.lower(College.name) == college_name.lower()).first()
+            if not college:
+                college = College.query.filter(College.name.ilike(f"%{college_name}%")).first()
+            if not college:
+                college = College.query.filter_by(code='OTHER-COLLEGE').first() or \
+                          College.query.filter(College.name.ilike('%Other%')).first()
+
         if not college or not college.is_active:
             flash('Please select a valid College / Institution from the list.', 'danger')
             return render_template(
@@ -528,12 +545,34 @@ def profile():
                 colleges=colleges
             )
 
-        # 2. Department
+        # 2. Department (accepts typed name or selected ID)
+        dept = None
+        dept_id_raw = str(request.form.get('department_id', '')).strip()
+        dept_name = (request.form.get('department') or request.form.get('department_name') or '').strip()
+
         try:
-            department_id = int(request.form.get('department_id', 0))
+            department_id = int(dept_id_raw) if dept_id_raw else 0
         except (ValueError, TypeError):
             department_id = 0
-        dept = Department.query.get(department_id) if department_id else None
+
+        if department_id > 0:
+            candidate_dept = db.session.get(Department, department_id)
+            if candidate_dept and candidate_dept.college_id == college.id and candidate_dept.is_active:
+                dept = candidate_dept
+
+        if not dept and dept_name:
+            dept = Department.query.filter_by(college_id=college.id).filter(
+                func.lower(Department.name) == dept_name.lower()
+            ).first()
+            if not dept:
+                dept = Department.query.filter(
+                    Department.college_id == college.id,
+                    Department.name.ilike(f"%{dept_name}%")
+                ).first()
+            if not dept:
+                dept = Department.query.filter_by(college_id=college.id, name='Other').first() or \
+                       Department.query.filter_by(college_id=college.id).first()
+
         if not dept or not dept.is_active or dept.college_id != college.id:
             flash('Please select a valid Academic Department for the selected college.', 'danger')
             return render_template(
@@ -544,8 +583,18 @@ def profile():
                 colleges=colleges
             )
 
-        # 3. Current Year
+        # 3. Current Year (accepts selection or typed value with normalization)
         current_year = request.form.get('current_year', '').strip()
+        year_mapping = {
+            '1': '1st Year', '1st': '1st Year', '1st year': '1st Year',
+            '2': '2nd Year', '2nd': '2nd Year', '2nd year': '2nd Year',
+            '3': '3rd Year', '3rd': '3rd Year', '3rd year': '3rd Year',
+            '4': '4th Year', '4th': '4th Year', '4th year': '4th Year',
+            'final': 'Final Year', 'final year': 'Final Year'
+        }
+        if current_year.lower() in year_mapping:
+            current_year = year_mapping[current_year.lower()]
+
         if current_year not in ALLOWED_PROFILE_YEARS:
             flash('Please select a valid Current Year from the options.', 'danger')
             return render_template(

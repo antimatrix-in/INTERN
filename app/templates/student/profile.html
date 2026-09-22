@@ -131,56 +131,70 @@
       </div>
     </div>
 
-    <!-- ── 2. YOUR PROFILE INFORMATION (CANDIDATE EDITABLE) ─────────────── -->
+    <!-- ── 2. YOUR PROFILE INFORMATION ─────────────────────────────────── -->
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle);">
-        <h3 class="card-title" style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <div style="margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle);">
+        <h3 class="card-title" style="margin: 0; font-size: 1.05rem;">
           YOUR PROFILE
         </h3>
-        <span style="font-size: 0.75rem; font-weight: 700; color: var(--brand-primary); background: rgba(16, 185, 129, 0.1); padding: 0.25rem 0.65rem; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.25);">
-          EDITABLE
-        </span>
       </div>
 
       <form action="{{ url_for('student.profile') }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="grid-2" style="gap: 1.25rem; margin-bottom: 1.5rem;">
-          <!-- 1. College / Institution Dropdown -->
+          <!-- 1. College / Institution Input -->
           <div class="form-group" style="margin-bottom: 0;">
-            <label for="college_id" class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.35rem; display: block;">
+            <label for="college_input" class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.35rem; display: block;">
               College / Institution <span style="color: #EF4444;">*</span>
             </label>
-            <select id="college_id" name="college_id" class="form-select" required onchange="handleCollegeChange(this.value)" style="width: 100%; padding: 0.6rem 0.85rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 0.9rem;">
-              <option value="">-- Select College --</option>
+            <input type="text"
+                   id="college_input"
+                   name="college"
+                   list="college_list"
+                   class="form-control"
+                   value="{{ student.college.name if student.college else '' }}"
+                   placeholder="Other Autonomous / University College"
+                   required
+                   autocomplete="off">
+            <datalist id="college_list">
               {% for c in colleges %}
-                <option value="{{ c.id }}" {% if student.college_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                <option value="{{ c.name }}"></option>
               {% endfor %}
-            </select>
+            </datalist>
+            <input type="hidden" id="college_id" name="college_id" value="{{ student.college_id or '' }}">
           </div>
 
-          <!-- 2. Academic Department Dropdown -->
+          <!-- 2. Academic Department Input -->
           <div class="form-group" style="margin-bottom: 0;">
-            <label for="department_id" class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.35rem; display: block;">
+            <label for="department_input" class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.35rem; display: block;">
               Academic Department <span style="color: #EF4444;">*</span>
             </label>
-            <select id="department_id" name="department_id" class="form-select" required style="width: 100%; padding: 0.6rem 0.85rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 0.9rem;">
-              <option value="">-- Select Department --</option>
+            <input type="text"
+                   id="department_input"
+                   name="department"
+                   list="department_list"
+                   class="form-control"
+                   value="{{ student.department.name if student.department else '' }}"
+                   placeholder="Computer Science and Engineering"
+                   required
+                   autocomplete="off">
+            <datalist id="department_list">
               {% if student.college and student.college.departments %}
                 {% for d in student.college.departments %}
-                  <option value="{{ d.id }}" {% if student.department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+                  <option value="{{ d.name }}"></option>
                 {% endfor %}
               {% endif %}
-            </select>
+            </datalist>
+            <input type="hidden" id="department_id" name="department_id" value="{{ student.department_id or '' }}">
           </div>
 
-          <!-- 3. Current Year Controlled Selection -->
+          <!-- 3. Current Year Selection -->
           <div class="form-group" style="margin-bottom: 0;">
             <label for="current_year" class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.35rem; display: block;">
               Current Year <span style="color: #EF4444;">*</span>
             </label>
-            <select id="current_year" name="current_year" class="form-select" required style="width: 100%; padding: 0.6rem 0.85rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 0.9rem;">
+            <select id="current_year" name="current_year" class="form-control form-select" required>
               <option value="">-- Select Year --</option>
               <option value="1st Year" {% if student.current_year == '1st Year' %}selected{% endif %}>1st Year</option>
               <option value="2nd Year" {% if student.current_year == '2nd Year' %}selected{% endif %}>2nd Year</option>
@@ -195,7 +209,13 @@
             <label for="mobile_number" class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.35rem; display: block;">
               Mobile Number <span style="color: #EF4444;">*</span>
             </label>
-            <input type="tel" id="mobile_number" name="mobile_number" class="form-input mono" value="{{ student.user.phone or '' }}" placeholder="+91 98765 43210" required style="width: 100%; padding: 0.6rem 0.85rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 0.9rem; box-sizing: border-box;">
+            <input type="tel"
+                   id="mobile_number"
+                   name="mobile_number"
+                   class="form-control mono"
+                   value="{{ student.user.phone or '' }}"
+                   placeholder="+91 98765 43210"
+                   required>
           </div>
         </div>
 
@@ -211,39 +231,68 @@
 </div>
 
 <script>
-  // Embedded College to Departments lookup map
-  const collegeDepartmentsMap = {
+  const collegeDepts = {
     {% for c in colleges %}
-      "{{ c.id }}": [
-        {% for d in c.departments %}
-          { id: {{ d.id }}, name: {{ d.name|tojson }} },
-        {% endfor %}
-      ],
+      {{ c.name|tojson }}: {
+        id: {{ c.id }},
+        departments: [
+          {% for d in c.departments %}
+            { id: {{ d.id }}, name: {{ d.name|tojson }} },
+          {% endfor %}
+        ]
+      },
     {% endfor %}
   };
 
-  const initialDeptId = {{ student.department_id or 'null' }};
+  const collegeInput = document.getElementById('college_input');
+  const collegeIdInput = document.getElementById('college_id');
+  const deptInput = document.getElementById('department_input');
+  const deptIdInput = document.getElementById('department_id');
+  const deptList = document.getElementById('department_list');
 
-  function handleCollegeChange(collegeId) {
-    const deptSelect = document.getElementById('department_id');
-    if (!deptSelect) return;
-
-    deptSelect.innerHTML = '<option value="">-- Select Department --</option>';
-
-    if (!collegeId || !collegeDepartmentsMap[collegeId]) {
-      return;
-    }
-
-    const depts = collegeDepartmentsMap[collegeId];
-    depts.forEach(d => {
-      const opt = document.createElement('option');
-      opt.value = d.id;
-      opt.textContent = d.name;
-      if (initialDeptId && String(d.id) === String(initialDeptId)) {
-        opt.selected = true;
+  function syncCollege() {
+    if (!collegeInput) return;
+    const name = collegeInput.value.trim();
+    const data = collegeDepts[name];
+    if (data) {
+      if (collegeIdInput) collegeIdInput.value = data.id;
+      if (deptList) {
+        deptList.innerHTML = '';
+        data.departments.forEach(function(d) {
+          const opt = document.createElement('option');
+          opt.value = d.name;
+          deptList.appendChild(opt);
+        });
       }
-      deptSelect.appendChild(opt);
-    });
+    } else {
+      if (collegeIdInput) collegeIdInput.value = '';
+    }
+  }
+
+  function syncDepartment() {
+    if (!deptInput) return;
+    const deptName = deptInput.value.trim();
+    const colName = collegeInput ? collegeInput.value.trim() : '';
+    const colData = collegeDepts[colName];
+    if (colData) {
+      const match = colData.departments.find(function(d) {
+        return d.name.toLowerCase() === deptName.toLowerCase();
+      });
+      if (match && deptIdInput) {
+        deptIdInput.value = match.id;
+        return;
+      }
+    }
+    if (deptIdInput) deptIdInput.value = '';
+  }
+
+  if (collegeInput) {
+    collegeInput.addEventListener('input', syncCollege);
+    collegeInput.addEventListener('change', syncCollege);
+  }
+  if (deptInput) {
+    deptInput.addEventListener('input', syncDepartment);
+    deptInput.addEventListener('change', syncDepartment);
   }
 </script>
 {% endblock %}
