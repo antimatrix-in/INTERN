@@ -90,8 +90,21 @@ class Config:
             'pool_recycle': 300,
         }
     else:
-        instance_dir = BASE_DIR / 'instance'
-        os.makedirs(instance_dir, exist_ok=True)
+        is_serverless = bool(os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))
+        if is_serverless:
+            import tempfile
+            instance_dir = Path(tempfile.gettempdir()) / 'antimatrix' / 'instance'
+        else:
+            instance_dir = BASE_DIR / 'instance'
+        try:
+            os.makedirs(instance_dir, exist_ok=True)
+        except OSError:
+            import tempfile
+            instance_dir = Path(tempfile.gettempdir()) / 'antimatrix' / 'instance'
+            try:
+                os.makedirs(instance_dir, exist_ok=True)
+            except OSError:
+                pass
         SQLALCHEMY_DATABASE_URI = f"sqlite:///{instance_dir / 'antimatrix.db'}"
         SQLALCHEMY_ENGINE_OPTIONS = {}
     
@@ -103,9 +116,18 @@ class Config:
     SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')
     SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
     
-    # Upload storage
-    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', str(BASE_DIR / 'app' / 'static' / 'uploads'))
-    VIDEO_UPLOAD_FOLDER = os.environ.get('VIDEO_UPLOAD_FOLDER', str(BASE_DIR / 'instance' / 'uploads' / 'videos'))
+    # Upload storage (environment-aware: writable temp storage on serverless/Vercel; local repo paths on dev/Render)
+    is_serverless = bool(os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))
+    if is_serverless:
+        import tempfile
+        _default_upload = str(Path(tempfile.gettempdir()) / 'antimatrix' / 'uploads')
+        _default_video = str(Path(tempfile.gettempdir()) / 'antimatrix' / 'uploads' / 'videos')
+    else:
+        _default_upload = str(BASE_DIR / 'app' / 'static' / 'uploads')
+        _default_video = str(BASE_DIR / 'instance' / 'uploads' / 'videos')
+
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', _default_upload)
+    VIDEO_UPLOAD_FOLDER = os.environ.get('VIDEO_UPLOAD_FOLDER', _default_video)
     MAX_VIDEO_SIZE_MB = int(os.environ.get('MAX_VIDEO_SIZE_MB', 100))
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'webm'}
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 120 * 1024 * 1024)) # 120 MB

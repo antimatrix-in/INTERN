@@ -19,15 +19,17 @@ def create_app(config_class=Config):
         x_prefix=1
     )
 
-    # Ensure upload directories exist
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'resumes'), exist_ok=True)
-    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'identity'), exist_ok=True)
-    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'college_ids'), exist_ok=True)
-    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'photos'), exist_ok=True)
-    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'generated_docs'), exist_ok=True)
-    if 'VIDEO_UPLOAD_FOLDER' in app.config:
-        os.makedirs(app.config['VIDEO_UPLOAD_FOLDER'], exist_ok=True)
+    # Ensure upload directories exist safely without blocking read-only environments (e.g. Vercel /var/task)
+    is_serverless = bool(os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))
+    if not is_serverless:
+        try:
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            for sub_dir in ('resumes', 'identity', 'college_ids', 'photos', 'generated_docs'):
+                os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], sub_dir), exist_ok=True)
+            if 'VIDEO_UPLOAD_FOLDER' in app.config:
+                os.makedirs(app.config['VIDEO_UPLOAD_FOLDER'], exist_ok=True)
+        except OSError:
+            pass
 
     # Initialize extensions
     db.init_app(app)
