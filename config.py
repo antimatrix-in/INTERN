@@ -136,10 +136,16 @@ class Config:
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5050')
 
     # Security & Session Management
+    SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME', 'anti_matrix_session')
+    REMEMBER_COOKIE_NAME = os.environ.get('REMEMBER_COOKIE_NAME', 'anti_matrix_remember')
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_PATH = '/'
+    # Host-only cookies for intern.antimatrix.co.in by default to prevent cross-subdomain bleeding
     SESSION_COOKIE_DOMAIN = os.environ.get('SESSION_COOKIE_DOMAIN', None)
-    # Enforce secure cookies in production/HTTPS on Render while allowing dev/testing
+    REMEMBER_COOKIE_DOMAIN = os.environ.get('REMEMBER_COOKIE_DOMAIN', None)
+    REMEMBER_COOKIE_PATH = '/'
+    # Enforce secure cookies in production/HTTPS while allowing dev/testing
     _cookie_secure_env = os.environ.get('SESSION_COOKIE_SECURE')
     if _cookie_secure_env is not None:
         SESSION_COOKIE_SECURE = _cookie_secure_env.strip().lower() in ('1', 'true', 'yes')

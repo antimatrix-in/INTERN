@@ -130,6 +130,20 @@ def create_app(config_class=Config):
             'support_email': 'internships@antimatrix.tech'
         }
 
+    # Security & Cache Control headers for dynamic/authenticated responses
+    @app.after_request
+    def set_security_and_cache_headers(response):
+        """
+        Prevent browser bfcache and CDN edge proxies from caching dynamic/authenticated pages.
+        Forces the browser to always revalidate with the server so that logging out or clicking
+        Back strictly requires valid authentication.
+        """
+        if not request.path.startswith('/static'):
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0, private'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        return response
+
     return app
 
 

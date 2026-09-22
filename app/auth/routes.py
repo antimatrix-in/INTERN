@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db, csrf
 from app.models import (
@@ -692,15 +692,48 @@ def logout():
         except Exception:
             db.session.rollback()
 
-        logout_user()
-
+    logout_user()
     session.clear()
 
     if request.is_json or request.headers.get('Accept') == 'application/json':
-        return jsonify({'success': True, 'message': 'You have been securely signed out of the portal.'}), 200
+        response = jsonify({'success': True, 'message': 'You have been securely signed out of the portal.'})
+    else:
+        flash('You have been securely signed out of the portal.', 'info')
+        response = redirect(url_for('auth.login'))
 
-    flash('You have been securely signed out of the portal.', 'info')
-    return redirect(url_for('auth.login'))
+    # Explicitly delete all session and remember-me cookies across host-only and domain scopes
+    cookie_names = {
+        current_app.config.get('REMEMBER_COOKIE_NAME', 'anti_matrix_remember'),
+        current_app.config.get('SESSION_COOKIE_NAME', 'anti_matrix_session'),
+        'remember_token',
+        'session'
+    }
+    domains = {
+        None,
+        current_app.config.get('SESSION_COOKIE_DOMAIN'),
+        current_app.config.get('REMEMBER_COOKIE_DOMAIN'),
+        '.antimatrix.co.in',
+        'intern.antimatrix.co.in'
+    }
+
+    is_https = (
+        request.is_secure or
+        request.headers.get('X-Forwarded-Proto') == 'https' or
+        bool(current_app.config.get('SESSION_COOKIE_SECURE', False))
+    )
+
+    for c_name in cookie_names:
+        for dom in domains:
+            response.delete_cookie(c_name, path='/', domain=dom)
+            if is_https:
+                response.delete_cookie(c_name, path='/', domain=dom, secure=True, httponly=True, samesite='Lax')
+
+    # Prevent caching of logout response
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0, private'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+
+    return response
 
 
 def _safe_user_dict(user):

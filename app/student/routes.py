@@ -83,11 +83,19 @@ def get_current_student():
 @student_bp.before_request
 @login_required
 def check_student_role():
+    # If authenticated in admin realm, redirect to admin dashboard to preserve strict isolation
+    if session.get('auth_realm') == 'admin' and current_user.is_admin_or_staff:
+        return redirect(url_for('admin.dashboard'))
+
     if session.get('auth_realm') == 'employee':
         return
-    if current_user.role not in ALLOWED_STUDENT_ROLES and not current_user.is_admin_or_staff:
+
+    if current_user.role not in ALLOWED_STUDENT_ROLES:
         flash('Access restricted to enrolled internship employees.', 'danger')
         return redirect(url_for('auth.login'))
+
+    # Establish active employee session realm
+    session['auth_realm'] = 'employee'
 
 
 # ─── Dashboard ────────────────────────────────────────────────────────────────
