@@ -32,7 +32,37 @@ class ProfileTypeableFieldsTestCase(unittest.TestCase):
         self.assertIn('YOUR PROFILE', html)
         self.assertNotIn('EDITABLE', html)
 
-        # 2. Four fields exist as active, non-disabled, non-readonly form controls
+        # 2. "OFFICIAL INTERNSHIP INFORMATION" header exists without "READ-ONLY" badge
+        self.assertIn('OFFICIAL INTERNSHIP INFORMATION', html)
+        self.assertNotIn('READ-ONLY', html)
+
+        # 3. Informational lock/note box is completely removed
+        self.assertNotIn('remain read-only', html)
+        self.assertNotIn('Official registration and project allocation records', html)
+
+        # 4. Redundant academic block is removed from the left profile card
+        self.assertNotIn('Graduation: <strong', html)
+        self.assertNotIn('Roll No: <strong', html)
+
+        # 5. All 12 official fields remain intact in Official Internship Information
+        official_fields = [
+            'Full Legal Name',
+            'Allocated Employee ID',
+            'Registered Email Address',
+            'Degree',
+            'Graduation Year',
+            'Roll Number',
+            'Internship Track',
+            'Program Duration',
+            'Commencement Date',
+            'Expected Completion Date',
+            'Assigned Technical Mentor',
+            'Allocated Project Code',
+        ]
+        for field in official_fields:
+            self.assertIn(field, html)
+
+        # 6. Four fields exist as active, non-disabled, non-readonly form controls
         self.assertIn('id="college_input"', html)
         self.assertNotIn('id="college_input" readonly', html)
         self.assertNotIn('id="college_input" disabled', html)
@@ -48,7 +78,7 @@ class ProfileTypeableFieldsTestCase(unittest.TestCase):
         self.assertNotIn('id="mobile_number" readonly', html)
         self.assertNotIn('id="mobile_number" disabled', html)
 
-        # 3. Save Profile button exists
+        # 7. Save Profile button exists
         self.assertIn('Save Profile', html)
 
     def test_profile_submission_with_typed_values(self):
