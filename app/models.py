@@ -412,6 +412,18 @@ class Internship(db.Model):
         return names.get(m.email, m.full_name)
 
     @property
+    def assigned_mentor_email(self):
+        """
+        Returns the official Anti-Matrix email of the assigned mentor, or None.
+        Display-only resolution using canonical mentor mappings without modifying database.
+        """
+        name = self.assigned_mentor_name
+        if not name:
+            return None
+        from app.services.mentor_service import get_canonical_mentor_email
+        return get_canonical_mentor_email(name)
+
+    @property
     def active_assignment(self):
         if hasattr(self, '_preloaded_active_assignment'):
             return self._preloaded_active_assignment

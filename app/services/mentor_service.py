@@ -40,3 +40,37 @@ def get_canonical_mentor_name(user):
     if not user or not getattr(user, 'email', None):
         return None
     return APPROVED_MENTOR_NAMES.get(user.email)
+
+
+APPROVED_MENTOR_OFFICIAL_EMAILS = {
+    'Praveen': 'praveen@antimatrix.co.in',
+    'Satish Kumar': 'satishkumar@antimatrix.co.in',
+    'Rohit': 'rohit@antimatrix.co.in',
+    'Bharat Babu': 'bharathbabu@antimatrix.co.in',
+}
+
+
+def get_canonical_mentor_email(mentor_or_name):
+    """
+    Return the official Anti-Matrix mentor email for an approved mentor.
+    Accepts a User object, canonical mentor name string, or mentor email string.
+    Returns None if the mentor is not an approved mentor or unassigned.
+    """
+    if not mentor_or_name:
+        return None
+    if isinstance(mentor_or_name, str):
+        name = mentor_or_name.strip()
+        if name in APPROVED_MENTOR_OFFICIAL_EMAILS:
+            return APPROVED_MENTOR_OFFICIAL_EMAILS[name]
+        if name in APPROVED_MENTOR_NAMES:
+            canon_name = APPROVED_MENTOR_NAMES[name]
+            return APPROVED_MENTOR_OFFICIAL_EMAILS.get(canon_name)
+        for k, v in APPROVED_MENTOR_OFFICIAL_EMAILS.items():
+            if k.lower() == name.lower():
+                return v
+        return None
+    if is_approved_mentor(mentor_or_name):
+        canonical_name = get_canonical_mentor_name(mentor_or_name)
+        return APPROVED_MENTOR_OFFICIAL_EMAILS.get(canonical_name)
+    return None
+

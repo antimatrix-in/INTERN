@@ -5,6 +5,7 @@ from app.extensions import db
 from app.models import User, Student, College, Department, Internship
 from app.services.mentor_service import (
     get_approved_mentors, is_approved_mentor, get_canonical_mentor_name,
+    get_canonical_mentor_email, APPROVED_MENTOR_OFFICIAL_EMAILS,
     APPROVED_MENTOR_EMAILS, APPROVED_MENTOR_NAMES
 )
 from app.seed import seed_initial_data
@@ -281,6 +282,137 @@ class ProfileAndApprovedMentorsTestCase(unittest.TestCase):
         })
         self.assertIn('Please enter a valid mobile number', resp.get_data(as_text=True))
 
+    # ── MENTOR EMAIL DISPLAY TESTS ───────────────────────────────────────────
+
+    def test_assigned_mentor_email_mappings(self):
+        """Verify the exact approved email mapping for all 4 approved mentors."""
+        expected_mappings = {
+            'Praveen': 'praveen@antimatrix.co.in',
+            'Satish Kumar': 'satishkumar@antimatrix.co.in',
+            'Rohit': 'rohit@antimatrix.co.in',
+            'Bharat Babu': 'bharathbabu@antimatrix.co.in',
+        }
+        for name, expected_email in expected_mappings.items():
+            self.assertEqual(get_canonical_mentor_email(name), expected_email)
+            self.assertEqual(APPROVED_MENTOR_OFFICIAL_EMAILS.get(name), expected_email)
+
+        # Unapproved mentor returns None
+        self.assertIsNone(get_canonical_mentor_email('Dr. Rajesh Sharma'))
+        self.assertIsNone(get_canonical_mentor_email(None))
+        self.assertIsNone(get_canonical_mentor_email(''))
+
+    def test_employee_dashboard_displays_all_four_mentors_and_emails(self):
+        """
+        Verify that for all four mentors:
+        1. Praveen -> praveen@antimatrix.co.in
+        2. Satish Kumar -> satishkumar@antimatrix.co.in
+        3. Rohit -> rohit@antimatrix.co.in
+        4. Bharat Babu -> bharathbabu@antimatrix.co.in
+        The employee dashboard dynamically displays mentor name and clickable mailto link.
+        """
+        user = User.query.filter_by(employee_id='AM-INT-2026-001').first()
+        student = user.student_profile
+        internship = student.active_internship
+
+        # Login as employee
+        self.client.post('/login', data={'employee_id': 'AM-INT-2026-001', 'password': 'Student@2026Password!'})
+
+        approved_mentors = get_approved_mentors()
+        expected = [
+            ('Praveen', 'praveen@antimatrix.co.in'),
+            ('Satish Kumar', 'satishkumar@antimatrix.co.in'),
+            ('Rohit', 'rohit@antimatrix.co.in'),
+            ('Bharat Babu', 'bharathbabu@antimatrix.co.in'),
+        ]
+
+        for mentor_obj, (exp_name, exp_email) in zip(approved_mentors, expected):
+            internship.mentor_id = mentor_obj.id
+            db.session.commit()
+
+            self.assertEqual(internship.assigned_mentor_name, exp_name)
+            self.assertEqual(internship.assigned_mentor_email, exp_email)
+
+            resp = self.client.get('/dashboard')
+            self.assertEqual(resp.status_code, 200)
+            html = resp.get_data(as_text=True)
+
+            # Check mentor name rendered
+            self.assertIn(exp_name, html)
+            # Check mentor email rendered
+            self.assertIn(exp_email, html)
+            # Check clickable mailto link
+            self.assertIn(f'href="mailto:{exp_email}"', html)
+
+    def test_employee_dashboard_unassigned_mentor(self):
+        """Verify that when no mentor is assigned, 'Not Assigned' is shown and no mentor email is displayed."""
+        user = User.query.filter_by(employee_id='AM-INT-2026-001').first()
+        student = user.student_profile
+        internship = student.active_internship
+
+        # Set unassigned
+        internship.mentor_id = None
+        db.session.commit()
+
+        self.assertIsNone(internship.assigned_mentor)
+        self.assertIsNone(internship.assigned_mentor_name)
+        self.assertIsNone(internship.assigned_mentor_email)
+
+        # Login as employee
+        self.client.post('/login', data={'employee_id': 'AM-INT-2026-001', 'password': 'Student@2026Password!'})
+        resp = self.client.get('/dashboard')
+        self.assertEqual(resp.status_code, 200)
+        html = resp.get_data(as_text=True)
+
+        self.assertIn('Mentor:', html)
+        self.assertIn('Not Assigned', html)
+        self.assertNotIn('mailto:', html)
+        for email in APPROVED_MENTOR_OFFICIAL_EMAILS.values():
+            self.assertNotIn(email, html)
+
+    def test_admin_reassign_mentor_dynamically_updates_employee_dashboard(self):
+        """
+        Verify that changing the mentor in the existing Admin Dashboard
+        causes the corresponding mentor name + email to appear for the employee.
+        """
+        student = Student.query.first()
+        user = student.user
+
+        mentors = get_approved_mentors()
+        praveen = mentors[0]  # Praveen
+        bharat = mentors[3]   # Bharat Babu
+
+        # 1. Admin assigns Praveen
+        self.client.post('/admin/login', data={'email_or_id': 'admin', 'password': 'Admin@12345'}, follow_redirects=True)
+        resp1 = self.client.post(f'/admin/employees/{student.id}/assign-mentor', data={'mentor_id': praveen.id})
+        self.assertEqual(resp1.status_code, 302)
+
+        # Admin logs out
+        self.client.get('/logout', follow_redirects=True)
+
+        # Employee logs in and visits dashboard
+        self.client.post('/login', data={'employee_id': user.employee_id, 'password': 'Student@2026Password!'})
+        resp_emp1 = self.client.get('/dashboard')
+        html1 = resp_emp1.get_data(as_text=True)
+        self.assertIn('Praveen', html1)
+        self.assertIn('praveen@antimatrix.co.in', html1)
+        self.assertIn('href="mailto:praveen@antimatrix.co.in"', html1)
+        self.client.get('/logout', follow_redirects=True)
+
+        # 2. Admin re-assigns to Bharat Babu
+        self.client.post('/admin/login', data={'email_or_id': 'admin', 'password': 'Admin@12345'}, follow_redirects=True)
+        resp2 = self.client.post(f'/admin/employees/{student.id}/assign-mentor', data={'mentor_id': bharat.id})
+        self.assertEqual(resp2.status_code, 302)
+        self.client.get('/logout', follow_redirects=True)
+
+        # Employee logs in and visits dashboard
+        self.client.post('/login', data={'employee_id': user.employee_id, 'password': 'Student@2026Password!'})
+        resp_emp2 = self.client.get('/dashboard')
+        html2 = resp_emp2.get_data(as_text=True)
+        self.assertIn('Bharat Babu', html2)
+        self.assertIn('bharathbabu@antimatrix.co.in', html2)
+        self.assertIn('href="mailto:bharathbabu@antimatrix.co.in"', html2)
+
 
 if __name__ == '__main__':
     unittest.main()
+
